@@ -17,7 +17,7 @@
 
 package org.apache.kafka.streams.processor.internals;
 
-import org.apache.kafka.clients.consumer.ConsumerRecord;
+import org.apache.kafka.clients.consumer.HeaderConsumerRecord;
 import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.common.record.TimestampType;
 import org.apache.kafka.streams.errors.StreamsException;
@@ -26,7 +26,7 @@ import org.apache.kafka.streams.processor.TimestampExtractor;
 import java.util.ArrayDeque;
 
 /**
- * RecordQueue is a FIFO queue of {@link StampedRecord} (ConsumerRecord + timestamp). It also keeps track of the
+ * RecordQueue is a FIFO queue of {@link StampedRecord} (HeaderConsumerRecord + timestamp). It also keeps track of the
  * partition timestamp defined as the minimum timestamp of records in its queue; in addition, its partition
  * timestamp is monotonically increasing such that once it is advanced, it will not be decremented.
  */
@@ -35,7 +35,7 @@ public class RecordQueue {
     private final SourceNode source;
     private final TopicPartition partition;
     private final ArrayDeque<StampedRecord> fifoQueue;
-    private final TimestampTracker<ConsumerRecord<Object, Object>> timeTracker;
+    private final TimestampTracker<HeaderConsumerRecord<Object, Object, Object>> timeTracker;
 
     private long partitionTime = TimestampTracker.NOT_KNOWN;
 
@@ -66,23 +66,25 @@ public class RecordQueue {
     }
 
     /**
-     * Add a batch of {@link ConsumerRecord} into the queue
+     * Add a batch of {@link HeaderConsumerRecord} into the queue
      *
      * @param rawRecords the raw records
      * @param timestampExtractor TimestampExtractor
      * @return the size of this queue
      */
-    public int addRawRecords(Iterable<ConsumerRecord<byte[], byte[]>> rawRecords, TimestampExtractor timestampExtractor) {
-        for (ConsumerRecord<byte[], byte[]> rawRecord : rawRecords) {
+    public int addRawRecords(Iterable<HeaderConsumerRecord<byte[], byte[], byte[]>> rawRecords, TimestampExtractor timestampExtractor) {
+        for (HeaderConsumerRecord<byte[], byte[], byte[]> rawRecord : rawRecords) {
             // deserialize the raw record, extract the timestamp and put into the queue
             Object key = source.deserializeKey(rawRecord.topic(), rawRecord.key());
+            Object header = source.deserializeHeader(rawRecord.topic(), rawRecord.header());
             Object value = source.deserializeValue(rawRecord.topic(), rawRecord.value());
 
-            ConsumerRecord<Object, Object> record = new ConsumerRecord<>(rawRecord.topic(), rawRecord.partition(), rawRecord.offset(),
-                                                                         rawRecord.timestamp(), TimestampType.CREATE_TIME,
-                                                                         rawRecord.checksum(),
-                                                                         rawRecord.serializedKeySize(),
-                                                                         rawRecord.serializedValueSize(), key, value);
+            HeaderConsumerRecord<Object, Object, Object> record = new HeaderConsumerRecord<>(rawRecord.topic(), rawRecord.partition(), rawRecord.offset(),
+                                                                                     rawRecord.timestamp(), TimestampType.CREATE_TIME,
+                                                                                     rawRecord.checksum(),
+                                                                                     rawRecord.serializedKeySize(),
+                                                                                     rawRecord.getSerializedHeaderSize(),
+                                                                                     rawRecord.serializedValueSize(), key, header, value);
             long timestamp = timestampExtractor.extract(record);
 
             // validate that timestamp must be non-negative

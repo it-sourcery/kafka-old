@@ -19,12 +19,12 @@ package org.apache.kafka.connect.util;
 
 import org.apache.kafka.clients.CommonClientConfigs;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
-import org.apache.kafka.clients.consumer.ConsumerRecord;
+import org.apache.kafka.clients.consumer.HeaderConsumerRecord;
 import org.apache.kafka.clients.consumer.MockConsumer;
 import org.apache.kafka.clients.consumer.OffsetResetStrategy;
+import org.apache.kafka.clients.producer.HeaderProducerRecord;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerConfig;
-import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.clients.producer.RecordMetadata;
 import org.apache.kafka.common.KafkaException;
 import org.apache.kafka.common.Node;
@@ -114,12 +114,12 @@ public class KafkaBasedLogTest {
     private KafkaProducer<String, String> producer;
     private MockConsumer<String, String> consumer;
 
-    private Map<TopicPartition, List<ConsumerRecord<String, String>>> consumedRecords = new HashMap<>();
-    private Callback<ConsumerRecord<String, String>> consumedCallback = new Callback<ConsumerRecord<String, String>>() {
+    private Map<TopicPartition, List<HeaderConsumerRecord<String, String>>> consumedRecords = new HashMap<>();
+    private Callback<HeaderConsumerRecord<String, String>> consumedCallback = new Callback<HeaderConsumerRecord<String, String>>() {
         @Override
-        public void onCompletion(Throwable error, ConsumerRecord<String, String> record) {
+        public void onCompletion(Throwable error, HeaderConsumerRecord<String, String> record) {
             TopicPartition partition = new TopicPartition(record.topic(), record.partition());
-            List<ConsumerRecord<String, String>> records = consumedRecords.get(partition);
+            List<HeaderConsumerRecord<String, String>> records = consumedRecords.get(partition);
             if (records == null) {
                 records = new ArrayList<>();
                 consumedRecords.put(partition, records);
@@ -183,7 +183,7 @@ public class KafkaBasedLogTest {
                 consumer.schedulePollTask(new Runnable() {
                     @Override
                     public void run() {
-                        consumer.addRecord(new ConsumerRecord<>(TOPIC, 0, 0, 0L, TimestampType.CREATE_TIME, 0L, 0, 0, TP0_KEY, TP0_VALUE));
+                        consumer.addRecord(new HeaderConsumerRecord<>(TOPIC, 0, 0, 0L, TimestampType.CREATE_TIME, 0L, 0, 0, TP0_KEY, TP0_VALUE));
                     }
                 });
                 consumer.scheduleNopPollTask();
@@ -191,7 +191,7 @@ public class KafkaBasedLogTest {
                 consumer.schedulePollTask(new Runnable() {
                     @Override
                     public void run() {
-                        consumer.addRecord(new ConsumerRecord<>(TOPIC, 1, 0, 0L, TimestampType.CREATE_TIME, 0L, 0, 0, TP1_KEY, TP1_VALUE));
+                        consumer.addRecord(new HeaderConsumerRecord<>(TOPIC, 1, 0, 0L, TimestampType.CREATE_TIME, 0L, 0, 0, TP1_KEY, TP1_VALUE));
                     }
                 });
                 consumer.schedulePollTask(new Runnable() {
@@ -222,11 +222,11 @@ public class KafkaBasedLogTest {
     public void testSendAndReadToEnd() throws Exception {
         expectStart();
         TestFuture<RecordMetadata> tp0Future = new TestFuture<>();
-        ProducerRecord<String, String> tp0Record = new ProducerRecord<>(TOPIC, TP0_KEY, TP0_VALUE);
+        HeaderProducerRecord<String, String> tp0Record = new HeaderProducerRecord<>(TOPIC, TP0_KEY, TP0_VALUE);
         Capture<org.apache.kafka.clients.producer.Callback> callback0 = EasyMock.newCapture();
         EasyMock.expect(producer.send(EasyMock.eq(tp0Record), EasyMock.capture(callback0))).andReturn(tp0Future);
         TestFuture<RecordMetadata> tp1Future = new TestFuture<>();
-        ProducerRecord<String, String> tp1Record = new ProducerRecord<>(TOPIC, TP1_KEY, TP1_VALUE);
+        HeaderProducerRecord<String, String> tp1Record = new HeaderProducerRecord<>(TOPIC, TP1_KEY, TP1_VALUE);
         Capture<org.apache.kafka.clients.producer.Callback> callback1 = EasyMock.newCapture();
         EasyMock.expect(producer.send(EasyMock.eq(tp1Record), EasyMock.capture(callback1))).andReturn(tp1Future);
 
@@ -298,16 +298,16 @@ public class KafkaBasedLogTest {
                 consumer.schedulePollTask(new Runnable() {
                     @Override
                     public void run() {
-                        consumer.addRecord(new ConsumerRecord<>(TOPIC, 0, 0, 0L, TimestampType.CREATE_TIME, 0L, 0, 0, TP0_KEY, TP0_VALUE));
-                        consumer.addRecord(new ConsumerRecord<>(TOPIC, 0, 1, 0L, TimestampType.CREATE_TIME, 0L, 0, 0, TP0_KEY, TP0_VALUE_NEW));
-                        consumer.addRecord(new ConsumerRecord<>(TOPIC, 1, 0, 0L, TimestampType.CREATE_TIME, 0L, 0, 0, TP1_KEY, TP1_VALUE));
+                        consumer.addRecord(new HeaderConsumerRecord<>(TOPIC, 0, 0, 0L, TimestampType.CREATE_TIME, 0L, 0, 0, TP0_KEY, TP0_VALUE));
+                        consumer.addRecord(new HeaderConsumerRecord<>(TOPIC, 0, 1, 0L, TimestampType.CREATE_TIME, 0L, 0, 0, TP0_KEY, TP0_VALUE_NEW));
+                        consumer.addRecord(new HeaderConsumerRecord<>(TOPIC, 1, 0, 0L, TimestampType.CREATE_TIME, 0L, 0, 0, TP1_KEY, TP1_VALUE));
                     }
                 });
 
                 consumer.schedulePollTask(new Runnable() {
                     @Override
                     public void run() {
-                        consumer.addRecord(new ConsumerRecord<>(TOPIC, 1, 1, 0L, TimestampType.CREATE_TIME, 0L, 0, 0, TP1_KEY, TP1_VALUE_NEW));
+                        consumer.addRecord(new HeaderConsumerRecord<>(TOPIC, 1, 1, 0L, TimestampType.CREATE_TIME, 0L, 0, 0, TP1_KEY, TP1_VALUE_NEW));
                     }
                 });
 
@@ -363,8 +363,8 @@ public class KafkaBasedLogTest {
                 consumer.schedulePollTask(new Runnable() {
                     @Override
                     public void run() {
-                        consumer.addRecord(new ConsumerRecord<>(TOPIC, 0, 0, 0L, TimestampType.CREATE_TIME, 0L, 0, 0, TP0_KEY, TP0_VALUE_NEW));
-                        consumer.addRecord(new ConsumerRecord<>(TOPIC, 1, 0, 0L, TimestampType.CREATE_TIME, 0L, 0, 0, TP0_KEY, TP0_VALUE_NEW));
+                        consumer.addRecord(new HeaderConsumerRecord<>(TOPIC, 0, 0, 0L, TimestampType.CREATE_TIME, 0L, 0, 0, TP0_KEY, TP0_VALUE_NEW));
+                        consumer.addRecord(new HeaderConsumerRecord<>(TOPIC, 1, 0, 0L, TimestampType.CREATE_TIME, 0L, 0, 0, TP0_KEY, TP0_VALUE_NEW));
                     }
                 });
 
@@ -392,7 +392,7 @@ public class KafkaBasedLogTest {
     public void testProducerError() throws Exception {
         expectStart();
         TestFuture<RecordMetadata> tp0Future = new TestFuture<>();
-        ProducerRecord<String, String> tp0Record = new ProducerRecord<>(TOPIC, TP0_KEY, TP0_VALUE);
+        HeaderProducerRecord<String, String> tp0Record = new HeaderProducerRecord<>(TOPIC, TP0_KEY, TP0_VALUE);
         Capture<org.apache.kafka.clients.producer.Callback> callback0 = EasyMock.newCapture();
         EasyMock.expect(producer.send(EasyMock.eq(tp0Record), EasyMock.capture(callback0))).andReturn(tp0Future);
 

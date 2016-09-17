@@ -20,9 +20,9 @@ import java.util.Properties;
 import java.util.Random;
 
 import org.apache.kafka.clients.producer.Callback;
+import org.apache.kafka.clients.producer.HeaderProducerRecord;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerConfig;
-import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.clients.producer.RecordMetadata;
 
 import net.sourceforge.argparse4j.ArgumentParsers;
@@ -72,7 +72,7 @@ public class ProducerPerformance {
             Random random = new Random(0);
             for (int i = 0; i < payload.length; ++i)
                 payload[i] = (byte) (random.nextInt(26) + 65);
-            ProducerRecord<byte[], byte[]> record = new ProducerRecord<>(topicName, payload);
+            HeaderProducerRecord<byte[], byte[]> record = new HeaderProducerRecord<>(topicName, payload);
             Stats stats = new Stats(numRecords, 5000);
             long startMs = System.currentTimeMillis();
 

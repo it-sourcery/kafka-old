@@ -18,7 +18,7 @@
 package org.apache.kafka.streams.processor.internals;
 
 import org.apache.kafka.clients.consumer.Consumer;
-import org.apache.kafka.clients.consumer.ConsumerRecord;
+import org.apache.kafka.clients.consumer.HeaderConsumerRecord;
 import org.apache.kafka.common.PartitionInfo;
 import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.streams.errors.StreamsException;
@@ -208,7 +208,7 @@ public class ProcessorStateManager {
             long limit = offsetLimit(storePartition);
             while (true) {
                 long offset = 0L;
-                for (ConsumerRecord<byte[], byte[]> record : restoreConsumer.poll(100).records(storePartition)) {
+                for (HeaderConsumerRecord<byte[], byte[]> record : restoreConsumer.poll(100).records(storePartition)) {
                     offset = record.offset();
                     if (offset >= limit) break;
                     stateRestoreCallback.restore(record.key(), record.value());
@@ -251,9 +251,9 @@ public class ProcessorStateManager {
         return partitionsAndOffsets;
     }
 
-    public List<ConsumerRecord<byte[], byte[]>> updateStandbyStates(TopicPartition storePartition, List<ConsumerRecord<byte[], byte[]>> records) {
+    public List<HeaderConsumerRecord<byte[], byte[]>> updateStandbyStates(TopicPartition storePartition, List<HeaderConsumerRecord<byte[], byte[]>> records) {
         long limit = offsetLimit(storePartition);
-        List<ConsumerRecord<byte[], byte[]>> remainingRecords = null;
+        List<HeaderConsumerRecord<byte[], byte[]>> remainingRecords = null;
 
         // restore states from changelog records
 
@@ -261,7 +261,7 @@ public class ProcessorStateManager {
 
         long lastOffset = -1L;
         int count = 0;
-        for (ConsumerRecord<byte[], byte[]> record : records) {
+        for (HeaderConsumerRecord<byte[], byte[]> record : records) {
             if (record.offset() < limit) {
                 restoreCallback.restore(record.key(), record.value());
                 lastOffset = record.offset();

@@ -20,6 +20,7 @@ package kafka.tools
 import java.io.PrintStream
 import java.util.concurrent.CountDownLatch
 import java.util.{Locale, Properties, Random}
+
 import joptsimple._
 import kafka.api.OffsetRequest
 import kafka.common.{MessageFormatter, StreamEndException}
@@ -27,12 +28,13 @@ import kafka.consumer._
 import kafka.message._
 import kafka.metrics.KafkaMetricsReporter
 import kafka.utils._
-import org.apache.kafka.clients.consumer.{ConsumerConfig, ConsumerRecord}
+import org.apache.kafka.clients.consumer.{ConsumerConfig, ConsumerRecord, HeaderConsumerRecord}
 import org.apache.kafka.common.errors.WakeupException
 import org.apache.kafka.common.record.TimestampType
 import org.apache.kafka.common.serialization.Deserializer
 import org.apache.kafka.common.utils.Utils
 import org.apache.log4j.Logger
+
 import scala.collection.JavaConverters._
 
 /**
@@ -134,7 +136,7 @@ object ConsoleConsumer extends Logging {
       }
       messageCount += 1
       try {
-        formatter.writeTo(new ConsumerRecord(msg.topic, msg.partition, msg.offset, msg.timestamp,
+        formatter.writeTo(new HeaderConsumerRecord(msg.topic, msg.partition, msg.offset, msg.timestamp,
                                              msg.timestampType, 0, 0, 0, msg.key, msg.value), output)
       } catch {
         case e: Throwable =>
@@ -429,7 +431,7 @@ class DefaultMessageFormatter extends MessageFormatter {
       valueDeserializer = Some(Class.forName(props.getProperty("value.deserializer")).newInstance().asInstanceOf[Deserializer[_]])
   }
 
-  def writeTo(consumerRecord: ConsumerRecord[Array[Byte], Array[Byte]], output: PrintStream) {
+  def writeTo(consumerRecord: HeaderConsumerRecord[Array[Byte], Array[Byte]], output: PrintStream) {
 
     def write(deserializer: Option[Deserializer[_]], sourceBytes: Array[Byte], separator: Array[Byte]) {
       val nonNullBytes = Option(sourceBytes).getOrElse("null".getBytes)
@@ -457,7 +459,7 @@ class LoggingMessageFormatter extends MessageFormatter   {
   private val defaultWriter: DefaultMessageFormatter = new DefaultMessageFormatter
   val logger = Logger.getLogger(getClass().getName)
 
-  def writeTo(consumerRecord: ConsumerRecord[Array[Byte], Array[Byte]], output: PrintStream): Unit = {
+  def writeTo(consumerRecord: HeaderConsumerRecord[Array[Byte], Array[Byte]], output: PrintStream): Unit = {
     import consumerRecord._
     defaultWriter.writeTo(consumerRecord, output)
     if (logger.isInfoEnabled)
@@ -470,7 +472,7 @@ class LoggingMessageFormatter extends MessageFormatter   {
 class NoOpMessageFormatter extends MessageFormatter {
   override def init(props: Properties) {}
 
-  def writeTo(consumerRecord: ConsumerRecord[Array[Byte], Array[Byte]], output: PrintStream){}
+  def writeTo(consumerRecord: HeaderConsumerRecord[Array[Byte], Array[Byte]], output: PrintStream){}
 }
 
 class ChecksumMessageFormatter extends MessageFormatter {
@@ -484,7 +486,7 @@ class ChecksumMessageFormatter extends MessageFormatter {
       topicStr = ""
   }
 
-  def writeTo(consumerRecord: ConsumerRecord[Array[Byte], Array[Byte]], output: PrintStream) {
+  def writeTo(consumerRecord: HeaderConsumerRecord[Array[Byte], Array[Byte]], output: PrintStream) {
     import consumerRecord._
     val chksum =
       if (timestampType != TimestampType.NO_TIMESTAMP_TYPE)

@@ -21,12 +21,13 @@ import joptsimple.OptionParser
 import java.util.Properties
 import java.util.Random
 import java.io._
+
 import kafka.consumer._
 import kafka.serializer._
 import kafka.utils._
 import kafka.log.FileMessageSet
 import kafka.log.Log
-import org.apache.kafka.clients.producer.{ProducerRecord, KafkaProducer, ProducerConfig}
+import org.apache.kafka.clients.producer.{HeaderProducerRecord, KafkaProducer, ProducerConfig, ProducerRecord}
 
 /**
  * This is a torture test that runs against an existing broker. Here is how it works:
@@ -264,9 +265,9 @@ object TestLogCleaning {
       val delete = i % 100 < percentDeletes
       val msg = 
         if(delete)
-          new ProducerRecord[Array[Byte],Array[Byte]](topic, key.toString.getBytes(), null)
+          new HeaderProducerRecord[Array[Byte],Array[Byte]](topic, key.toString.getBytes(), null)
         else
-          new ProducerRecord[Array[Byte],Array[Byte]](topic, key.toString.getBytes(), i.toString.getBytes())
+          new HeaderProducerRecord[Array[Byte],Array[Byte]](topic, key.toString.getBytes(), i.toString.getBytes())
       producer.send(msg)
       producedWriter.write(TestRecord(topic, key, i, delete).toString)
       producedWriter.newLine()

@@ -26,7 +26,7 @@ import kafka.cluster.BrokerEndPoint
 
 import scala.collection.JavaConversions._
 import kafka.common.{MessageFormatter, TopicAndPartition}
-import org.apache.kafka.clients.consumer.ConsumerRecord
+import org.apache.kafka.clients.consumer.{ConsumerRecord, HeaderConsumerRecord}
 import org.apache.kafka.common.utils.Utils
 
 /**
@@ -225,7 +225,7 @@ object SimpleConsumerShell extends Logging {
                 val value = if (message.isNull) null else Utils.readBytes(message.payload)
                 val serializedKeySize = if (message.hasKey) key.size else -1
                 val serializedValueSize = if (message.isNull) -1 else value.size
-                formatter.writeTo(new ConsumerRecord(topic, partitionId, offset, message.timestamp,
+                formatter.writeTo(new HeaderConsumerRecord(topic, partitionId, offset, message.timestamp,
                   message.timestampType, message.checksum, serializedKeySize, serializedValueSize, key, value), System.out)
                 numMessagesConsumed += 1
               } catch {

@@ -34,17 +34,17 @@ import org.apache.kafka.common.Configurable;
  */
 public interface ProducerInterceptor<K, V> extends Configurable {
     /**
-     * This is called from {@link org.apache.kafka.clients.producer.KafkaProducer#send(ProducerRecord)} and
-     * {@link org.apache.kafka.clients.producer.KafkaProducer#send(ProducerRecord, Callback)} methods, before key and value
-     * get serialized and partition is assigned (if partition is not specified in ProducerRecord).
+     * This is called from {@link org.apache.kafka.clients.producer.KafkaProducer#send(HeaderProducerRecord)} and
+     * {@link org.apache.kafka.clients.producer.KafkaProducer#send(HeaderProducerRecord, Callback)} methods, before key and value
+     * get serialized and partition is assigned (if partition is not specified in HeaderProducerRecord).
      * <p>
      * This method is allowed to modify the record, in which case, the new record will be returned. The implication of modifying
-     * key/value is that partition assignment (if not specified in ProducerRecord) will be done based on modified key/value,
+     * key/value is that partition assignment (if not specified in HeaderProducerRecord) will be done based on modified key/value,
      * not key/value from the client. Consequently, key and value transformation done in onSend() needs to be consistent:
      * same key and value should mutate to the same (modified) key and value. Otherwise, log compaction would not work
      * as expected.
      * <p>
-     * Similarly, it is up to interceptor implementation to ensure that correct topic/partition is returned in ProducerRecord.
+     * Similarly, it is up to interceptor implementation to ensure that correct topic/partition is returned in HeaderProducerRecord.
      * Most often, it should be the same topic/partition from 'record'.
      * <p>
      * Any exception thrown by this method will be caught by the caller and logged, but not propagated further.
@@ -62,7 +62,7 @@ public interface ProducerInterceptor<K, V> extends Configurable {
      * @param record the record from client or the record returned by the previous interceptor in the chain of interceptors.
      * @return producer record to send to topic/partition
      */
-    public ProducerRecord<K, V> onSend(ProducerRecord<K, V> record);
+    public HeaderProducerRecord<K, V> onSend(HeaderProducerRecord<K, V> record);
 
     /**
      * This method is called when the record sent to the server has been acknowledged, or when sending the record fails before
@@ -78,10 +78,10 @@ public interface ProducerInterceptor<K, V> extends Configurable {
      *
      * @param metadata The metadata for the record that was sent (i.e. the partition and offset).
      *                 If an error occurred, metadata will contain only valid topic and maybe
-     *                 partition. If partition is not given in ProducerRecord and an error occurs
+     *                 partition. If partition is not given in HeaderProducerRecord and an error occurs
      *                 before partition gets assigned, then partition will be set to RecordMetadata.NO_PARTITION.
      *                 The metadata may be null if the client passed null record to
-     *                 {@link org.apache.kafka.clients.producer.KafkaProducer#send(ProducerRecord)}.
+     *                 {@link org.apache.kafka.clients.producer.KafkaProducer#send(HeaderProducerRecord)}.
      * @param exception The exception thrown during processing of this record. Null if no error occurred.
      */
     public void onAcknowledgement(RecordMetadata metadata, Exception exception);

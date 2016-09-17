@@ -17,14 +17,14 @@
 
 package org.apache.kafka.test;
 
-import org.apache.kafka.clients.consumer.ConsumerRecord;
+import org.apache.kafka.clients.consumer.HeaderConsumerRecord;
 import org.apache.kafka.streams.processor.TimestampExtractor;
 
 /* Extract the timestamp as the offset of the record */
 public class MockTimestampExtractor implements TimestampExtractor {
 
     @Override
-    public long extract(ConsumerRecord<Object, Object> record) {
+    public long extract(HeaderConsumerRecord<Object, Object> record) {
         return record.offset();
     }
 }

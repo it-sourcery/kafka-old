@@ -16,9 +16,9 @@
  */
 package org.apache.kafka.streams.state;
 
+import org.apache.kafka.clients.producer.HeaderProducerRecord;
 import org.apache.kafka.clients.producer.MockProducer;
 import org.apache.kafka.clients.producer.Producer;
-import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.common.metrics.Sensor;
 import org.apache.kafka.common.serialization.ByteArraySerializer;
 import org.apache.kafka.common.serialization.Deserializer;
@@ -201,7 +201,7 @@ public class KeyValueStoreTestDriver<K, V> {
         this.recordCollector = new RecordCollector(producer, "KeyValueStoreTestDriver") {
             @SuppressWarnings("unchecked")
             @Override
-            public <K1, V1> void send(ProducerRecord<K1, V1> record, Serializer<K1> keySerializer, Serializer<V1> valueSerializer) {
+            public <K1, V1> void send(HeaderProducerRecord<K1, V1> record, Serializer<K1> keySerializer, Serializer<V1> valueSerializer) {
                 // for byte arrays we need to wrap it for comparison
 
                 K key = serdes.keyFrom(keySerializer.serialize(record.topic(), record.key()));
@@ -210,8 +210,8 @@ public class KeyValueStoreTestDriver<K, V> {
                 recordFlushed(key, value);
             }
             @Override
-            public <K1, V1> void send(ProducerRecord<K1, V1> record, Serializer<K1> keySerializer, Serializer<V1> valueSerializer,
-                                    StreamPartitioner<K1, V1> partitioner) {
+            public <K1, V1> void send(HeaderProducerRecord<K1, V1> record, Serializer<K1> keySerializer, Serializer<V1> valueSerializer,
+                                      StreamPartitioner<K1, V1> partitioner) {
                 // ignore partitioner
                 send(record, keySerializer, valueSerializer);
             }

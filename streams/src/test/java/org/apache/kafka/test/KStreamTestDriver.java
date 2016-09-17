@@ -17,7 +17,7 @@
 
 package org.apache.kafka.test;
 
-import org.apache.kafka.clients.producer.ProducerRecord;
+import org.apache.kafka.clients.producer.HeaderProducerRecord;
 import org.apache.kafka.common.serialization.Serde;
 import org.apache.kafka.common.serialization.Serdes;
 import org.apache.kafka.common.serialization.Serializer;
@@ -232,14 +232,14 @@ public class KStreamTestDriver {
         }
 
         @Override
-        public <K, V> void send(ProducerRecord<K, V> record, Serializer<K> keySerializer, Serializer<V> valueSerializer,
+        public <K, V> void send(HeaderProducerRecord<K, V> record, Serializer<K> keySerializer, Serializer<V> valueSerializer,
                                 StreamPartitioner<K, V> partitioner) {
             // The serialization is skipped.
             process(record.topic(), record.key(), record.value());
         }
 
         @Override
-        public <K, V> void send(ProducerRecord<K, V> record, Serializer<K> keySerializer, Serializer<V> valueSerializer) {
+        public <K, V> void send(HeaderProducerRecord<K, V> record, Serializer<K> keySerializer, Serializer<V> valueSerializer) {
             // The serialization is skipped.
             process(record.topic(), record.key(), record.value());
         }

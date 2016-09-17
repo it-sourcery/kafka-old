@@ -16,11 +16,11 @@
  */
 package org.apache.kafka.test;
 
-import org.apache.kafka.clients.consumer.ConsumerRecord;
+import org.apache.kafka.clients.consumer.HeaderConsumerRecord;
 import org.apache.kafka.clients.consumer.MockConsumer;
 import org.apache.kafka.clients.consumer.OffsetResetStrategy;
+import org.apache.kafka.clients.producer.HeaderProducerRecord;
 import org.apache.kafka.clients.producer.MockProducer;
-import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.common.PartitionInfo;
 import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.common.metrics.Sensor;
@@ -107,9 +107,9 @@ import java.util.concurrent.atomic.AtomicLong;
  * obtain these messages using the {@link #readOutput(String, Deserializer, Deserializer)} method:
  *
  * <pre>
- * ProducerRecord<String, String> record1 = driver.readOutput("output-topic-1", strDeserializer, strDeserializer);
- * ProducerRecord<String, String> record2 = driver.readOutput("output-topic-1", strDeserializer, strDeserializer);
- * ProducerRecord<String, String> record3 = driver.readOutput("output-topic-2", strDeserializer, strDeserializer);
+ * HeaderProducerRecord<String, String> record1 = driver.readOutput("output-topic-1", strDeserializer, strDeserializer);
+ * HeaderProducerRecord<String, String> record2 = driver.readOutput("output-topic-1", strDeserializer, strDeserializer);
+ * HeaderProducerRecord<String, String> record3 = driver.readOutput("output-topic-2", strDeserializer, strDeserializer);
  * </pre>
  *
  * Again, our example topology generates messages with string keys and values, so we supply our string deserializer instance
@@ -141,7 +141,7 @@ public class ProcessorTopologyTestDriver {
     private final MockConsumer<byte[], byte[]> restoreStateConsumer;
     private final Map<String, TopicPartition> partitionsByTopic = new HashMap<>();
     private final Map<TopicPartition, AtomicLong> offsetsByTopicPartition = new HashMap<>();
-    private final Map<String, Queue<ProducerRecord<byte[], byte[]>>> outputRecordsByTopic = new HashMap<>();
+    private final Map<String, Queue<HeaderProducerRecord<byte[], byte[]>>> outputRecordsByTopic = new HashMap<>();
 
     /**
      * Create a new test driver instance.
@@ -206,15 +206,15 @@ public class ProcessorTopologyTestDriver {
         }
         // Add the record ...
         long offset = offsetsByTopicPartition.get(tp).incrementAndGet();
-        task.addRecords(tp, records(new ConsumerRecord<byte[], byte[]>(tp.topic(), tp.partition(), offset, 0L, TimestampType.CREATE_TIME, 0L, 0, 0, key, value)));
+        task.addRecords(tp, records(new HeaderConsumerRecord<byte[], byte[]>(tp.topic(), tp.partition(), offset, 0L, TimestampType.CREATE_TIME, 0L, 0, 0, key, value)));
         producer.clear();
         // Process the record ...
         task.process();
         ((InternalProcessorContext) task.context()).setRecordContext(new ProcessorRecordContext(0L, offset, tp.partition(), topicName));
         task.commit();
         // Capture all the records sent to the producer ...
-        for (ProducerRecord<byte[], byte[]> record : producer.history()) {
-            Queue<ProducerRecord<byte[], byte[]>> outputRecords = outputRecordsByTopic.get(record.topic());
+        for (HeaderProducerRecord<byte[], byte[]> record : producer.history()) {
+            Queue<HeaderProducerRecord<byte[], byte[]>> outputRecords = outputRecordsByTopic.get(record.topic());
             if (outputRecords == null) {
                 outputRecords = new LinkedList<>();
                 outputRecordsByTopic.put(record.topic(), outputRecords);
@@ -243,8 +243,8 @@ public class ProcessorTopologyTestDriver {
      * @param topic the name of the topic
      * @return the next record on that topic, or null if there is no record available
      */
-    public ProducerRecord<byte[], byte[]> readOutput(String topic) {
-        Queue<ProducerRecord<byte[], byte[]>> outputRecords = outputRecordsByTopic.get(topic);
+    public HeaderProducerRecord<byte[], byte[]> readOutput(String topic) {
+        Queue<HeaderProducerRecord<byte[], byte[]>> outputRecords = outputRecordsByTopic.get(topic);
         if (outputRecords == null) return null;
         return outputRecords.poll();
     }
@@ -258,15 +258,15 @@ public class ProcessorTopologyTestDriver {
      * @param valueDeserializer the deserializer for the value type
      * @return the next record on that topic, or null if there is no record available
      */
-    public <K, V> ProducerRecord<K, V> readOutput(String topic, Deserializer<K> keyDeserializer, Deserializer<V> valueDeserializer) {
-        ProducerRecord<byte[], byte[]> record = readOutput(topic);
+    public <K, V> HeaderProducerRecord<K, V> readOutput(String topic, Deserializer<K> keyDeserializer, Deserializer<V> valueDeserializer) {
+        HeaderProducerRecord<byte[], byte[]> record = readOutput(topic);
         if (record == null) return null;
         K key = keyDeserializer.deserialize(record.topic(), record.key());
         V value = valueDeserializer.deserialize(record.topic(), record.value());
-        return new ProducerRecord<K, V>(record.topic(), record.partition(), key, value);
+        return new HeaderProducerRecord<K, V>(record.topic(), record.partition(), key, value);
     }
 
-    private Iterable<ConsumerRecord<byte[], byte[]>> records(ConsumerRecord<byte[], byte[]> record) {
+    private Iterable<HeaderConsumerRecord<byte[], byte[]>> records(HeaderConsumerRecord<byte[], byte[]> record) {
         return Collections.singleton(record);
     }
 

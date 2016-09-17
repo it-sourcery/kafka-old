@@ -88,7 +88,7 @@ class ProducerFailureHandlingTest extends KafkaServerTestHarness {
     TestUtils.createTopic(zkUtils, topic1, 1, numServers, servers)
 
     // send a too-large record
-    val record = new ProducerRecord[Array[Byte],Array[Byte]](topic1, null, "key".getBytes, new Array[Byte](serverMessageMaxBytes + 1))
+    val record = new HeaderProducerRecord[Array[Byte],Array[Byte]](topic1, null, "key".getBytes, new Array[Byte](serverMessageMaxBytes + 1))
     assertEquals("Returned metadata should have offset -1", producer1.send(record).get.offset, -1L)
   }
 
@@ -101,7 +101,7 @@ class ProducerFailureHandlingTest extends KafkaServerTestHarness {
     TestUtils.createTopic(zkUtils, topic1, 1, numServers, servers)
 
     // send a too-large record
-    val record = new ProducerRecord[Array[Byte],Array[Byte]](topic1, null, "key".getBytes, new Array[Byte](serverMessageMaxBytes + 1))
+    val record = new HeaderProducerRecord[Array[Byte],Array[Byte]](topic1, null, "key".getBytes, new Array[Byte](serverMessageMaxBytes + 1))
     intercept[ExecutionException] {
       producer2.send(record).get
     }
@@ -113,7 +113,7 @@ class ProducerFailureHandlingTest extends KafkaServerTestHarness {
   @Test
   def testNonExistentTopic() {
     // send a record with non-exist topic
-    val record = new ProducerRecord[Array[Byte],Array[Byte]](topic2, null, "key".getBytes, "value".getBytes)
+    val record = new HeaderProducerRecord[Array[Byte],Array[Byte]](topic2, null, "key".getBytes, "value".getBytes)
     intercept[ExecutionException] {
       producer1.send(record).get
     }
@@ -138,7 +138,7 @@ class ProducerFailureHandlingTest extends KafkaServerTestHarness {
     producer4 = TestUtils.createNewProducer("localhost:8686,localhost:4242", acks = 1, maxBlockMs = 10000L, bufferSize = producerBufferSize)
 
     // send a record with incorrect broker list
-    val record = new ProducerRecord[Array[Byte],Array[Byte]](topic1, null, "key".getBytes, "value".getBytes)
+    val record = new HeaderProducerRecord[Array[Byte],Array[Byte]](topic1, null, "key".getBytes, "value".getBytes)
     intercept[ExecutionException] {
       producer4.send(record).get
     }
@@ -153,7 +153,7 @@ class ProducerFailureHandlingTest extends KafkaServerTestHarness {
     TestUtils.createTopic(zkUtils, topic1, 1, numServers, servers)
 
     // create a record with incorrect partition id, send should fail
-    val record = new ProducerRecord[Array[Byte],Array[Byte]](topic1, new Integer(1), "key".getBytes, "value".getBytes)
+    val record = new HeaderProducerRecord[Array[Byte],Array[Byte]](topic1, new Integer(1), "key".getBytes, "value".getBytes)
     intercept[IllegalArgumentException] {
       producer1.send(record)
     }
@@ -173,7 +173,7 @@ class ProducerFailureHandlingTest extends KafkaServerTestHarness {
     // create topic
     TestUtils.createTopic(zkUtils, topic1, 1, numServers, servers)
 
-    val record = new ProducerRecord[Array[Byte],Array[Byte]](topic1, null, "key".getBytes, "value".getBytes)
+    val record = new HeaderProducerRecord[Array[Byte],Array[Byte]](topic1, null, "key".getBytes, "value".getBytes)
 
     // first send a message to make sure the metadata is refreshed
     producer1.send(record).get
@@ -199,7 +199,7 @@ class ProducerFailureHandlingTest extends KafkaServerTestHarness {
   @Test
   def testCannotSendToInternalTopic() {
     val thrown = intercept[ExecutionException] {
-      producer2.send(new ProducerRecord[Array[Byte],Array[Byte]](Topic.InternalTopics.head, "test".getBytes, "test".getBytes)).get
+      producer2.send(new HeaderProducerRecord[Array[Byte],Array[Byte]](Topic.InternalTopics.head, "test".getBytes, "test".getBytes)).get
     }
     assertTrue("Unexpected exception while sending to an invalid topic " + thrown.getCause, thrown.getCause.isInstanceOf[InvalidTopicException])
   }
@@ -212,7 +212,7 @@ class ProducerFailureHandlingTest extends KafkaServerTestHarness {
 
     TestUtils.createTopic(zkUtils, topicName, 1, numServers, servers, topicProps)
 
-    val record = new ProducerRecord[Array[Byte],Array[Byte]](topicName, null, "key".getBytes, "value".getBytes)
+    val record = new HeaderProducerRecord[Array[Byte],Array[Byte]](topicName, null, "key".getBytes, "value".getBytes)
     try {
       producer3.send(record).get
       fail("Expected exception when producing to topic with fewer brokers than min.insync.replicas")
@@ -232,7 +232,7 @@ class ProducerFailureHandlingTest extends KafkaServerTestHarness {
 
     TestUtils.createTopic(zkUtils, topicName, 1, numServers, servers,topicProps)
 
-    val record = new ProducerRecord[Array[Byte],Array[Byte]](topicName, null, "key".getBytes, "value".getBytes)
+    val record = new HeaderProducerRecord[Array[Byte],Array[Byte]](topicName, null, "key".getBytes, "value".getBytes)
     // this should work with all brokers up and running
     producer3.send(record).get
 
@@ -267,7 +267,7 @@ class ProducerFailureHandlingTest extends KafkaServerTestHarness {
     override def doWork(): Unit = {
       val responses =
         for (i <- sent+1 to sent+numRecords)
-        yield producer.send(new ProducerRecord[Array[Byte],Array[Byte]](topic1, null, null, i.toString.getBytes),
+        yield producer.send(new HeaderProducerRecord[Array[Byte],Array[Byte]](topic1, null, null, i.toString.getBytes),
                             new ErrorLoggingCallback(topic1, null, null, true))
       val futures = responses.toList
 

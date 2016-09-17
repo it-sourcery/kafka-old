@@ -187,7 +187,7 @@ class ClientQuotasTest extends KafkaServerTestHarness {
     for (i <- 0 to count) {
       val payload = i.toString.getBytes
       numBytesProduced += payload.length
-      p.send(new ProducerRecord[Array[Byte], Array[Byte]](topic1, null, null, payload),
+      p.send(new HeaderProducerRecord[Array[Byte], Array[Byte]](topic1, null, null, payload),
              new ErrorLoggingCallback(topic1, null, null, true)).get()
       Thread.sleep(1)
     }

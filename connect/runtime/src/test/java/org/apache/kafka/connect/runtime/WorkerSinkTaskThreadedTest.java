@@ -18,8 +18,8 @@
 package org.apache.kafka.connect.runtime;
 
 import org.apache.kafka.clients.consumer.ConsumerRebalanceListener;
-import org.apache.kafka.clients.consumer.ConsumerRecord;
-import org.apache.kafka.clients.consumer.ConsumerRecords;
+import org.apache.kafka.clients.consumer.HeaderConsumerRecord;
+import org.apache.kafka.clients.consumer.HeaderConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.clients.consumer.OffsetAndMetadata;
 import org.apache.kafka.clients.consumer.OffsetCommitCallback;
@@ -505,11 +505,11 @@ public class WorkerSinkTaskThreadedTest extends ThreadedTest {
         sinkTask.open(partitions);
         EasyMock.expectLastCall();
 
-        EasyMock.expect(consumer.poll(EasyMock.anyLong())).andAnswer(new IAnswer<ConsumerRecords<byte[], byte[]>>() {
+        EasyMock.expect(consumer.poll(EasyMock.anyLong())).andAnswer(new IAnswer<HeaderConsumerRecords<byte[], byte[]>>() {
             @Override
-            public ConsumerRecords<byte[], byte[]> answer() throws Throwable {
+            public HeaderConsumerRecords<byte[], byte[]> answer() throws Throwable {
                 rebalanceListener.getValue().onPartitionsAssigned(partitions);
-                return ConsumerRecords.empty();
+                return HeaderConsumerRecords.empty();
             }
         });
         EasyMock.expect(consumer.position(TOPIC_PARTITION)).andReturn(FIRST_OFFSET);
@@ -538,16 +538,16 @@ public class WorkerSinkTaskThreadedTest extends ThreadedTest {
         // Stub out all the consumer stream/iterator responses, which we just want to verify occur,
         // but don't care about the exact details here.
         EasyMock.expect(consumer.poll(EasyMock.anyLong())).andStubAnswer(
-                new IAnswer<ConsumerRecords<byte[], byte[]>>() {
+                new IAnswer<HeaderConsumerRecords<byte[], byte[]>>() {
                     @Override
-                    public ConsumerRecords<byte[], byte[]> answer() throws Throwable {
+                    public HeaderConsumerRecords<byte[], byte[]> answer() throws Throwable {
                         // "Sleep" so time will progress
                         time.sleep(pollDelayMs);
-                        ConsumerRecords<byte[], byte[]> records = new ConsumerRecords<>(
+                        HeaderConsumerRecords<byte[], byte[]> records = new HeaderConsumerRecords<>(
                                 Collections.singletonMap(
                                         new TopicPartition(TOPIC, PARTITION),
                                         Arrays.asList(
-                                                new ConsumerRecord<>(TOPIC, PARTITION, FIRST_OFFSET + recordsReturned, TIMESTAMP, TIMESTAMP_TYPE, 0L, 0, 0, RAW_KEY, RAW_VALUE)
+                                                new HeaderConsumerRecord<>(TOPIC, PARTITION, FIRST_OFFSET + recordsReturned, TIMESTAMP, TIMESTAMP_TYPE, 0L, 0, 0, RAW_KEY, RAW_VALUE)
                                         )));
                         recordsReturned++;
                         return records;
@@ -567,16 +567,16 @@ public class WorkerSinkTaskThreadedTest extends ThreadedTest {
         // returning empty data, we return one record. The expectation is that the data will be ignored by the
         // response behavior specified using the return value of this method.
         EasyMock.expect(consumer.poll(EasyMock.anyLong())).andAnswer(
-                new IAnswer<ConsumerRecords<byte[], byte[]>>() {
+                new IAnswer<HeaderConsumerRecords<byte[], byte[]>>() {
                     @Override
-                    public ConsumerRecords<byte[], byte[]> answer() throws Throwable {
+                    public HeaderConsumerRecords<byte[], byte[]> answer() throws Throwable {
                         // "Sleep" so time will progress
                         time.sleep(1L);
-                        ConsumerRecords<byte[], byte[]> records = new ConsumerRecords<>(
+                        HeaderConsumerRecords<byte[], byte[]> records = new HeaderConsumerRecords<>(
                                 Collections.singletonMap(
                                         new TopicPartition(TOPIC, PARTITION),
                                         Arrays.asList(
-                                                new ConsumerRecord<>(TOPIC, PARTITION, FIRST_OFFSET + recordsReturned, TIMESTAMP, TIMESTAMP_TYPE, 0L, 0, 0, RAW_KEY, RAW_VALUE)
+                                                new HeaderConsumerRecord<>(TOPIC, PARTITION, FIRST_OFFSET + recordsReturned, TIMESTAMP, TIMESTAMP_TYPE, 0L, 0, 0, RAW_KEY, RAW_VALUE)
                                         )));
                         recordsReturned++;
                         return records;
@@ -597,20 +597,20 @@ public class WorkerSinkTaskThreadedTest extends ThreadedTest {
         offsets.put(TOPIC_PARTITION, startOffset);
 
         EasyMock.expect(consumer.poll(EasyMock.anyLong())).andAnswer(
-                new IAnswer<ConsumerRecords<byte[], byte[]>>() {
+                new IAnswer<HeaderConsumerRecords<byte[], byte[]>>() {
                     @Override
-                    public ConsumerRecords<byte[], byte[]> answer() throws Throwable {
+                    public HeaderConsumerRecords<byte[], byte[]> answer() throws Throwable {
                         // "Sleep" so time will progress
                         time.sleep(1L);
 
                         sinkTaskContext.getValue().offset(offsets);
                         rebalanceListener.getValue().onPartitionsAssigned(partitions);
 
-                        ConsumerRecords<byte[], byte[]> records = new ConsumerRecords<>(
+                        HeaderConsumerRecords<byte[], byte[]> records = new HeaderConsumerRecords<>(
                                 Collections.singletonMap(
                                         new TopicPartition(TOPIC, PARTITION),
                                         Arrays.asList(
-                                                new ConsumerRecord<>(TOPIC, PARTITION, FIRST_OFFSET + recordsReturned, TIMESTAMP, TIMESTAMP_TYPE, 0L, 0, 0, RAW_KEY, RAW_VALUE)
+                                                new HeaderConsumerRecord<>(TOPIC, PARTITION, FIRST_OFFSET + recordsReturned, TIMESTAMP, TIMESTAMP_TYPE, 0L, 0, 0, RAW_KEY, RAW_VALUE)
                                         )));
                         recordsReturned++;
                         return records;

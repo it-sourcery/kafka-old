@@ -26,7 +26,7 @@ import java.util.Properties
 import java.io._
 
 import joptsimple._
-import org.apache.kafka.clients.producer.{ProducerConfig, ProducerRecord}
+import org.apache.kafka.clients.producer.{HeaderProducerRecord, ProducerConfig, ProducerRecord}
 import org.apache.kafka.common.utils.Utils
 
 object ConsoleProducer {
@@ -51,7 +51,7 @@ object ConsoleProducer {
           }
         })
 
-        var message: ProducerRecord[Array[Byte], Array[Byte]] = null
+        var message: HeaderProducerRecord[Array[Byte], Array[Byte]] = null
         do {
           message = reader.readMessage()
           if (message != null)
@@ -310,14 +310,14 @@ object ConsoleProducer {
         case (line, true) =>
           line.indexOf(keySeparator) match {
             case -1 =>
-              if (ignoreError) new ProducerRecord(topic, line.getBytes)
+              if (ignoreError) new HeaderProducerRecord(topic, line.getBytes)
               else throw new KafkaException(s"No key found on line $lineNumber: $line")
             case n =>
               val value = (if (n + keySeparator.size > line.size) "" else line.substring(n + keySeparator.size)).getBytes
-              new ProducerRecord(topic, line.substring(0, n).getBytes, value)
+              new HeaderProducerRecord(topic, line.substring(0, n).getBytes, value)
           }
         case (line, false) =>
-          new ProducerRecord(topic, line.getBytes)
+          new HeaderProducerRecord(topic, line.getBytes)
       }
     }
   }

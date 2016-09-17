@@ -18,12 +18,12 @@
 package org.apache.kafka.streams.perf;
 
 import org.apache.kafka.clients.consumer.ConsumerConfig;
-import org.apache.kafka.clients.consumer.ConsumerRecord;
-import org.apache.kafka.clients.consumer.ConsumerRecords;
+import org.apache.kafka.clients.consumer.HeaderConsumerRecord;
+import org.apache.kafka.clients.consumer.HeaderConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerConfig;
-import org.apache.kafka.clients.producer.ProducerRecord;
+import org.apache.kafka.clients.producer.HeaderProducerRecord;
 import org.apache.kafka.common.PartitionInfo;
 import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.common.serialization.ByteArrayDeserializer;
@@ -369,7 +369,7 @@ public class SimpleBenchmark {
         if (sequential) key = 0;
         else key = rand.nextInt(upperRange);
         for (int i = 0; i < numRecords; i++) {
-            producer.send(new ProducerRecord<>(topic, key, value));
+            producer.send(new HeaderProducerRecord<>(topic, key, value));
             if (sequential) key++;
             else key = rand.nextInt(upperRange);
         }
@@ -400,12 +400,12 @@ public class SimpleBenchmark {
         long startTime = System.currentTimeMillis();
 
         while (true) {
-            ConsumerRecords<Integer, byte[]> records = consumer.poll(500);
+            HeaderConsumerRecords<Integer, byte[]> records = consumer.poll(500);
             if (records.isEmpty()) {
                 if (endKey.equals(key))
                     break;
             } else {
-                for (ConsumerRecord<Integer, byte[]> record : records) {
+                for (HeaderConsumerRecord<Integer, byte[]> record : records) {
                     Integer recKey = record.key();
 
                     if (key == null || key < recKey)

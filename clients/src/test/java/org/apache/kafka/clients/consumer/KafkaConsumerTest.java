@@ -430,7 +430,7 @@ public class KafkaConsumerTest {
         client.prepareResponse(listOffsetsResponse(Collections.singletonMap(tp0, 50L), Errors.NONE.code()));
         client.prepareResponse(fetchResponse(tp0, 50L, 5));
 
-        ConsumerRecords<String, String> records = consumer.poll(0);
+        HeaderConsumerRecords<String, String> records = consumer.poll(0);
         assertEquals(5, records.count());
         assertEquals(55L, consumer.position(tp0));
     }
@@ -567,7 +567,7 @@ public class KafkaConsumerTest {
         assertEquals(0, consumer.position(tp0));
 
         // the next poll should return the completed fetch
-        ConsumerRecords<String, String> records = consumer.poll(0);
+        HeaderConsumerRecords<String, String> records = consumer.poll(0);
         assertEquals(5, records.count());
     }
 
@@ -602,7 +602,7 @@ public class KafkaConsumerTest {
         fetches1.put(t2p0, new FetchInfo(0, 10)); // not assigned and not fetched
         client.prepareResponseFrom(fetchResponse(fetches1), node);
 
-        ConsumerRecords<String, String> records = consumer.poll(0);
+        HeaderConsumerRecords<String, String> records = consumer.poll(0);
         assertEquals(0, records.count());
     }
 
@@ -666,7 +666,7 @@ public class KafkaConsumerTest {
         client.respondFrom(fetchResponse(fetches1), node);
         client.poll(0, time.milliseconds());
 
-        ConsumerRecords<String, String> records = consumer.poll(0);
+        HeaderConsumerRecords<String, String> records = consumer.poll(0);
 
         // clear out the prefetch so it doesn't interfere with the rest of the test
         fetches1.put(tp0, new FetchInfo(1, 0));
@@ -853,7 +853,7 @@ public class KafkaConsumerTest {
         client.prepareResponse(listOffsetsResponse(Collections.singletonMap(tp0, 10L), Errors.NONE.code()));
         client.prepareResponse(fetchResponse(tp0, 10L, 1));
 
-        ConsumerRecords<String, String> records = consumer.poll(0);
+        HeaderConsumerRecords<String, String> records = consumer.poll(0);
         assertEquals(1, records.count());
         assertEquals(11L, consumer.position(tp0));
 
@@ -915,7 +915,7 @@ public class KafkaConsumerTest {
         client.prepareResponse(listOffsetsResponse(Collections.singletonMap(tp0, 10L), Errors.NONE.code()));
         client.prepareResponse(fetchResponse(tp0, 10L, 1));
 
-        ConsumerRecords<String, String> records = consumer.poll(0);
+        HeaderConsumerRecords<String, String> records = consumer.poll(0);
         assertEquals(1, records.count());
         assertEquals(11L, consumer.position(tp0));
 
