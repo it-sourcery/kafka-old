@@ -19,6 +19,7 @@ import org.apache.kafka.common.config.ConfigDef;
 import org.apache.kafka.common.config.ConfigDef.Importance;
 import org.apache.kafka.common.config.ConfigDef.Type;
 import org.apache.kafka.common.serialization.Serializer;
+import org.apache.kafka.common.serialization.VoidSerializer;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -197,6 +198,10 @@ public class ProducerConfig extends AbstractConfig {
     public static final String KEY_SERIALIZER_CLASS_CONFIG = "key.serializer";
     public static final String KEY_SERIALIZER_CLASS_DOC = "Serializer class for key that implements the <code>Serializer</code> interface.";
 
+    /** <code>header.serializer</code> */
+    public static final String HEADER_SERIALIZER_CLASS_CONFIG = "header.serializer";
+    public static final String HEADER_SERIALIZER_CLASS_DOC = "Serializer class for header that implements the <code>Serializer</code> interface.";
+
     /** <code>value.serializer</code> */
     public static final String VALUE_SERIALIZER_CLASS_CONFIG = "value.serializer";
     public static final String VALUE_SERIALIZER_CLASS_DOC = "Serializer class for value that implements the <code>Serializer</code> interface.";
@@ -281,6 +286,11 @@ public class ProducerConfig extends AbstractConfig {
                                         Type.CLASS,
                                         Importance.HIGH,
                                         KEY_SERIALIZER_CLASS_DOC)
+                                .define(HEADER_SERIALIZER_CLASS_CONFIG,
+                                        Type.CLASS,
+                                        VoidSerializer.class.getName(),
+                                        Importance.HIGH,
+                                        HEADER_SERIALIZER_CLASS_DOC)
                                 .define(VALUE_SERIALIZER_CLASS_CONFIG,
                                         Type.CLASS,
                                         Importance.HIGH,
@@ -313,22 +323,26 @@ public class ProducerConfig extends AbstractConfig {
     }
 
     public static Map<String, Object> addSerializerToConfig(Map<String, Object> configs,
-                                                            Serializer<?> keySerializer, Serializer<?> valueSerializer) {
+                                                            Serializer<?> keySerializer, Serializer<?> headerSerializer, Serializer<?> valueSerializer) {
         Map<String, Object> newConfigs = new HashMap<String, Object>();
         newConfigs.putAll(configs);
         if (keySerializer != null)
             newConfigs.put(KEY_SERIALIZER_CLASS_CONFIG, keySerializer.getClass());
+        if (headerSerializer != null)
+            newConfigs.put(HEADER_SERIALIZER_CLASS_CONFIG, headerSerializer.getClass());
         if (valueSerializer != null)
             newConfigs.put(VALUE_SERIALIZER_CLASS_CONFIG, valueSerializer.getClass());
         return newConfigs;
     }
 
     public static Properties addSerializerToConfig(Properties properties,
-                                                   Serializer<?> keySerializer, Serializer<?> valueSerializer) {
+                                                   Serializer<?> keySerializer, Serializer<?> headerSerializer, Serializer<?> valueSerializer) {
         Properties newProperties = new Properties();
         newProperties.putAll(properties);
         if (keySerializer != null)
             newProperties.put(KEY_SERIALIZER_CLASS_CONFIG, keySerializer.getClass().getName());
+        if (headerSerializer != null)
+            newProperties.put(HEADER_SERIALIZER_CLASS_CONFIG, headerSerializer.getClass());
         if (valueSerializer != null)
             newProperties.put(VALUE_SERIALIZER_CLASS_CONFIG, valueSerializer.getClass().getName());
         return newProperties;

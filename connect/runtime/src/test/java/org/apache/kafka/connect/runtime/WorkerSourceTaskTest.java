@@ -17,6 +17,7 @@
 
 package org.apache.kafka.connect.runtime;
 
+import com.sun.org.apache.regexp.internal.RE;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.HeaderProducerRecord;
 import org.apache.kafka.clients.producer.RecordMetadata;
@@ -72,6 +73,8 @@ public class WorkerSourceTaskTest extends ThreadedTest {
     // Connect-format data
     private static final Schema KEY_SCHEMA = Schema.INT32_SCHEMA;
     private static final Integer KEY = -1;
+    private static final Schema HEADER_SCHEMA = Schema.INT32_SCHEMA;
+    private static final Integer HEADER = -1;
     private static final Schema RECORD_SCHEMA = Schema.INT64_SCHEMA;
     private static final Long RECORD = 12L;
     // Serialized data. The actual format of this data doesn't matter -- we just want to see that the right version
@@ -84,8 +87,9 @@ public class WorkerSourceTaskTest extends ThreadedTest {
     private WorkerConfig config;
     @Mock private SourceTask sourceTask;
     @Mock private Converter keyConverter;
+    @Mock private Converter headerConverter;
     @Mock private Converter valueConverter;
-    @Mock private KafkaProducer<byte[], byte[]> producer;
+    @Mock private KafkaProducer<byte[], byte[], byte[]> producer;
     @Mock private OffsetStorageReader offsetReader;
     @Mock private OffsetStorageWriter offsetWriter;
     private WorkerSourceTask workerTask;
@@ -109,8 +113,10 @@ public class WorkerSourceTaskTest extends ThreadedTest {
         super.setup();
         Map<String, String> workerProps = new HashMap<>();
         workerProps.put("key.converter", "org.apache.kafka.connect.json.JsonConverter");
+        workerProps.put("header.converter", "org.apache.kafka.connect.json.JsonConverter");
         workerProps.put("value.converter", "org.apache.kafka.connect.json.JsonConverter");
         workerProps.put("internal.key.converter", "org.apache.kafka.connect.json.JsonConverter");
+        workerProps.put("internal.header.converter", "org.apache.kafka.connect.json.JsonConverter");
         workerProps.put("internal.value.converter", "org.apache.kafka.connect.json.JsonConverter");
         workerProps.put("internal.key.converter.schemas.enable", "false");
         workerProps.put("internal.value.converter.schemas.enable", "false");
@@ -124,7 +130,7 @@ public class WorkerSourceTaskTest extends ThreadedTest {
     }
 
     private void createWorkerTask(TargetState initialState) {
-        workerTask = new WorkerSourceTask(taskId, sourceTask, statusListener, initialState, keyConverter,
+        workerTask = new WorkerSourceTask(taskId, sourceTask, statusListener, initialState, keyConverter, headerConverter,
                 valueConverter, producer, offsetReader, offsetWriter, config, new SystemTime());
     }
 
@@ -394,9 +400,9 @@ public class WorkerSourceTaskTest extends ThreadedTest {
 
         List<SourceRecord> records = new ArrayList<>();
         // Can just use the same record for key and value
-        records.add(new SourceRecord(PARTITION, OFFSET, "topic", null, KEY_SCHEMA, KEY, RECORD_SCHEMA, RECORD));
+        records.add(new SourceRecord(PARTITION, OFFSET, "topic", null, KEY_SCHEMA, KEY, HEADER_SCHEMA, HEADER, RECORD_SCHEMA, RECORD));
 
-        Capture<HeaderProducerRecord<byte[], byte[]>> sent = expectSendRecordAnyTimes();
+        Capture<HeaderProducerRecord<byte[], byte[], byte[]>> sent = expectSendRecordAnyTimes();
 
         PowerMock.replayAll();
 
@@ -415,10 +421,10 @@ public class WorkerSourceTaskTest extends ThreadedTest {
         createWorkerTask();
 
         List<SourceRecord> records = Collections.singletonList(
-                new SourceRecord(PARTITION, OFFSET, "topic", null, KEY_SCHEMA, KEY, RECORD_SCHEMA, RECORD, timestamp)
+                new SourceRecord(PARTITION, OFFSET, "topic", null, KEY_SCHEMA, KEY, HEADER_SCHEMA, HEADER, RECORD_SCHEMA, RECORD, timestamp)
         );
 
-        Capture<HeaderProducerRecord<byte[], byte[]>> sent = expectSendRecordAnyTimes();
+        Capture<HeaderProducerRecord<byte[], byte[], byte[]>> sent = expectSendRecordAnyTimes();
 
         PowerMock.replayAll();
 
@@ -573,26 +579,26 @@ public class WorkerSourceTaskTest extends ThreadedTest {
                 .andThrow(error);
     }
 
-    private Capture<HeaderProducerRecord<byte[], byte[]>> expectSendRecordAnyTimes() throws InterruptedException {
+    private Capture<HeaderProducerRecord<byte[], byte[], byte[]>> expectSendRecordAnyTimes() throws InterruptedException {
         return expectSendRecordTaskCommitRecordSucceed(true, false);
     }
 
-    private Capture<HeaderProducerRecord<byte[], byte[]>> expectSendRecordOnce(boolean isRetry) throws InterruptedException {
+    private Capture<HeaderProducerRecord<byte[], byte[], byte[]>> expectSendRecordOnce(boolean isRetry) throws InterruptedException {
         return expectSendRecordTaskCommitRecordSucceed(false, isRetry);
     }
 
-    private Capture<HeaderProducerRecord<byte[], byte[]>> expectSendRecordTaskCommitRecordSucceed(boolean anyTimes, boolean isRetry) throws InterruptedException {
+    private Capture<HeaderProducerRecord<byte[], byte[], byte[]>> expectSendRecordTaskCommitRecordSucceed(boolean anyTimes, boolean isRetry) throws InterruptedException {
         return expectSendRecord(anyTimes, isRetry, true);
     }
 
-    private Capture<HeaderProducerRecord<byte[], byte[]>> expectSendRecordTaskCommitRecordFail(boolean anyTimes, boolean isRetry) throws InterruptedException {
+    private Capture<HeaderProducerRecord<byte[], byte[], byte[]>> expectSendRecordTaskCommitRecordFail(boolean anyTimes, boolean isRetry) throws InterruptedException {
         return expectSendRecord(anyTimes, isRetry, false);
     }
 
-    private Capture<HeaderProducerRecord<byte[], byte[]>> expectSendRecord(boolean anyTimes, boolean isRetry, boolean succeed) throws InterruptedException {
+    private Capture<HeaderProducerRecord<byte[], byte[], byte[]>> expectSendRecord(boolean anyTimes, boolean isRetry, boolean succeed) throws InterruptedException {
         expectConvertKeyValue(anyTimes);
 
-        Capture<HeaderProducerRecord<byte[], byte[]>> sent = EasyMock.newCapture();
+        Capture<HeaderProducerRecord<byte[], byte[], byte[]>> sent = EasyMock.newCapture();
 
         // 1. Offset data is passed to the offset storage.
         if (!isRetry) {
@@ -613,7 +619,7 @@ public class WorkerSourceTaskTest extends ThreadedTest {
                 synchronized (producerCallbacks) {
                     for (org.apache.kafka.clients.producer.Callback cb : producerCallbacks.getValues()) {
                         cb.onCompletion(new RecordMetadata(new TopicPartition("foo", 0), 0, 0,
-                                                           0L, 0L, 0, 0), null);
+                                                           0L, 0L, 0, 0, 0), null);
                     }
                     producerCallbacks.reset();
                 }

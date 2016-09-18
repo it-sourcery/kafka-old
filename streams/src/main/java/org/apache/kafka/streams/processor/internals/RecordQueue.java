@@ -35,7 +35,8 @@ public class RecordQueue {
     private final SourceNode source;
     private final TopicPartition partition;
     private final ArrayDeque<StampedRecord> fifoQueue;
-    private final TimestampTracker<HeaderConsumerRecord<Object, Object, Object>> timeTracker;
+    private final TimestampTracker<HeaderConsumerRecord<Object, Void, Object>> timeTracker;
+
 
     private long partitionTime = TimestampTracker.NOT_KNOWN;
 
@@ -72,19 +73,18 @@ public class RecordQueue {
      * @param timestampExtractor TimestampExtractor
      * @return the size of this queue
      */
-    public int addRawRecords(Iterable<HeaderConsumerRecord<byte[], byte[], byte[]>> rawRecords, TimestampExtractor timestampExtractor) {
-        for (HeaderConsumerRecord<byte[], byte[], byte[]> rawRecord : rawRecords) {
+    public int addRawRecords(Iterable<HeaderConsumerRecord<byte[], Void, byte[]>> rawRecords, TimestampExtractor timestampExtractor) {
+        for (HeaderConsumerRecord<byte[], Void, byte[]> rawRecord : rawRecords) {
             // deserialize the raw record, extract the timestamp and put into the queue
             Object key = source.deserializeKey(rawRecord.topic(), rawRecord.key());
-            Object header = source.deserializeHeader(rawRecord.topic(), rawRecord.header());
             Object value = source.deserializeValue(rawRecord.topic(), rawRecord.value());
 
-            HeaderConsumerRecord<Object, Object, Object> record = new HeaderConsumerRecord<>(rawRecord.topic(), rawRecord.partition(), rawRecord.offset(),
+            HeaderConsumerRecord<Object, Void, Object> record = new HeaderConsumerRecord<>(rawRecord.topic(), rawRecord.partition(), rawRecord.offset(),
                                                                                      rawRecord.timestamp(), TimestampType.CREATE_TIME,
                                                                                      rawRecord.checksum(),
                                                                                      rawRecord.serializedKeySize(),
-                                                                                     rawRecord.getSerializedHeaderSize(),
-                                                                                     rawRecord.serializedValueSize(), key, header, value);
+                                                                                     rawRecord.serializedHeaderSize(),
+                                                                                     rawRecord.serializedValueSize(), key, null, value);
             long timestamp = timestampExtractor.extract(record);
 
             // validate that timestamp must be non-negative

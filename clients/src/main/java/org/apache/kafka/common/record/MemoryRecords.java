@@ -91,14 +91,14 @@ public class MemoryRecords implements Records {
      * Append a new record and offset to the buffer
      * @return crc of the record
      */
-    public long append(long offset, long timestamp, byte[] key, byte[] value) {
+    public long append(long offset, long timestamp, byte[] key, byte[] header, byte[] value) {
         if (!writable)
             throw new IllegalStateException("Memory records is not writable");
 
-        int size = Record.recordSize(key, value);
+        int size = Record.recordSize(key, header, value);
         compressor.putLong(offset);
         compressor.putInt(size);
-        long crc = compressor.putRecord(timestamp, key, value);
+        long crc = compressor.putRecord(timestamp, key, header, value);
         compressor.recordWritten(size + Records.LOG_OVERHEAD);
         return crc;
     }
@@ -115,13 +115,13 @@ public class MemoryRecords implements Records {
      * the checking should be based on the capacity of the initialized buffer rather than the write limit in order
      * to accept this single record.
      */
-    public boolean hasRoomFor(byte[] key, byte[] value) {
+    public boolean hasRoomFor(byte[] key, byte[] header, byte[] value) {
         if (!this.writable)
             return false;
 
         return this.compressor.numRecordsWritten() == 0 ?
-            this.initialCapacity >= Records.LOG_OVERHEAD + Record.recordSize(key, value) :
-            this.writeLimit >= this.compressor.estimatedBytesWritten() + Records.LOG_OVERHEAD + Record.recordSize(key, value);
+            this.initialCapacity >= Records.LOG_OVERHEAD + Record.recordSize(key, header, value) :
+            this.writeLimit >= this.compressor.estimatedBytesWritten() + Records.LOG_OVERHEAD + Record.recordSize(key, header, value);
     }
 
     public boolean isFull() {

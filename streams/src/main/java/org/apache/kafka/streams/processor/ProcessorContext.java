@@ -100,19 +100,17 @@ public interface ProcessorContext {
     /**
      * Forwards a key/value pair to the downstream processors
      * @param key key
-     * @param header key
      * @param value value
      */
-    <K, H, V> void forward(K key, H header, V value);
+    <K, V> void forward(K key, V value);
 
     /**
      * Forwards a key/value pair to one of the downstream processors designated by childIndex
      * @param key key
-     * @param header header
      * @param value value
      * @param childIndex index in list of children of this node
      */
-    <K, H, V> void forward(K key, H header, V value, int childIndex);
+    <K, V> void forward(K key, V value, int childIndex);
 
     /**
      * Forwards a key/value pair to one of the downstream processors designated by the downstream processor name
@@ -120,7 +118,7 @@ public interface ProcessorContext {
      * @param value value
      * @param childName name of downstream processor
      */
-    <K, H, V> void forward(K key, H header, V value, String childName);
+    <K, V> void forward(K key, V value, String childName);
 
     /**
      * Requests a commit

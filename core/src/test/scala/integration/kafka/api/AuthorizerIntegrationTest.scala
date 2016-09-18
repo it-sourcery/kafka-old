@@ -62,8 +62,8 @@ class AuthorizerIntegrationTest extends BaseRequestTest {
   val TopicDescribeAcl = Map(topicResource -> Set(new Acl(KafkaPrincipal.ANONYMOUS, Allow, Acl.WildCardHost, Describe)))
   val TopicDeleteAcl = Map(deleteTopicResource -> Set(new Acl(KafkaPrincipal.ANONYMOUS, Allow, Acl.WildCardHost, Delete)))
 
-  val consumers = Buffer[KafkaConsumer[Array[Byte], Array[Byte]]]()
-  val producers = Buffer[KafkaProducer[Array[Byte], Array[Byte]]]()
+  val consumers = Buffer[KafkaConsumer[Array[Byte], Array[Byte], Array[Byte]]]()
+  val producers = Buffer[KafkaProducer[Array[Byte], Array[Byte], Array[Byte]]]()
 
   val producerCount = 1
   val consumerCount = 2
@@ -605,7 +605,7 @@ class AuthorizerIntegrationTest extends BaseRequestTest {
 
   private def sendRecords(numRecords: Int, tp: TopicPartition) {
     val futures = (0 until numRecords).map { i =>
-      this.producers.head.send(new HeaderProducerRecord(tp.topic(), tp.partition(), i.toString.getBytes, i.toString.getBytes))
+      this.producers.head.send(new HeaderProducerRecord(tp.topic(), tp.partition(), i.toString.getBytes, i.toString.getBytes, i.toString.getBytes))
     }
     try {
       futures.foreach(_.get)
@@ -625,12 +625,12 @@ class AuthorizerIntegrationTest extends BaseRequestTest {
   }
 
 
-  private def consumeRecords(consumer: Consumer[Array[Byte], Array[Byte]],
+  private def consumeRecords(consumer: Consumer[Array[Byte], Array[Byte], Array[Byte]],
                              numRecords: Int = 1,
                              startingOffset: Int = 0,
                              topic: String = topic,
                              part: Int = part) {
-    val records = new ArrayList[HeaderConsumerRecord[Array[Byte], Array[Byte]]]()
+    val records = new ArrayList[HeaderConsumerRecord[Array[Byte], Array[Byte], Array[Byte]]]()
     val maxIters = numRecords * 50
     var iters = 0
     while (records.size < numRecords) {

@@ -32,7 +32,7 @@ trait MessageReader {
 
   def init(inputStream: InputStream, props: Properties) {}
 
-  def readMessage(): HeaderProducerRecord[Array[Byte], Array[Byte]]
+  def readMessage(): HeaderProducerRecord[Array[Byte], Array[Byte], Array[Byte]]
 
   def close() {}
 

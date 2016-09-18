@@ -64,15 +64,16 @@ public class ProducerPerformance {
                 }
 
             props.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, "org.apache.kafka.common.serialization.ByteArraySerializer");
+            props.put(ProducerConfig.HEADER_SERIALIZER_CLASS_CONFIG, "org.apache.kafka.common.serialization.ByteArraySerializer");
             props.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, "org.apache.kafka.common.serialization.ByteArraySerializer");
-            KafkaProducer<byte[], byte[]> producer = new KafkaProducer<byte[], byte[]>(props);
+            KafkaProducer<byte[], byte[], byte[]> producer = new KafkaProducer<byte[], byte[], byte[]>(props);
 
             /* setup perf test */
             byte[] payload = new byte[recordSize];
             Random random = new Random(0);
             for (int i = 0; i < payload.length; ++i)
                 payload[i] = (byte) (random.nextInt(26) + 65);
-            HeaderProducerRecord<byte[], byte[]> record = new HeaderProducerRecord<>(topicName, payload);
+            HeaderProducerRecord<byte[], byte[], byte[]> record = new HeaderProducerRecord<>(topicName, payload);
             Stats stats = new Stats(numRecords, 5000);
             long startMs = System.currentTimeMillis();
 

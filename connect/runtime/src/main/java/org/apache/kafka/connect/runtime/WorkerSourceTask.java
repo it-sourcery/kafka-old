@@ -54,8 +54,9 @@ class WorkerSourceTask extends WorkerTask {
     private final WorkerConfig workerConfig;
     private final SourceTask task;
     private final Converter keyConverter;
+    private final Converter headerConverter;
     private final Converter valueConverter;
-    private KafkaProducer<byte[], byte[]> producer;
+    private KafkaProducer<byte[], byte[], byte[]> producer;
     private final OffsetStorageReader offsetReader;
     private final OffsetStorageWriter offsetWriter;
     private final Time time;
@@ -64,9 +65,9 @@ class WorkerSourceTask extends WorkerTask {
     private boolean lastSendFailed; // Whether the last send failed *synchronously*, i.e. never made it into the producer's RecordAccumulator
     // Use IdentityHashMap to ensure correctness with duplicate records. This is a HashMap because
     // there is no IdentityHashSet.
-    private IdentityHashMap<HeaderProducerRecord<byte[], byte[]>, HeaderProducerRecord<byte[], byte[]>> outstandingMessages;
+    private IdentityHashMap<HeaderProducerRecord<byte[], byte[], byte[]>, HeaderProducerRecord<byte[], byte[], byte[]>> outstandingMessages;
     // A second buffer is used while an offset flush is running
-    private IdentityHashMap<HeaderProducerRecord<byte[], byte[]>, HeaderProducerRecord<byte[], byte[]>> outstandingMessagesBacklog;
+    private IdentityHashMap<HeaderProducerRecord<byte[],byte[], byte[]>, HeaderProducerRecord<byte[], byte[], byte[]>> outstandingMessagesBacklog;
     private boolean flushing;
     private CountDownLatch stopRequestedLatch;
 
@@ -79,8 +80,9 @@ class WorkerSourceTask extends WorkerTask {
                             TaskStatus.Listener statusListener,
                             TargetState initialState,
                             Converter keyConverter,
+                            Converter headerConverter,
                             Converter valueConverter,
-                            KafkaProducer<byte[], byte[]> producer,
+                            KafkaProducer<byte[], byte[], byte[]> producer,
                             OffsetStorageReader offsetReader,
                             OffsetStorageWriter offsetWriter,
                             WorkerConfig workerConfig,
@@ -90,6 +92,7 @@ class WorkerSourceTask extends WorkerTask {
         this.workerConfig = workerConfig;
         this.task = task;
         this.keyConverter = keyConverter;
+        this.headerConverter = headerConverter;
         this.valueConverter = valueConverter;
         this.producer = producer;
         this.offsetReader = offsetReader;
@@ -180,9 +183,10 @@ class WorkerSourceTask extends WorkerTask {
         int processed = 0;
         for (final SourceRecord record : toSend) {
             byte[] key = keyConverter.fromConnectData(record.topic(), record.keySchema(), record.key());
+            byte[] header = headerConverter.fromConnectData(record.topic(), record.headerSchema(), record.header());
             byte[] value = valueConverter.fromConnectData(record.topic(), record.valueSchema(), record.value());
-            final HeaderProducerRecord<byte[], byte[]>
-               headerProducerRecord = new HeaderProducerRecord<>(record.topic(), record.kafkaPartition(), record.timestamp(), key, value);
+            final HeaderProducerRecord<byte[], byte[], byte[]>
+               headerProducerRecord = new HeaderProducerRecord<>(record.topic(), record.kafkaPartition(), record.timestamp(), key, header, value);
             log.trace("Appending record with key {}, value {}", record.key(), record.value());
             // We need this queued first since the callback could happen immediately (even synchronously in some cases).
             // Because of this we need to be careful about handling retries -- we always save the previously attempted
@@ -247,8 +251,8 @@ class WorkerSourceTask extends WorkerTask {
         }
     }
 
-    private synchronized void recordSent(final HeaderProducerRecord<byte[], byte[]> record) {
-        HeaderProducerRecord<byte[], byte[]> removed = outstandingMessages.remove(record);
+    private synchronized void recordSent(final HeaderProducerRecord<byte[], byte[], byte[]> record) {
+        HeaderProducerRecord<byte[], byte[], byte[]> removed = outstandingMessages.remove(record);
         // While flushing, we may also see callbacks for items in the backlog
         if (removed == null && flushing)
             removed = outstandingMessagesBacklog.remove(record);
@@ -381,7 +385,7 @@ class WorkerSourceTask extends WorkerTask {
 
     private synchronized void finishSuccessfulFlush() {
         // If we were successful, we can just swap instead of replacing items back into the original map
-        IdentityHashMap<HeaderProducerRecord<byte[], byte[]>, HeaderProducerRecord<byte[], byte[]>> temp = outstandingMessages;
+        IdentityHashMap<HeaderProducerRecord<byte[], byte[], byte[]>, HeaderProducerRecord<byte[], byte[], byte[]>> temp = outstandingMessages;
         outstandingMessages = outstandingMessagesBacklog;
         outstandingMessagesBacklog = temp;
         flushing = false;

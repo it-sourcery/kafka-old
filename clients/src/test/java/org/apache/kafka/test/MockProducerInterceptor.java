@@ -26,7 +26,7 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
 
-public class MockProducerInterceptor implements ProducerInterceptor<String, String> {
+public class MockProducerInterceptor implements ProducerInterceptor<String, String, String> {
     public static final AtomicInteger INIT_COUNT = new AtomicInteger(0);
     public static final AtomicInteger CLOSE_COUNT = new AtomicInteger(0);
     public static final AtomicInteger ONSEND_COUNT = new AtomicInteger(0);
@@ -56,10 +56,10 @@ public class MockProducerInterceptor implements ProducerInterceptor<String, Stri
     }
 
     @Override
-    public HeaderProducerRecord<String, String> onSend(HeaderProducerRecord<String, String> record) {
+    public HeaderProducerRecord<String, String, String> onSend(HeaderProducerRecord<String, String, String> record) {
         ONSEND_COUNT.incrementAndGet();
-        HeaderProducerRecord<String, String> newRecord = new HeaderProducerRecord<>(
-                record.topic(), record.partition(), record.key(), record.value().concat(appendStr));
+        HeaderProducerRecord<String, String, String> newRecord = new HeaderProducerRecord<>(
+                record.topic(), record.partition(), record.key(), record.header(), record.value().concat(appendStr));
         return newRecord;
     }
 

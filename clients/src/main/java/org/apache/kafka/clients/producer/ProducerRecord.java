@@ -5,24 +5,24 @@ package org.apache.kafka.clients.producer;
  *
  * @see HeaderProducerRecord
  */
-public class ProducerRecord<K, V> extends HeaderProducerRecord<K, Object, V>
+public class ProducerRecord<K, V> extends HeaderProducerRecord<K, Void, V>
 {
-   public ProducerRecord(String topic, Integer partition, Long timestamp, K key, Object header, V value)
+   public ProducerRecord(String topic, Integer partition, Long timestamp, K key, Void header, V value)
    {
       super(topic, partition, timestamp, key, header, value);
    }
 
-   public ProducerRecord(String topic, Integer partition, K key, Object header, V value)
+   public ProducerRecord(String topic, Integer partition, K key, Void header, V value)
    {
       super(topic, partition, key, header, value);
    }
 
    public ProducerRecord(String topic, Integer partition, K key, V value)
    {
-      super(topic, partition, key, value);
+      super(topic, partition, key, null, value);
    }
 
-   public ProducerRecord(String topic, K key, Object header, V value)
+   public ProducerRecord(String topic, K key, Void header, V value)
    {
       super(topic, key, header, value);
    }

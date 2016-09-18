@@ -45,16 +45,16 @@ class PlaintextProducerSendTest extends BaseProducerSendTest {
     createNewProducerWithExplicitSerializer(brokerList)
   }
 
-  private def createNewProducerWithNoSerializer(brokerList: String): KafkaProducer[Array[Byte], Array[Byte]] = {
+  private def createNewProducerWithNoSerializer(brokerList: String): KafkaProducer[Array[Byte], Array[Byte], Array[Byte]] = {
     val producerProps = new Properties()
     producerProps.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, brokerList)
     registerProducer(new KafkaProducer(producerProps))
   }
 
-  private def createNewProducerWithExplicitSerializer(brokerList: String): KafkaProducer[Array[Byte], Array[Byte]] = {
+  private def createNewProducerWithExplicitSerializer(brokerList: String): KafkaProducer[Array[Byte], Array[Byte], Array[Byte]] = {
     val producerProps = new Properties()
     producerProps.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, brokerList)
-    registerProducer(new KafkaProducer(producerProps, new ByteArraySerializer, new ByteArraySerializer))
+    registerProducer(new KafkaProducer(producerProps, new ByteArraySerializer, new ByteArraySerializer, new ByteArraySerializer))
   }
 
   @Test
@@ -62,7 +62,7 @@ class PlaintextProducerSendTest extends BaseProducerSendTest {
     // send a record with a wrong type should receive a serialization exception
     try {
       val producer = createProducerWithWrongSerializer(brokerList)
-      val record5 = new HeaderProducerRecord[Array[Byte], Array[Byte]](topic, new Integer(0), "key".getBytes, "value".getBytes)
+      val record5 = new HeaderProducerRecord[Array[Byte], Array[Byte], Array[Byte]](topic, new Integer(0), "key".getBytes, "header".getBytes ,"value".getBytes)
       producer.send(record5)
       fail("Should have gotten a SerializationException")
     } catch {
@@ -95,7 +95,7 @@ class PlaintextProducerSendTest extends BaseProducerSendTest {
 
     try {
       // Send a message to auto-create the topic
-      val record = new HeaderProducerRecord[Array[Byte], Array[Byte]](topic, null, "key".getBytes, "value".getBytes)
+      val record = new HeaderProducerRecord[Array[Byte], Array[Byte], Array[Byte]](topic, null, "key".getBytes, "header".getBytes, "value".getBytes)
       assertEquals("Should have offset 0", 0L, producer.send(record).get.offset)
 
       // double check that the topic is created with leader elected
@@ -114,7 +114,7 @@ class PlaintextProducerSendTest extends BaseProducerSendTest {
 
     val producer = createProducer(brokerList = brokerList)
     try {
-      producer.send(new HeaderProducerRecord(topic, 0, System.currentTimeMillis() - 1001, "key".getBytes, "value".getBytes)).get()
+      producer.send(new HeaderProducerRecord(topic, 0, System.currentTimeMillis() - 1001, "key".getBytes, "header".getBytes, "value".getBytes)).get()
       fail("Should throw CorruptedRecordException")
     } catch {
       case e: ExecutionException => assertTrue(e.getCause.isInstanceOf[InvalidTimestampException])
@@ -127,7 +127,7 @@ class PlaintextProducerSendTest extends BaseProducerSendTest {
     producerProps.setProperty(ProducerConfig.COMPRESSION_TYPE_CONFIG, "gzip")
     val compressedProducer = createProducer(brokerList = brokerList, props = Some(producerProps))
     try {
-      compressedProducer.send(new HeaderProducerRecord(topic, 0, System.currentTimeMillis() - 1001, "key".getBytes, "value".getBytes)).get()
+      compressedProducer.send(new HeaderProducerRecord(topic, 0, System.currentTimeMillis() - 1001, "key".getBytes, "header".getBytes, "value".getBytes)).get()
       fail("Should throw CorruptedRecordException")
     } catch {
       case e: ExecutionException => assertTrue(e.getCause.isInstanceOf[InvalidTimestampException])
@@ -136,10 +136,11 @@ class PlaintextProducerSendTest extends BaseProducerSendTest {
     }
   }
 
-  private def createProducerWithWrongSerializer(brokerList: String): KafkaProducer[Array[Byte], Array[Byte]] = {
+  private def createProducerWithWrongSerializer(brokerList: String): KafkaProducer[Array[Byte], Array[Byte], Array[Byte]] = {
     val producerProps = new Properties()
     producerProps.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, brokerList)
     producerProps.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, "org.apache.kafka.common.serialization.StringSerializer")
+    producerProps.put(ProducerConfig.HEADER_SERIALIZER_CLASS_CONFIG, "org.apache.kafka.common.serialization.StringSerializer")
     producerProps.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, "org.apache.kafka.common.serialization.StringSerializer")
     registerProducer(new KafkaProducer(producerProps))
   }

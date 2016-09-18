@@ -264,13 +264,13 @@ object ProducerPerformance extends Logging {
       var nSends = 0
       var i: Long = 0L
       var message: Array[Byte] = null
-
+      var header: Array[Byte] = null;
       while (i < messagesPerThread) {
         try {
           config.topics.foreach(
             topic => {
               message = generateProducerData(topic, i)
-              producer.send(topic, BigInteger.valueOf(i).toByteArray, message)
+              producer.send(topic, BigInteger.valueOf(i).toByteArray, header, message)
               bytesSent += message.size
               nSends += 1
               if (config.messageSendGapMs > 0)

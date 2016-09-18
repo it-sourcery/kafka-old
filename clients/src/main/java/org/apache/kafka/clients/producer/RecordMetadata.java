@@ -39,15 +39,17 @@ public final class RecordMetadata {
     private final long checksum;
     private final int serializedKeySize;
     private final int serializedValueSize;
+    private final int serializedHeaderSize;
     private final TopicPartition topicPartition;
 
     private RecordMetadata(TopicPartition topicPartition, long offset, long timestamp, long
-        checksum, int serializedKeySize, int serializedValueSize) {
+        checksum, int serializedKeySize, int serializedHeaderSize, int serializedValueSize) {
         super();
         this.offset = offset;
         this.timestamp = timestamp;
         this.checksum = checksum;
         this.serializedKeySize = serializedKeySize;
+        this.serializedHeaderSize = serializedHeaderSize;
         this.serializedValueSize = serializedValueSize;
         this.topicPartition = topicPartition;
     }
@@ -58,11 +60,11 @@ public final class RecordMetadata {
     }
 
     public RecordMetadata(TopicPartition topicPartition, long baseOffset, long relativeOffset,
-                          long timestamp, long checksum, int serializedKeySize, int serializedValueSize) {
+                          long timestamp, long checksum, int serializedKeySize, int serializedHeaderSize, int serializedValueSize) {
         // ignore the relativeOffset if the base offset is -1,
         // since this indicates the offset is unknown
         this(topicPartition, baseOffset == -1 ? baseOffset : baseOffset + relativeOffset,
-             timestamp, checksum, serializedKeySize, serializedValueSize);
+             timestamp, checksum, serializedKeySize, serializedHeaderSize, serializedValueSize);
     }
 
     /**
@@ -95,12 +97,21 @@ public final class RecordMetadata {
     }
 
     /**
+     * The size of the serialized, uncompressed header in bytes. If value is null, the returned
+     * size is -1.
+     */
+    public int serializedHeaderSize() {
+        return this.serializedHeaderSize;
+    }
+
+    /**
      * The size of the serialized, uncompressed value in bytes. If value is null, the returned
      * size is -1.
      */
     public int serializedValueSize() {
         return this.serializedValueSize;
     }
+
 
     /**
      * The topic the record was appended to

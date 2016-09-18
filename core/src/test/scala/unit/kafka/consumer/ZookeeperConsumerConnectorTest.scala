@@ -77,7 +77,7 @@ class ZookeeperConsumerConnectorTest extends KafkaServerTestHarness with Logging
       override val consumerTimeoutMs = 200
     }
     val zkConsumerConnector0 = new ZookeeperConsumerConnector(consumerConfig0, true)
-    val topicMessageStreams0 = zkConsumerConnector0.createMessageStreams(Map(topic -> 1), new StringDecoder(), new StringDecoder())
+    val topicMessageStreams0 = zkConsumerConnector0.createMessageStreams(Map(topic -> 1), new StringDecoder(), new StringDecoder(), new StringDecoder())
 
     // no messages to consume, we should hit timeout;
     // also the iterator should support re-entrant, so loop it twice
@@ -107,7 +107,7 @@ class ZookeeperConsumerConnectorTest extends KafkaServerTestHarness with Logging
     // create a consumer
     val consumerConfig1 = new ConsumerConfig(TestUtils.createConsumerProperties(zkConnect, group, consumer1))
     val zkConsumerConnector1 = new ZookeeperConsumerConnector(consumerConfig1, true)
-    val topicMessageStreams1 = zkConsumerConnector1.createMessageStreams(Map(topic -> 1), new StringDecoder(), new StringDecoder())
+    val topicMessageStreams1 = zkConsumerConnector1.createMessageStreams(Map(topic -> 1), new StringDecoder(), new StringDecoder(), new StringDecoder())
 
     val receivedMessages1 = getMessages(topicMessageStreams1, nMessages * 2)
     assertEquals(sentMessages1.sorted, receivedMessages1.sorted)
@@ -126,7 +126,7 @@ class ZookeeperConsumerConnectorTest extends KafkaServerTestHarness with Logging
       override val rebalanceBackoffMs = RebalanceBackoffMs
     }
     val zkConsumerConnector2 = new ZookeeperConsumerConnector(consumerConfig2, true)
-    val topicMessageStreams2 = zkConsumerConnector2.createMessageStreams(Map(topic -> 1), new StringDecoder(), new StringDecoder())
+    val topicMessageStreams2 = zkConsumerConnector2.createMessageStreams(Map(topic -> 1), new StringDecoder(), new StringDecoder(), new StringDecoder())
     // send some messages to each broker
     val sentMessages2 = sendMessages(servers, topic, nMessages, 0) ++
                          sendMessages(servers, topic, nMessages, 1)
@@ -196,7 +196,7 @@ class ZookeeperConsumerConnectorTest extends KafkaServerTestHarness with Logging
     val consumerConfig1 = new ConsumerConfig(
       TestUtils.createConsumerProperties(zkConnect, group, consumer1))
     val zkConsumerConnector1 = new ZookeeperConsumerConnector(consumerConfig1, true)
-    val topicMessageStreams1 = zkConsumerConnector1.createMessageStreams(Map(topic -> 1), new StringDecoder(), new StringDecoder())
+    val topicMessageStreams1 = zkConsumerConnector1.createMessageStreams(Map(topic -> 1), new StringDecoder(), new StringDecoder(), new StringDecoder())
     val receivedMessages1 = getMessages(topicMessageStreams1, nMessages * 2)
     assertEquals(sentMessages1.sorted, receivedMessages1.sorted)
 
@@ -214,7 +214,7 @@ class ZookeeperConsumerConnectorTest extends KafkaServerTestHarness with Logging
       override val rebalanceBackoffMs = RebalanceBackoffMs
     }
     val zkConsumerConnector2 = new ZookeeperConsumerConnector(consumerConfig2, true)
-    val topicMessageStreams2 = zkConsumerConnector2.createMessageStreams(Map(topic -> 1), new StringDecoder(), new StringDecoder())
+    val topicMessageStreams2 = zkConsumerConnector2.createMessageStreams(Map(topic -> 1), new StringDecoder(), new StringDecoder(), new StringDecoder())
     // send some messages to each broker
     val sentMessages2 = sendMessages(servers, topic, nMessages, 0, GZIPCompressionCodec) ++
                         sendMessages(servers, topic, nMessages, 1, GZIPCompressionCodec)
@@ -235,7 +235,7 @@ class ZookeeperConsumerConnectorTest extends KafkaServerTestHarness with Logging
     val consumerConfig3 = new ConsumerConfig(
       TestUtils.createConsumerProperties(zkConnect, group, consumer3))
     val zkConsumerConnector3 = new ZookeeperConsumerConnector(consumerConfig3, true)
-    val topicMessageStreams3 = zkConsumerConnector3.createMessageStreams(new mutable.HashMap[String, Int](), new StringDecoder(), new StringDecoder())
+    val topicMessageStreams3 = zkConsumerConnector3.createMessageStreams(new mutable.HashMap[String, Int](), new StringDecoder(), new StringDecoder(), new StringDecoder())
     // send some messages to each broker
     val sentMessages3 = sendMessages(servers, topic, nMessages, 0, GZIPCompressionCodec) ++
                         sendMessages(servers, topic, nMessages, 1, GZIPCompressionCodec)
@@ -268,7 +268,7 @@ class ZookeeperConsumerConnectorTest extends KafkaServerTestHarness with Logging
 
     val consumerConfig1 = new ConsumerConfig(TestUtils.createConsumerProperties(zkConnect, group, consumer0))
     val zkConsumerConnector1 = new ZookeeperConsumerConnector(consumerConfig1, true)
-    val topicMessageStreams1 = zkConsumerConnector1.createMessageStreams(Map(topic -> 1), new StringDecoder(), new StringDecoder())
+    val topicMessageStreams1 = zkConsumerConnector1.createMessageStreams(Map(topic -> 1), new StringDecoder(), new StringDecoder(), new StringDecoder())
     val receivedMessages = getMessages(topicMessageStreams1, 400)
     assertEquals(sentMessages.sorted, receivedMessages.sorted)
 
@@ -301,7 +301,7 @@ class ZookeeperConsumerConnectorTest extends KafkaServerTestHarness with Logging
     val zkConsumerConnector =
       new ZookeeperConsumerConnector(consumerConfig, true)
     val topicMessageStreams =
-      zkConsumerConnector.createMessageStreams(Map(topic -> 1), new StringDecoder(), new StringDecoder())
+      zkConsumerConnector.createMessageStreams(Map(topic -> 1), new StringDecoder(), new StringDecoder(), new StringDecoder())
 
     var receivedMessages: List[String] = Nil
     for ((topic, messageStreams) <- topicMessageStreams) {
@@ -334,7 +334,7 @@ class ZookeeperConsumerConnectorTest extends KafkaServerTestHarness with Logging
     // create a consumer
     val consumerConfig1 = new ConsumerConfig(TestUtils.createConsumerProperties(zkConnect, group, consumer1))
     val zkConsumerConnector1 = new ZookeeperConsumerConnector(consumerConfig1, true)
-    val topicMessageStreams1 = zkConsumerConnector1.createMessageStreams(Map(topic -> 1), new StringDecoder(), new StringDecoder())
+    val topicMessageStreams1 = zkConsumerConnector1.createMessageStreams(Map(topic -> 1), new StringDecoder(), new StringDecoder(), new StringDecoder())
     val topicRegistry = zkConsumerConnector1.getTopicRegistry
     assertEquals(1, topicRegistry.map(r => r._1).size)
     assertEquals(topic, topicRegistry.map(r => r._1).head)
@@ -364,7 +364,7 @@ class ZookeeperConsumerConnectorTest extends KafkaServerTestHarness with Logging
     // Register consumer rebalance listener
     val rebalanceListener1 = new TestConsumerRebalanceListener()
     zkConsumerConnector1.setConsumerRebalanceListener(rebalanceListener1)
-    val topicMessageStreams1 = zkConsumerConnector1.createMessageStreams(Map(topic -> 1), new StringDecoder(), new StringDecoder())
+    val topicMessageStreams1 = zkConsumerConnector1.createMessageStreams(Map(topic -> 1), new StringDecoder(), new StringDecoder(), new StringDecoder())
 
     // Check if rebalance listener is fired
     assertEquals(true, rebalanceListener1.beforeReleasingPartitionsCalled)
@@ -390,7 +390,7 @@ class ZookeeperConsumerConnectorTest extends KafkaServerTestHarness with Logging
     // Register consumer rebalance listener
     val rebalanceListener2 = new TestConsumerRebalanceListener()
     zkConsumerConnector2.setConsumerRebalanceListener(rebalanceListener2)
-    val topicMessageStreams2 = zkConsumerConnector2.createMessageStreams(Map(topic -> 1), new StringDecoder(), new StringDecoder())
+    val topicMessageStreams2 = zkConsumerConnector2.createMessageStreams(Map(topic -> 1), new StringDecoder(), new StringDecoder(), new StringDecoder())
 
     // Consume messages from consumer 1 to make sure it has finished rebalance
     getMessages(topicMessageStreams1, nMessages)

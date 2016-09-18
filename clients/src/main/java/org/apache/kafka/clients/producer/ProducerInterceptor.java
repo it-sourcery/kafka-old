@@ -32,7 +32,7 @@ import org.apache.kafka.common.Configurable;
  * <p>
  * ProducerInterceptor callbacks may be called from multiple threads. Interceptor implementation must ensure thread-safety, if needed.
  */
-public interface ProducerInterceptor<K, V> extends Configurable {
+public interface ProducerInterceptor<K, H, V> extends Configurable {
     /**
      * This is called from {@link org.apache.kafka.clients.producer.KafkaProducer#send(HeaderProducerRecord)} and
      * {@link org.apache.kafka.clients.producer.KafkaProducer#send(HeaderProducerRecord, Callback)} methods, before key and value
@@ -62,7 +62,7 @@ public interface ProducerInterceptor<K, V> extends Configurable {
      * @param record the record from client or the record returned by the previous interceptor in the chain of interceptors.
      * @return producer record to send to topic/partition
      */
-    public HeaderProducerRecord<K, V> onSend(HeaderProducerRecord<K, V> record);
+    public HeaderProducerRecord<K, H, V> onSend(HeaderProducerRecord<K, H, V> record);
 
     /**
      * This method is called when the record sent to the server has been acknowledged, or when sending the record fails before

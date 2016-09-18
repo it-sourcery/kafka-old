@@ -59,8 +59,8 @@ public class KafkaProducerTest {
         final int oldInitCount = MockMetricsReporter.INIT_COUNT.get();
         final int oldCloseCount = MockMetricsReporter.CLOSE_COUNT.get();
         try {
-            KafkaProducer<byte[], byte[]> producer = new KafkaProducer<byte[], byte[]>(
-                    props, new ByteArraySerializer(), new ByteArraySerializer());
+            KafkaProducer<byte[], byte[], byte[]> producer = new KafkaProducer<byte[], byte[], byte[]>(
+                    props, new ByteArraySerializer(), new ByteArraySerializer(), new ByteArraySerializer());
         } catch (KafkaException e) {
             Assert.assertEquals(oldInitCount + 1, MockMetricsReporter.INIT_COUNT.get());
             Assert.assertEquals(oldCloseCount + 1, MockMetricsReporter.CLOSE_COUNT.get());
@@ -80,8 +80,8 @@ public class KafkaProducerTest {
         final int oldInitCount = MockSerializer.INIT_COUNT.get();
         final int oldCloseCount = MockSerializer.CLOSE_COUNT.get();
 
-        KafkaProducer<byte[], byte[]> producer = new KafkaProducer<byte[], byte[]>(
-                configs, new MockSerializer(), new MockSerializer());
+        KafkaProducer<byte[], byte[], byte[]> producer = new KafkaProducer<byte[], byte[], byte[]>(
+                configs, new MockSerializer(), new MockSerializer(), new MockSerializer());
         Assert.assertEquals(oldInitCount + 2, MockSerializer.INIT_COUNT.get());
         Assert.assertEquals(oldCloseCount, MockSerializer.CLOSE_COUNT.get());
 
@@ -99,8 +99,8 @@ public class KafkaProducerTest {
             props.setProperty(ProducerConfig.INTERCEPTOR_CLASSES_CONFIG, MockProducerInterceptor.class.getName());
             props.setProperty(MockProducerInterceptor.APPEND_STRING_PROP, "something");
 
-            KafkaProducer<String, String> producer = new KafkaProducer<String, String>(
-                    props, new StringSerializer(), new StringSerializer());
+            KafkaProducer<String, String, String> producer = new KafkaProducer<String, String, String>(
+                    props, new StringSerializer(), new StringSerializer(), new StringSerializer());
             Assert.assertEquals(1, MockProducerInterceptor.INIT_COUNT.get());
             Assert.assertEquals(0, MockProducerInterceptor.CLOSE_COUNT.get());
 
@@ -119,8 +119,8 @@ public class KafkaProducerTest {
         config.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, "localhost:9999");
         config.put(ProducerConfig.SEND_BUFFER_CONFIG, Selectable.USE_DEFAULT_BUFFER_SIZE);
         config.put(ProducerConfig.RECEIVE_BUFFER_CONFIG, Selectable.USE_DEFAULT_BUFFER_SIZE);
-        KafkaProducer<byte[], byte[]> producer = new KafkaProducer<>(
-                config, new ByteArraySerializer(), new ByteArraySerializer());
+        KafkaProducer<byte[], byte[], byte[]> producer = new KafkaProducer<>(
+                config, new ByteArraySerializer(), new ByteArraySerializer(), new ByteArraySerializer());
         producer.close();
     }
 
@@ -129,7 +129,7 @@ public class KafkaProducerTest {
         Map<String, Object> config = new HashMap<>();
         config.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, "localhost:9999");
         config.put(ProducerConfig.SEND_BUFFER_CONFIG, -2);
-        new KafkaProducer<>(config, new ByteArraySerializer(), new ByteArraySerializer());
+        new KafkaProducer<>(config, new ByteArraySerializer(), new ByteArraySerializer(), new ByteArraySerializer());
     }
 
     @Test(expected = KafkaException.class)
@@ -137,7 +137,7 @@ public class KafkaProducerTest {
         Map<String, Object> config = new HashMap<>();
         config.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, "localhost:9999");
         config.put(ProducerConfig.RECEIVE_BUFFER_CONFIG, -2);
-        new KafkaProducer<>(config, new ByteArraySerializer(), new ByteArraySerializer());
+        new KafkaProducer<>(config, new ByteArraySerializer(), new ByteArraySerializer(), new ByteArraySerializer());
     }
 
     @PrepareOnlyThisForTest(Metadata.class)
@@ -145,12 +145,12 @@ public class KafkaProducerTest {
     public void testMetadataFetch() throws Exception {
         Properties props = new Properties();
         props.setProperty(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, "localhost:9999");
-        KafkaProducer<String, String> producer = new KafkaProducer<>(props, new StringSerializer(), new StringSerializer());
+        KafkaProducer<String, String, String> producer = new KafkaProducer<>(props, new StringSerializer(), new StringSerializer(), new StringSerializer());
         Metadata metadata = PowerMock.createNiceMock(Metadata.class);
         MemberModifier.field(KafkaProducer.class, "metadata").set(producer, metadata);
 
         String topic = "topic";
-        HeaderProducerRecord<String, String> record = new HeaderProducerRecord<>(topic, "value");
+        HeaderProducerRecord<String, String, String> record = new HeaderProducerRecord<>(topic, "value");
         Collection<Node> nodes = Collections.singletonList(new Node(0, "host1", 1000));
         final Cluster emptyCluster = new Cluster(nodes,
                 Collections.<PartitionInfo>emptySet(),

@@ -19,9 +19,9 @@ package org.apache.kafka.streams.processor.internals;
 
 import org.apache.kafka.clients.consumer.HeaderConsumerRecord;
 
-public class StampedRecord extends Stamped<HeaderConsumerRecord<Object, Object, Object>> {
+public class StampedRecord extends Stamped<HeaderConsumerRecord<Object, Void, Object>> {
 
-    public StampedRecord(HeaderConsumerRecord<Object, Object, Object> record, long timestamp) {
+    public StampedRecord(HeaderConsumerRecord<Object, Void, Object> record, long timestamp) {
         super(record, timestamp);
     }
 
@@ -35,10 +35,6 @@ public class StampedRecord extends Stamped<HeaderConsumerRecord<Object, Object, 
 
     public Object key() {
         return value.key();
-    }
-
-    public Object header() {
-        return value.header();
     }
 
     public Object value() {

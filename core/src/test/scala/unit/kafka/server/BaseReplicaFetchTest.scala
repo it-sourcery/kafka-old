@@ -66,9 +66,10 @@ abstract class BaseReplicaFetchTest extends ZooKeeperTestHarness  {
     val producer = TestUtils.createNewProducer(TestUtils.getBrokerListStrFromServers(brokers),
                                                retries = 5,
                                                keySerializer = new StringSerializer,
+                                               headerSerializer = new StringSerializer,
                                                valueSerializer = new StringSerializer)
-    val records = testMessageList1.map(m => new HeaderProducerRecord(topic1, m, m)) ++
-      testMessageList2.map(m => new HeaderProducerRecord(topic2, m, m))
+    val records = testMessageList1.map(m => new HeaderProducerRecord(topic1, m, m, m)) ++
+      testMessageList2.map(m => new HeaderProducerRecord(topic2, m, m, m))
     records.map(producer.send).foreach(_.get)
     producer.close()
 

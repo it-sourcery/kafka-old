@@ -89,7 +89,7 @@ public class IntegrationTestUtils {
      * @return The KeyValue elements retrieved via the consumer
      */
     public static <K, V> List<KeyValue<K, V>> readKeyValues(final String topic, final Properties consumerConfig, final int maxMessages) {
-        final KafkaConsumer<K, V> consumer = new KafkaConsumer<>(consumerConfig);
+        final KafkaConsumer<K, Void, V> consumer = new KafkaConsumer<>(consumerConfig);
         consumer.subscribe(Collections.singletonList(topic));
         final int pollIntervalMs = 100;
         final int maxTotalPollTimeMs = 2000;
@@ -97,8 +97,8 @@ public class IntegrationTestUtils {
         final List<KeyValue<K, V>> consumedValues = new ArrayList<>();
         while (totalPollTimeMs < maxTotalPollTimeMs && continueConsuming(consumedValues.size(), maxMessages)) {
             totalPollTimeMs += pollIntervalMs;
-            final HeaderConsumerRecords<K, V> records = consumer.poll(pollIntervalMs);
-            for (final HeaderConsumerRecord<K, V> record : records) {
+            final HeaderConsumerRecords<K, Void, V> records = consumer.poll(pollIntervalMs);
+            for (final HeaderConsumerRecord<K, Void, V> record : records) {
                 consumedValues.add(new KeyValue<>(record.key(), record.value()));
             }
         }
@@ -152,10 +152,10 @@ public class IntegrationTestUtils {
                                                                          final Properties producerConfig,
                                                                          final Long timestamp)
         throws ExecutionException, InterruptedException {
-        final Producer<K, V> producer = new KafkaProducer<>(producerConfig);
+        final Producer<K, Void, V> producer = new KafkaProducer<>(producerConfig);
         for (final KeyValue<K, V> record : records) {
             final Future<RecordMetadata> f = producer.send(
-                new HeaderProducerRecord<>(topic, null, timestamp, record.key, record.value));
+                new HeaderProducerRecord<>(topic, null, timestamp, record.key, (Void)null, record.value));
             f.get();
         }
         producer.flush();

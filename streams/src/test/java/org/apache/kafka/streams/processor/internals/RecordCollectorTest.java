@@ -65,7 +65,7 @@ public class RecordCollectorTest {
     public void testSpecificPartition() {
 
         RecordCollector collector = new RecordCollector(
-                new MockProducer<>(cluster, true, new DefaultPartitioner(), byteArraySerializer, byteArraySerializer),
+                new MockProducer<byte[], Void, byte[]>(cluster, true, new DefaultPartitioner(), byteArraySerializer, byteArraySerializer),
                 "RecordCollectorTest-TestSpecificPartition");
 
         collector.send(new HeaderProducerRecord<>("topic1", 0, "999", "0"), stringSerializer, stringSerializer);
@@ -75,7 +75,7 @@ public class RecordCollectorTest {
         collector.send(new HeaderProducerRecord<>("topic1", 1, "999", "0"), stringSerializer, stringSerializer);
         collector.send(new HeaderProducerRecord<>("topic1", 1, "999", "0"), stringSerializer, stringSerializer);
 
-        collector.send(new HeaderProducerRecord<>("topic1", 2, "999", "0"), stringSerializer, stringSerializer);
+        collector.send(new HeaderProducerRecord<>("topic1", 2, "999", null, "0"), stringSerializer, stringSerializer);
 
         Map<TopicPartition, Long> offsets = collector.offsets();
 
@@ -97,7 +97,7 @@ public class RecordCollectorTest {
     public void testStreamPartitioner() {
 
         RecordCollector collector = new RecordCollector(
-                new MockProducer<>(cluster, true, new DefaultPartitioner(), byteArraySerializer, byteArraySerializer),
+                new MockProducer<byte[], Void, byte[]>(cluster, true, new DefaultPartitioner(), byteArraySerializer, byteArraySerializer),
                 "RecordCollectorTest-TestStreamPartitioner");
 
         collector.send(new HeaderProducerRecord<>("topic1", "3", "0"), stringSerializer, stringSerializer, streamPartitioner);

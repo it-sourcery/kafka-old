@@ -124,7 +124,7 @@ public final class Record {
      * @param valueSize The size of the payload to use
      */
     public Record(long timestamp, byte[] key, byte[] header, byte[] value, CompressionType type, int valueOffset, int valueSize) {
-        this(ByteBuffer.allocate(recordSize(key == null ? 0 : key.length,
+        this(ByteBuffer.allocate(recordSize(key == null ? 0 : key.length, header == null ? 0 : header.length,
             value == null ? 0 : valueSize >= 0 ? valueSize : value.length - valueOffset)));
         write(this.buffer, timestamp, key, header, value, type, valueOffset, valueSize);
         this.buffer.rewind();
@@ -200,12 +200,12 @@ public final class Record {
         }
     }
 
-    public static int recordSize(byte[] key, byte[] value) {
-        return recordSize(key == null ? 0 : key.length, value == null ? 0 : value.length);
+    public static int recordSize(byte[] key, byte[] header, byte[] value) {
+        return recordSize(key == null ? 0 : key.length, header == null ? 0 : header.length, value == null ? 0 : value.length);
     }
 
-    public static int recordSize(int keySize, int valueSize) {
-        return CRC_LENGTH + MAGIC_LENGTH + ATTRIBUTE_LENGTH + TIMESTAMP_LENGTH + KEY_SIZE_LENGTH + keySize + VALUE_SIZE_LENGTH + valueSize;
+    public static int recordSize(int keySize, int headerSize, int valueSize) {
+        return CRC_LENGTH + MAGIC_LENGTH + ATTRIBUTE_LENGTH + TIMESTAMP_LENGTH + KEY_SIZE_LENGTH + keySize + HEADER_SIZE_LENGTH + headerSize + VALUE_SIZE_LENGTH + valueSize;
     }
 
     public ByteBuffer buffer() {

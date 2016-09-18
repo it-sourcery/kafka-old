@@ -182,7 +182,7 @@ public class StreamsResetter {
             if (isInputTopic(topic) || isInternalTopic(topic)) {
                 System.out.println("Topic: " + topic);
 
-                try (final KafkaConsumer<byte[], byte[]> client = new KafkaConsumer<>(config, new ByteArrayDeserializer(), new ByteArrayDeserializer())) {
+                try (final KafkaConsumer<byte[], byte[], byte[]> client = new KafkaConsumer<>(config, new ByteArrayDeserializer(), new ByteArrayDeserializer(), new ByteArrayDeserializer())) {
                     client.subscribe(Collections.singleton(topic));
                     client.poll(1);
 
@@ -226,7 +226,7 @@ public class StreamsResetter {
             if (this.allTopics.contains(topic)) {
                 System.out.println("Topic: " + topic);
 
-                try (final KafkaConsumer<byte[], byte[]> client = new KafkaConsumer<>(config, new ByteArrayDeserializer(), new ByteArrayDeserializer())) {
+                try (final KafkaConsumer<byte[], byte[], byte[]> client = new KafkaConsumer<>(config, new ByteArrayDeserializer(), new ByteArrayDeserializer(), new ByteArrayDeserializer())) {
                     client.subscribe(Collections.singleton(topic));
                     client.poll(1);
 

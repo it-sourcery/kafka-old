@@ -51,9 +51,9 @@ class ProducerBounceTest extends KafkaServerTestHarness {
       .map(KafkaConfig.fromProps(_, overridingProps))
   }
 
-  private var producer1: KafkaProducer[Array[Byte],Array[Byte]] = null
-  private var producer2: KafkaProducer[Array[Byte],Array[Byte]] = null
-  private var producer3: KafkaProducer[Array[Byte],Array[Byte]] = null
+  private var producer1: KafkaProducer[Array[Byte],Array[Byte],Array[Byte]] = null
+  private var producer2: KafkaProducer[Array[Byte],Array[Byte],Array[Byte]] = null
+  private var producer3: KafkaProducer[Array[Byte],Array[Byte],Array[Byte]] = null
 
   private val topic1 = "topic-1"
 
@@ -135,8 +135,8 @@ class ProducerBounceTest extends KafkaServerTestHarness {
     override def doWork(): Unit = {
       val responses =
         for (i <- sent+1 to sent+numRecords)
-        yield producer.send(new HeaderProducerRecord[Array[Byte],Array[Byte]](topic1, null, null, i.toString.getBytes),
-                            new ErrorLoggingCallback(topic1, null, null, true))
+        yield producer.send(new HeaderProducerRecord[Array[Byte],Array[Byte],Array[Byte]](topic1, null, null, i.toString.getBytes),
+                            new ErrorLoggingCallback(topic1, null, null, null, true))
       val futures = responses.toList
 
       try {

@@ -25,10 +25,10 @@ import java.util.Set;
 public class WorkerSinkTaskContext implements SinkTaskContext {
     private Map<TopicPartition, Long> offsets;
     private long timeoutMs;
-    private KafkaConsumer<byte[], byte[]> consumer;
+    private KafkaConsumer<byte[], byte[], byte[]> consumer;
     private final Set<TopicPartition> pausedPartitions;
 
-    public WorkerSinkTaskContext(KafkaConsumer<byte[], byte[]> consumer) {
+    public WorkerSinkTaskContext(KafkaConsumer<byte[], byte[], byte[]> consumer) {
         this.offsets = new HashMap<>();
         this.timeoutMs = -1L;
         this.consumer = consumer;

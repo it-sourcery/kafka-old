@@ -126,7 +126,7 @@ import org.slf4j.LoggerFactory;
  * their <code>HeaderProducerRecord</code> into bytes. You can use the included {@link org.apache.kafka.common.serialization.ByteArraySerializer} or
  * {@link org.apache.kafka.common.serialization.StringSerializer} for simple string or byte types.
  */
-public class KafkaProducer<K, V> implements Producer<K, V> {
+public class KafkaProducer<K, H, V> implements Producer<K, H, V> {
 
     private static final Logger log = LoggerFactory.getLogger(KafkaProducer.class);
     private static final AtomicInteger PRODUCER_CLIENT_ID_SEQUENCE = new AtomicInteger(1);
@@ -145,11 +145,12 @@ public class KafkaProducer<K, V> implements Producer<K, V> {
     private final Sensor errors;
     private final Time time;
     private final Serializer<K> keySerializer;
+    private final Serializer<H> headerSerializer;
     private final Serializer<V> valueSerializer;
     private final ProducerConfig producerConfig;
     private final long maxBlockTimeMs;
     private final int requestTimeoutMs;
-    private final ProducerInterceptors<K, V> interceptors;
+    private final ProducerInterceptors<K, H, V> interceptors;
 
     /**
      * A producer is instantiated by providing a set of key-value pairs as configuration. Valid configuration strings
@@ -160,7 +161,7 @@ public class KafkaProducer<K, V> implements Producer<K, V> {
      *
      */
     public KafkaProducer(Map<String, Object> configs) {
-        this(new ProducerConfig(configs), null, null);
+        this(new ProducerConfig(configs), null, null, null);
     }
 
     /**
@@ -171,12 +172,14 @@ public class KafkaProducer<K, V> implements Producer<K, V> {
      * @param configs   The producer configs
      * @param keySerializer  The serializer for key that implements {@link Serializer}. The configure() method won't be
      *                       called in the producer when the serializer is passed in directly.
+     * @param headerSerializer  The serializer for header that implements {@link Serializer}. The configure() method won't
+     *                         be called in the producer when the serializer is passed in directly.
      * @param valueSerializer  The serializer for value that implements {@link Serializer}. The configure() method won't
      *                         be called in the producer when the serializer is passed in directly.
      */
-    public KafkaProducer(Map<String, Object> configs, Serializer<K> keySerializer, Serializer<V> valueSerializer) {
-        this(new ProducerConfig(ProducerConfig.addSerializerToConfig(configs, keySerializer, valueSerializer)),
-             keySerializer, valueSerializer);
+    public KafkaProducer(Map<String, Object> configs, Serializer<K> keySerializer, Serializer<H> headerSerializer, Serializer<V> valueSerializer) {
+        this(new ProducerConfig(ProducerConfig.addSerializerToConfig(configs, keySerializer, headerSerializer, valueSerializer)),
+             keySerializer, headerSerializer, valueSerializer);
     }
 
     /**
@@ -185,7 +188,7 @@ public class KafkaProducer<K, V> implements Producer<K, V> {
      * @param properties   The producer configs
      */
     public KafkaProducer(Properties properties) {
-        this(new ProducerConfig(properties), null, null);
+        this(new ProducerConfig(properties), null, null, null);
     }
 
     /**
@@ -194,16 +197,18 @@ public class KafkaProducer<K, V> implements Producer<K, V> {
      * @param properties   The producer configs
      * @param keySerializer  The serializer for key that implements {@link Serializer}. The configure() method won't be
      *                       called in the producer when the serializer is passed in directly.
+     * @param headerSerializer  The serializer for header that implements {@link Serializer}. The configure() method won't be
+     *                       called in the producer when the serializer is passed in directly.
      * @param valueSerializer  The serializer for value that implements {@link Serializer}. The configure() method won't
      *                         be called in the producer when the serializer is passed in directly.
      */
-    public KafkaProducer(Properties properties, Serializer<K> keySerializer, Serializer<V> valueSerializer) {
-        this(new ProducerConfig(ProducerConfig.addSerializerToConfig(properties, keySerializer, valueSerializer)),
-             keySerializer, valueSerializer);
+    public KafkaProducer(Properties properties, Serializer<K> keySerializer, Serializer<H> headerSerializer, Serializer<V> valueSerializer) {
+        this(new ProducerConfig(ProducerConfig.addSerializerToConfig(properties, keySerializer, headerSerializer, valueSerializer)),
+             keySerializer, headerSerializer, valueSerializer);
     }
 
     @SuppressWarnings({"unchecked", "deprecation"})
-    private KafkaProducer(ProducerConfig config, Serializer<K> keySerializer, Serializer<V> valueSerializer) {
+    private KafkaProducer(ProducerConfig config, Serializer<K> keySerializer, Serializer<H> headerSerializer, Serializer<V> valueSerializer) {
         try {
             log.trace("Starting the Kafka producer");
             Map<String, Object> userProvidedConfigs = config.originals();
@@ -309,6 +314,16 @@ public class KafkaProducer<K, V> implements Producer<K, V> {
                 config.ignore(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG);
                 this.keySerializer = keySerializer;
             }
+
+            if (headerSerializer == null) {
+                this.headerSerializer = config.getConfiguredInstance(ProducerConfig.HEADER_SERIALIZER_CLASS_CONFIG,
+                                                                  Serializer.class);
+                this.headerSerializer.configure(config.originals(), true);
+            } else {
+                config.ignore(ProducerConfig.HEADER_SERIALIZER_CLASS_CONFIG);
+                this.headerSerializer = headerSerializer;
+            }
+
             if (valueSerializer == null) {
                 this.valueSerializer = config.getConfiguredInstance(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG,
                         Serializer.class);
@@ -320,7 +335,7 @@ public class KafkaProducer<K, V> implements Producer<K, V> {
 
             // load interceptors and make sure they get clientId
             userProvidedConfigs.put(ProducerConfig.CLIENT_ID_CONFIG, clientId);
-            List<ProducerInterceptor<K, V>> interceptorList = (List) (new ProducerConfig(userProvidedConfigs)).getConfiguredInstances(ProducerConfig.INTERCEPTOR_CLASSES_CONFIG,
+            List<ProducerInterceptor<K, H, V>> interceptorList = (List) (new ProducerConfig(userProvidedConfigs)).getConfiguredInstances(ProducerConfig.INTERCEPTOR_CLASSES_CONFIG,
                     ProducerInterceptor.class);
             this.interceptors = interceptorList.isEmpty() ? null : new ProducerInterceptors<>(interceptorList);
 
@@ -349,7 +364,7 @@ public class KafkaProducer<K, V> implements Producer<K, V> {
      * See {@link #send(HeaderProducerRecord, Callback)} for details.
      */
     @Override
-    public Future<RecordMetadata> send(HeaderProducerRecord<K, V> record) {
+    public Future<RecordMetadata> send(HeaderProducerRecord<K, H, V> record) {
         return send(record, null);
     }
 
@@ -426,16 +441,16 @@ public class KafkaProducer<K, V> implements Producer<K, V> {
      *
      */
     @Override
-    public Future<RecordMetadata> send(HeaderProducerRecord<K, V> record, Callback callback) {
+    public Future<RecordMetadata> send(HeaderProducerRecord<K, H, V> record, Callback callback) {
         // intercept the record, which can be potentially modified; this method does not throw exceptions
-        HeaderProducerRecord<K, V> interceptedRecord = this.interceptors == null ? record : this.interceptors.onSend(record);
+        HeaderProducerRecord<K, H, V> interceptedRecord = this.interceptors == null ? record : this.interceptors.onSend(record);
         return doSend(interceptedRecord, callback);
     }
 
     /**
      * Implementation of asynchronously send a record to a topic.
      */
-    private Future<RecordMetadata> doSend(HeaderProducerRecord<K, V> record, Callback callback) {
+    private Future<RecordMetadata> doSend(HeaderProducerRecord<K, H, V> record, Callback callback) {
         TopicPartition tp = null;
         try {
             // first make sure the metadata for the topic is available
@@ -450,6 +465,16 @@ public class KafkaProducer<K, V> implements Producer<K, V> {
                         " to class " + producerConfig.getClass(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG).getName() +
                         " specified in key.serializer");
             }
+
+            byte[] serializedHeader;
+            try {
+                serializedHeader = headerSerializer.serialize(record.topic(), record.header());
+            } catch (ClassCastException cce) {
+                throw new SerializationException("Can't convert header of class " + record.key().getClass().getName() +
+                                                 " to class " + producerConfig.getClass(ProducerConfig.HEADER_SERIALIZER_CLASS_CONFIG).getName() +
+                                                 " specified in header.serializer");
+            }
+
             byte[] serializedValue;
             try {
                 serializedValue = valueSerializer.serialize(record.topic(), record.value());
@@ -460,14 +485,14 @@ public class KafkaProducer<K, V> implements Producer<K, V> {
             }
 
             int partition = partition(record, serializedKey, serializedValue, cluster);
-            int serializedSize = Records.LOG_OVERHEAD + Record.recordSize(serializedKey, serializedValue);
+            int serializedSize = Records.LOG_OVERHEAD + Record.recordSize(serializedKey, serializedHeader, serializedValue);
             ensureValidRecordSize(serializedSize);
             tp = new TopicPartition(record.topic(), partition);
             long timestamp = record.timestamp() == null ? time.milliseconds() : record.timestamp();
             log.trace("Sending record {} with callback {} to topic {} partition {}", record, callback, record.topic(), partition);
             // producer callback will make sure to call both 'callback' and interceptor callback
             Callback interceptCallback = this.interceptors == null ? callback : new InterceptorCallback<>(callback, this.interceptors, tp);
-            RecordAccumulator.RecordAppendResult result = accumulator.append(tp, timestamp, serializedKey, serializedValue, interceptCallback, remainingWaitMs);
+            RecordAccumulator.RecordAppendResult result = accumulator.append(tp, timestamp, serializedKey, serializedHeader, serializedValue, interceptCallback, remainingWaitMs);
             if (result.batchIsFull || result.newBatchCreated) {
                 log.trace("Waking up the sender since topic {} partition {} is either full or getting a new batch", record.topic(), partition);
                 this.sender.wakeup();
@@ -717,7 +742,7 @@ public class KafkaProducer<K, V> implements Producer<K, V> {
      * if the record has partition returns the value otherwise
      * calls configured partitioner class to compute the partition.
      */
-    private int partition(HeaderProducerRecord<K, V> record, byte[] serializedKey , byte[] serializedValue, Cluster cluster) {
+    private int partition(HeaderProducerRecord<K, H, V> record, byte[] serializedKey , byte[] serializedValue, Cluster cluster) {
         Integer partition = record.partition();
         if (partition != null) {
             List<PartitionInfo> partitions = cluster.partitionsForTopic(record.topic());
@@ -780,12 +805,12 @@ public class KafkaProducer<K, V> implements Producer<K, V> {
      * A callback called when producer request is complete. It in turn calls user-supplied callback (if given) and
      * notifies producer interceptors about the request completion.
      */
-    private static class InterceptorCallback<K, V> implements Callback {
+    private static class InterceptorCallback<K, H, V> implements Callback {
         private final Callback userCallback;
-        private final ProducerInterceptors<K, V> interceptors;
+        private final ProducerInterceptors<K, H, V> interceptors;
         private final TopicPartition tp;
 
-        public InterceptorCallback(Callback userCallback, ProducerInterceptors<K, V> interceptors,
+        public InterceptorCallback(Callback userCallback, ProducerInterceptors<K, H, V> interceptors,
                                    TopicPartition tp) {
             this.userCallback = userCallback;
             this.interceptors = interceptors;
@@ -795,7 +820,7 @@ public class KafkaProducer<K, V> implements Producer<K, V> {
         public void onCompletion(RecordMetadata metadata, Exception exception) {
             if (this.interceptors != null) {
                 if (metadata == null) {
-                    this.interceptors.onAcknowledgement(new RecordMetadata(tp, -1, -1, Record.NO_TIMESTAMP, -1, -1, -1),
+                    this.interceptors.onAcknowledgement(new RecordMetadata(tp, -1, -1, Record.NO_TIMESTAMP, -1, -1, -1, -1),
                                                         exception);
                 } else {
                     this.interceptors.onAcknowledgement(metadata, exception);

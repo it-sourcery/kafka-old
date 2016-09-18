@@ -111,7 +111,7 @@ public class StandbyTaskTest {
         });
     }
 
-    private final MockConsumer<byte[], byte[]> consumer = new MockConsumer<>(OffsetResetStrategy.EARLIEST);
+    private final MockConsumer<byte[], Void, byte[]> consumer = new MockConsumer<>(OffsetResetStrategy.EARLIEST);
     private final ProcessorStateManagerTest.MockRestoreConsumer restoreStateConsumer = new ProcessorStateManagerTest.MockRestoreConsumer();
 
     private final byte[] recordValue = intSerializer.serialize(null, 10);
@@ -158,7 +158,7 @@ public class StandbyTaskTest {
         restoreStateConsumer.assign(new ArrayList<>(task.changeLogPartitions()));
 
         task.update(partition1,
-                records(new HeaderConsumerRecord<>(partition1.topic(), partition1.partition(), 10, 0L, TimestampType.CREATE_TIME, 0L, 0, 0, recordKey, recordValue))
+                records(new HeaderConsumerRecord<byte[], Void, byte[]>(partition1.topic(), partition1.partition(), 10, 0L, TimestampType.CREATE_TIME, 0L, 0, 0, recordKey, recordValue))
         );
 
     }
@@ -171,10 +171,10 @@ public class StandbyTaskTest {
 
         restoreStateConsumer.assign(new ArrayList<>(task.changeLogPartitions()));
 
-        for (HeaderConsumerRecord<Integer, Integer> record : Arrays.asList(
-                new HeaderConsumerRecord<>(partition2.topic(), partition2.partition(), 10, 0L, TimestampType.CREATE_TIME, 0L, 0, 0, 1, 100),
-                new HeaderConsumerRecord<>(partition2.topic(), partition2.partition(), 20, 0L, TimestampType.CREATE_TIME, 0L, 0, 0, 2, 100),
-                new HeaderConsumerRecord<>(partition2.topic(), partition2.partition(), 30, 0L, TimestampType.CREATE_TIME, 0L, 0, 0, 3, 100))) {
+        for (HeaderConsumerRecord<Integer, Void, Integer> record : Arrays.asList(
+                new HeaderConsumerRecord<Integer, Void, Integer>(partition2.topic(), partition2.partition(), 10, 0L, TimestampType.CREATE_TIME, 0L, 0, 0, 1, 100),
+                new HeaderConsumerRecord<Integer, Void, Integer>(partition2.topic(), partition2.partition(), 20, 0L, TimestampType.CREATE_TIME, 0L, 0, 0, 2, 100),
+                new HeaderConsumerRecord<Integer, Void, Integer>(partition2.topic(), partition2.partition(), 30, 0L, TimestampType.CREATE_TIME, 0L, 0, 0, 3, 100))) {
             restoreStateConsumer.bufferRecord(record);
         }
 
@@ -229,12 +229,12 @@ public class StandbyTaskTest {
 
         restoreStateConsumer.assign(new ArrayList<>(task.changeLogPartitions()));
 
-        for (HeaderConsumerRecord<Integer, Integer> record : Arrays.asList(
-                new HeaderConsumerRecord<>(ktable.topic(), ktable.partition(), 10, 0L, TimestampType.CREATE_TIME, 0L, 0, 0, 1, 100),
-                new HeaderConsumerRecord<>(ktable.topic(), ktable.partition(), 20, 0L, TimestampType.CREATE_TIME, 0L, 0, 0, 2, 100),
-                new HeaderConsumerRecord<>(ktable.topic(), ktable.partition(), 30, 0L, TimestampType.CREATE_TIME, 0L, 0, 0, 3, 100),
-                new HeaderConsumerRecord<>(ktable.topic(), ktable.partition(), 40, 0L, TimestampType.CREATE_TIME, 0L, 0, 0, 4, 100),
-                new HeaderConsumerRecord<>(ktable.topic(), ktable.partition(), 50, 0L, TimestampType.CREATE_TIME, 0L, 0, 0, 5, 100))) {
+        for (HeaderConsumerRecord<Integer, Void, Integer> record : Arrays.asList(
+                new HeaderConsumerRecord<Integer, Void, Integer>(ktable.topic(), ktable.partition(), 10, 0L, TimestampType.CREATE_TIME, 0L, 0, 0, 1, 100),
+                new HeaderConsumerRecord<Integer, Void, Integer>(ktable.topic(), ktable.partition(), 20, 0L, TimestampType.CREATE_TIME, 0L, 0, 0, 2, 100),
+                new HeaderConsumerRecord<Integer, Void, Integer>(ktable.topic(), ktable.partition(), 30, 0L, TimestampType.CREATE_TIME, 0L, 0, 0, 3, 100),
+                new HeaderConsumerRecord<Integer, Void, Integer>(ktable.topic(), ktable.partition(), 40, 0L, TimestampType.CREATE_TIME, 0L, 0, 0, 4, 100),
+                new HeaderConsumerRecord<Integer, Void, Integer>(ktable.topic(), ktable.partition(), 50, 0L, TimestampType.CREATE_TIME, 0L, 0, 0, 5, 100))) {
             restoreStateConsumer.bufferRecord(record);
         }
 
@@ -249,7 +249,7 @@ public class StandbyTaskTest {
         }
 
         // The commit offset is at 0L. Records should not be processed
-        List<HeaderConsumerRecord<byte[], byte[]>> remaining = task.update(ktable, restoreStateConsumer.poll(100).records(ktable));
+        List<HeaderConsumerRecord<byte[], Void, byte[]>> remaining = task.update(ktable, restoreStateConsumer.poll(100).records(ktable));
         assertEquals(5, remaining.size());
 
         committedOffsets.put(new TopicPartition(ktable.topic(), ktable.partition()), new OffsetAndMetadata(10L));
@@ -303,7 +303,7 @@ public class StandbyTaskTest {
 
     }
 
-    private List<HeaderConsumerRecord<byte[], byte[]>> records(HeaderConsumerRecord<byte[], byte[]>... recs) {
+    private List<HeaderConsumerRecord<byte[], Void, byte[]>> records(HeaderConsumerRecord<byte[], Void, byte[]>... recs) {
         return Arrays.asList(recs);
     }
 }

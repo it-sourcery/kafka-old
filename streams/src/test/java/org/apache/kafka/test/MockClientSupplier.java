@@ -30,23 +30,23 @@ import org.apache.kafka.streams.KafkaClientSupplier;
 public class MockClientSupplier implements KafkaClientSupplier {
     private static final ByteArraySerializer BYTE_ARRAY_SERIALIZER = new ByteArraySerializer();
 
-    public final MockProducer<byte[], byte[]> producer =
+    public final MockProducer<byte[], Void, byte[]> producer =
             new MockProducer<>(true, BYTE_ARRAY_SERIALIZER, BYTE_ARRAY_SERIALIZER);
-    public final MockConsumer<byte[], byte[]> consumer = new MockConsumer<>(OffsetResetStrategy.EARLIEST);
-    public final MockConsumer<byte[], byte[]> restoreConsumer = new MockConsumer<>(OffsetResetStrategy.LATEST);
+    public final MockConsumer<byte[], Void, byte[]> consumer = new MockConsumer<>(OffsetResetStrategy.EARLIEST);
+    public final MockConsumer<byte[], Void, byte[]> restoreConsumer = new MockConsumer<>(OffsetResetStrategy.LATEST);
 
     @Override
-    public Producer<byte[], byte[]> getProducer(Map<String, Object> config) {
+    public Producer<byte[], Void, byte[]> getProducer(Map<String, Object> config) {
         return producer;
     }
 
     @Override
-    public Consumer<byte[], byte[]> getConsumer(Map<String, Object> config) {
+    public Consumer<byte[], Void, byte[]> getConsumer(Map<String, Object> config) {
         return consumer;
     }
 
     @Override
-    public Consumer<byte[], byte[]> getRestoreConsumer(Map<String, Object> config) {
+    public Consumer<byte[], Void, byte[]> getRestoreConsumer(Map<String, Object> config) {
         return restoreConsumer;
     }
 }

@@ -54,7 +54,7 @@ class LogRecoveryTest extends ZooKeeperTestHarness {
 
   val message = "hello"
 
-  var producer: KafkaProducer[Integer, String] = null
+  var producer: KafkaProducer[Integer, String, String] = null
   def hwFile1 = new OffsetCheckpoint(new File(configProps1.logDirs.head, ReplicaManager.HighWatermarkFilename))
   def hwFile2 = new OffsetCheckpoint(new File(configProps2.logDirs.head, ReplicaManager.HighWatermarkFilename))
   var servers = Seq.empty[KafkaServer]
@@ -68,6 +68,7 @@ class LogRecoveryTest extends ZooKeeperTestHarness {
       TestUtils.getBrokerListStrFromServers(servers),
       retries = 5,
       keySerializer = new IntegerSerializer,
+      headerSerializer = new StringSerializer,
       valueSerializer = new StringSerializer
     )
   }

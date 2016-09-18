@@ -44,12 +44,12 @@ public class StoreChangeLoggerTest {
             new RecordCollector(null, "StoreChangeLoggerTest") {
                 @SuppressWarnings("unchecked")
                 @Override
-                public <K1, V1> void send(HeaderProducerRecord<K1, V1> record, Serializer<K1> keySerializer, Serializer<V1> valueSerializer) {
+                public <K1, Void, V1> void send(HeaderProducerRecord<K1, Void, V1> record, Serializer<K1> keySerializer, Serializer<V1> valueSerializer) {
                     logged.put((Integer) record.key(), (String) record.value());
                 }
 
                 @Override
-                public <K1, V1> void send(HeaderProducerRecord<K1, V1> record, Serializer<K1> keySerializer, Serializer<V1> valueSerializer,
+                public <K1, Void, V1> void send(HeaderProducerRecord<K1, Void, V1> record, Serializer<K1> keySerializer, Serializer<V1> valueSerializer,
                                           StreamPartitioner<K1, V1> partitioner) {
                     // ignore partitioner
                     send(record, keySerializer, valueSerializer);
