@@ -17,14 +17,15 @@
 
 package kafka.api.test
 
-import java.util.{ArrayList, Collection, Properties}
+import java.util.{Properties, Collection, ArrayList}
 
 import org.junit.runners.Parameterized
 import org.junit.runner.RunWith
 import org.junit.runners.Parameterized.Parameters
 import org.junit.{After, Before, Test}
-import org.apache.kafka.clients.producer.{HeaderProducerRecord, KafkaProducer, ProducerConfig, ProducerRecord}
+import org.apache.kafka.clients.producer.{ProducerRecord, KafkaProducer, ProducerConfig}
 import org.junit.Assert._
+
 import kafka.api.FetchRequestBuilder
 import kafka.server.{KafkaConfig, KafkaServer}
 import kafka.consumer.SimpleConsumer
@@ -88,7 +89,7 @@ class ProducerCompressionTest(compression: String) extends ZooKeeperTestHarness 
       // make sure the returned messages are correct
       val now = System.currentTimeMillis()
       val responses = for (message <- messages)
-        yield producer.send(new HeaderProducerRecord[Array[Byte],Array[Byte]](topic, null, now, null, message))
+        yield producer.send(new ProducerRecord[Array[Byte],Array[Byte]](topic, null, now, null, message))
       val futures = responses.toList
       for ((future, offset) <- futures zip (0 until numRecords)) {
         assertEquals(offset.toLong, future.get.offset)

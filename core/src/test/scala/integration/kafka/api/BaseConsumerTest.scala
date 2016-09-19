@@ -15,11 +15,11 @@ package kafka.api
 import java.util
 
 import org.apache.kafka.clients.consumer._
-import org.apache.kafka.clients.producer.{HeaderProducerRecord, KafkaProducer, ProducerConfig, ProducerRecord}
+import org.apache.kafka.clients.producer.{ProducerConfig, ProducerRecord}
 import org.apache.kafka.common.record.TimestampType
 import org.apache.kafka.common.serialization.ByteArrayDeserializer
 import org.apache.kafka.common.{PartitionInfo, TopicPartition}
-import kafka.utils.{Logging, ShutdownableThread, TestUtils}
+import kafka.utils.{TestUtils, Logging, ShutdownableThread}
 import kafka.common.Topic
 import kafka.server.KafkaConfig
 import java.util.ArrayList
@@ -29,6 +29,7 @@ import org.junit.{Before, Test}
 
 import scala.collection.JavaConverters._
 import scala.collection.mutable.Buffer
+import org.apache.kafka.clients.producer.KafkaProducer
 import org.apache.kafka.common.errors.WakeupException
 
 /**
@@ -143,7 +144,7 @@ abstract class BaseConsumerTest extends IntegrationTestHarness with Logging {
 
   protected def sendRecords(producer: KafkaProducer[Array[Byte], Array[Byte]], numRecords: Int, tp: TopicPartition) {
     (0 until numRecords).foreach { i =>
-      producer.send(new HeaderProducerRecord(tp.topic(), tp.partition(), i.toLong, s"key $i".getBytes, s"value $i".getBytes))
+      producer.send(new ProducerRecord(tp.topic(), tp.partition(), i.toLong, s"key $i".getBytes, s"value $i".getBytes))
     }
     producer.flush()
   }
@@ -182,8 +183,8 @@ abstract class BaseConsumerTest extends IntegrationTestHarness with Logging {
 
   protected def consumeRecords[K, V](consumer: Consumer[K, V],
                                      numRecords: Int,
-                                     maxPollRecords: Int = Int.MaxValue): ArrayList[HeaderConsumerRecord[K, V]] = {
-    val records = new ArrayList[HeaderConsumerRecord[K, V]]
+                                     maxPollRecords: Int = Int.MaxValue): ArrayList[ConsumerRecord[K, V]] = {
+    val records = new ArrayList[ConsumerRecord[K, V]]
     val maxIters = numRecords * 300
     var iters = 0
     while (records.size < numRecords) {

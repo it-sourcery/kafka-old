@@ -25,7 +25,7 @@ import kafka.zk.ZooKeeperTestHarness
 import kafka.utils.TestUtils
 import TestUtils._
 import kafka.common._
-import org.apache.kafka.clients.producer.{HeaderProducerRecord, ProducerRecord}
+import org.apache.kafka.clients.producer.ProducerRecord
 import org.apache.kafka.common.serialization.StringSerializer
 
 abstract class BaseReplicaFetchTest extends ZooKeeperTestHarness  {
@@ -67,8 +67,8 @@ abstract class BaseReplicaFetchTest extends ZooKeeperTestHarness  {
                                                retries = 5,
                                                keySerializer = new StringSerializer,
                                                valueSerializer = new StringSerializer)
-    val records = testMessageList1.map(m => new HeaderProducerRecord(topic1, m, m)) ++
-      testMessageList2.map(m => new HeaderProducerRecord(topic2, m, m))
+    val records = testMessageList1.map(m => new ProducerRecord(topic1, m, m)) ++
+      testMessageList2.map(m => new ProducerRecord(topic2, m, m))
     records.map(producer.send).foreach(_.get)
     producer.close()
 

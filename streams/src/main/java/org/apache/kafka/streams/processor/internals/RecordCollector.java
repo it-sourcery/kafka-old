@@ -18,8 +18,8 @@
 package org.apache.kafka.streams.processor.internals;
 
 import org.apache.kafka.clients.producer.Callback;
-import org.apache.kafka.clients.producer.HeaderProducerRecord;
 import org.apache.kafka.clients.producer.Producer;
+import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.clients.producer.RecordMetadata;
 import org.apache.kafka.common.PartitionInfo;
 import org.apache.kafka.common.TopicPartition;
@@ -57,11 +57,11 @@ public class RecordCollector {
         this.streamTaskId = streamTaskId;
     }
 
-    public <K, V> void send(HeaderProducerRecord<K, V> record, Serializer<K> keySerializer, Serializer<V> valueSerializer) {
+    public <K, V> void send(ProducerRecord<K, V> record, Serializer<K> keySerializer, Serializer<V> valueSerializer) {
         send(record, keySerializer, valueSerializer, null);
     }
 
-    public <K, V> void send(HeaderProducerRecord<K, V> record, Serializer<K> keySerializer, Serializer<V> valueSerializer,
+    public <K, V> void send(ProducerRecord<K, V> record, Serializer<K> keySerializer, Serializer<V> valueSerializer,
                             StreamPartitioner<K, V> partitioner) {
         byte[] keyBytes = keySerializer.serialize(record.topic(), record.key());
         byte[] valBytes = valueSerializer.serialize(record.topic(), record.value());
@@ -72,8 +72,8 @@ public class RecordCollector {
                 partition = partitioner.partition(record.key(), record.value(), partitions.size());
         }
 
-        HeaderProducerRecord<byte[], byte[]> serializedRecord =
-                new HeaderProducerRecord<>(record.topic(), partition, record.timestamp(), keyBytes, valBytes);
+        ProducerRecord<byte[], byte[]> serializedRecord =
+                new ProducerRecord<>(record.topic(), partition, record.timestamp(), keyBytes, valBytes);
         final String topic = serializedRecord.topic();
 
         this.producer.send(serializedRecord, new Callback() {

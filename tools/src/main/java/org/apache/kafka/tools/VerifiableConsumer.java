@@ -30,8 +30,8 @@ import net.sourceforge.argparse4j.inf.ArgumentParserException;
 import net.sourceforge.argparse4j.inf.Namespace;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.ConsumerRebalanceListener;
-import org.apache.kafka.clients.consumer.HeaderConsumerRecord;
-import org.apache.kafka.clients.consumer.HeaderConsumerRecords;
+import org.apache.kafka.clients.consumer.ConsumerRecord;
+import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.clients.consumer.OffsetAndMetadata;
 import org.apache.kafka.clients.consumer.OffsetCommitCallback;
@@ -131,12 +131,12 @@ public class VerifiableConsumer implements Closeable, OffsetCommitCallback, Cons
         return hasMessageLimit() && consumedMessages >= maxMessages;
     }
 
-    private Map<TopicPartition, OffsetAndMetadata> onRecordsReceived(HeaderConsumerRecords<String, String, String> records) {
+    private Map<TopicPartition, OffsetAndMetadata> onRecordsReceived(ConsumerRecords<String, String> records) {
         Map<TopicPartition, OffsetAndMetadata> offsets = new HashMap<>();
 
         List<RecordSetSummary> summaries = new ArrayList<>();
         for (TopicPartition tp : records.partitions()) {
-            List<HeaderConsumerRecord<String, String, String>> partitionRecords = records.records(tp);
+            List<ConsumerRecord<String, String>> partitionRecords = records.records(tp);
 
             if (hasMessageLimit() && consumedMessages + partitionRecords.size() > maxMessages)
                 partitionRecords = partitionRecords.subList(0, maxMessages - consumedMessages);
@@ -152,7 +152,7 @@ public class VerifiableConsumer implements Closeable, OffsetCommitCallback, Cons
                     partitionRecords.size(), minOffset, maxOffset));
 
             if (verbose) {
-                for (HeaderConsumerRecord<String, String, String> record : partitionRecords)
+                for (ConsumerRecord<String, String> record : partitionRecords)
                     printJson(new RecordData(record));
             }
 
@@ -218,7 +218,7 @@ public class VerifiableConsumer implements Closeable, OffsetCommitCallback, Cons
             consumer.subscribe(Arrays.asList(topic), this);
 
             while (true) {
-                HeaderConsumerRecords<String, String, String> records = consumer.poll(Long.MAX_VALUE);
+                ConsumerRecords<String, String> records = consumer.poll(Long.MAX_VALUE);
                 Map<TopicPartition, OffsetAndMetadata> offsets = onRecordsReceived(records);
 
                 if (!useAutoCommit) {
@@ -338,9 +338,9 @@ public class VerifiableConsumer implements Closeable, OffsetCommitCallback, Cons
 
     public static class RecordData extends ConsumerEvent {
 
-        private final HeaderConsumerRecord<String, String, String> record;
+        private final ConsumerRecord<String, String> record;
 
-        public RecordData(HeaderConsumerRecord<String, String, String> record) {
+        public RecordData(ConsumerRecord<String, String> record) {
             this.record = record;
         }
 
@@ -362,11 +362,6 @@ public class VerifiableConsumer implements Closeable, OffsetCommitCallback, Cons
         @JsonProperty
         public String key() {
             return record.key();
-        }
-
-        @JsonProperty
-        public String header() {
-            return record.header();
         }
 
         @JsonProperty

@@ -28,7 +28,7 @@ import java.util.regex.Pattern;
  * @see KafkaConsumer
  * @see MockConsumer
  */
-public interface Consumer<K, H, V> extends Closeable {
+public interface Consumer<K, V> extends Closeable {
 
     /**
      * @see KafkaConsumer#assignment()
@@ -68,7 +68,7 @@ public interface Consumer<K, H, V> extends Closeable {
     /**
      * @see KafkaConsumer#poll(long)
      */
-    public HeaderConsumerRecords<K, H, V> poll(long timeout);
+    public ConsumerRecords<K, V> poll(long timeout);
 
     /**
      * @see KafkaConsumer#commitSync()

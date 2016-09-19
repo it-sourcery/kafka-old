@@ -24,7 +24,7 @@ import kafka.api.FetchRequestBuilder
 import kafka.message.ByteBufferMessageSet
 import java.io.File
 
-import org.apache.kafka.clients.producer.{HeaderProducerRecord, KafkaProducer, ProducerRecord}
+import org.apache.kafka.clients.producer.{KafkaProducer, ProducerRecord}
 import org.apache.kafka.common.serialization.{IntegerSerializer, StringSerializer}
 import org.junit.{Before, Test}
 import org.junit.Assert._
@@ -62,7 +62,7 @@ class ServerShutdownTest extends ZooKeeperTestHarness {
     createTopic(zkUtils, topic, numPartitions = 1, replicationFactor = 1, servers = Seq(server))
 
     // send some messages
-    sent1.map(value => producer.send(new HeaderProducerRecord(topic, 0, value))).foreach(_.get)
+    sent1.map(value => producer.send(new ProducerRecord(topic, 0, value))).foreach(_.get)
 
     // do a clean shutdown and check that offset checkpoint file exists
     server.shutdown()
@@ -92,7 +92,7 @@ class ServerShutdownTest extends ZooKeeperTestHarness {
     val newOffset = fetchedMessage.last.nextOffset
 
     // send some more messages
-    sent2.map(value => producer.send(new HeaderProducerRecord(topic, 0, value))).foreach(_.get)
+    sent2.map(value => producer.send(new ProducerRecord(topic, 0, value))).foreach(_.get)
 
     fetchedMessage = null
     while (fetchedMessage == null || fetchedMessage.validBytes == 0) {

@@ -26,14 +26,15 @@ import kafka.common.TopicAndPartition
 import kafka.security.auth._
 import kafka.server._
 import kafka.utils._
-import org.apache.kafka.clients.consumer.{Consumer, ConsumerConfig, ConsumerRecord, HeaderConsumerRecord}
-import org.apache.kafka.clients.producer.{HeaderProducerRecord, ProducerConfig}
+
+import org.apache.kafka.clients.consumer.{Consumer, ConsumerRecord, ConsumerConfig}
+import org.apache.kafka.clients.producer.{ProducerRecord, ProducerConfig}
 import org.apache.kafka.common.security.auth.KafkaPrincipal
-import org.apache.kafka.common.TopicPartition
+import org.apache.kafka.common.{TopicPartition}
 import org.apache.kafka.common.protocol.SecurityProtocol
-import org.apache.kafka.common.errors.{GroupAuthorizationException, TopicAuthorizationException}
+import org.apache.kafka.common.errors.{GroupAuthorizationException,TopicAuthorizationException}
 import org.junit.Assert._
-import org.junit.{After, Before, Test}
+import org.junit.{Test, After, Before}
 
 import scala.collection.JavaConverters._
 
@@ -265,7 +266,7 @@ trait EndToEndAuthorizationTest extends IntegrationTestHarness with SaslSetup {
   
   private def sendRecords(numRecords: Int, tp: TopicPartition) {
     val futures = (0 until numRecords).map { i =>
-      val record = new HeaderProducerRecord(tp.topic(), tp.partition(), s"$i".getBytes, s"$i".getBytes)
+      val record = new ProducerRecord(tp.topic(), tp.partition(), s"$i".getBytes, s"$i".getBytes)
       debug(s"Sending this record: $record")
       this.producers.head.send(record)
     }
@@ -281,7 +282,7 @@ trait EndToEndAuthorizationTest extends IntegrationTestHarness with SaslSetup {
                              startingOffset: Int = 0,
                              topic: String = topic,
                              part: Int = part) {
-    val records = new ArrayList[HeaderConsumerRecord[Array[Byte], Array[Byte]]]()
+    val records = new ArrayList[ConsumerRecord[Array[Byte], Array[Byte]]]()
     val maxIters = numRecords * 50
     var iters = 0
     while (records.size < numRecords) {

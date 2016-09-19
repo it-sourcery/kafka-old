@@ -32,7 +32,7 @@ public final class RecordMetadata {
     private final long offset;
     // The timestamp of the message.
     // If LogAppendTime is used for the topic, the timestamp will be the timestamp returned by the broker.
-    // If CreateTime is used for the topic, the timestamp is the timestamp in the corresponding HeaderProducerRecord if the
+    // If CreateTime is used for the topic, the timestamp is the timestamp in the corresponding ProducerRecord if the
     // user provided one. Otherwise, it will be the producer local time when the producer record was handed to the
     // producer.
     private final long timestamp;

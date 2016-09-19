@@ -19,8 +19,8 @@ package org.apache.kafka.connect.runtime;
 
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.ConsumerRebalanceListener;
-import org.apache.kafka.clients.consumer.HeaderConsumerRecord;
-import org.apache.kafka.clients.consumer.HeaderConsumerRecords;
+import org.apache.kafka.clients.consumer.ConsumerRecord;
+import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.clients.consumer.OffsetAndMetadata;
 import org.apache.kafka.clients.consumer.OffsetCommitCallback;
@@ -60,9 +60,8 @@ class WorkerSinkTask extends WorkerTask {
     private Map<String, String> taskConfig;
     private final Time time;
     private final Converter keyConverter;
-    private final Converter headerConverter;
     private final Converter valueConverter;
-    private KafkaConsumer<byte[], byte[], byte[]> consumer;
+    private KafkaConsumer<byte[], byte[]> consumer;
     private WorkerSinkTaskContext context;
     private final List<SinkRecord> messageBatch;
     private Map<TopicPartition, OffsetAndMetadata> lastCommittedOffsets;
@@ -81,7 +80,6 @@ class WorkerSinkTask extends WorkerTask {
                           TargetState initialState,
                           WorkerConfig workerConfig,
                           Converter keyConverter,
-                          Converter headerConverter,
                           Converter valueConverter,
                           Time time) {
         super(id, statusListener, initialState);
@@ -89,7 +87,6 @@ class WorkerSinkTask extends WorkerTask {
         this.workerConfig = workerConfig;
         this.task = task;
         this.keyConverter = keyConverter;
-        this.headerConverter = headerConverter;
         this.valueConverter = valueConverter;
         this.time = time;
         this.messageBatch = new ArrayList<>();
@@ -223,7 +220,7 @@ class WorkerSinkTask extends WorkerTask {
             }
 
             log.trace("{} polling consumer with timeout {} ms", id, timeoutMs);
-            HeaderConsumerRecords<byte[], byte[], byte[]> msgs = pollConsumer(timeoutMs);
+            ConsumerRecords<byte[], byte[]> msgs = pollConsumer(timeoutMs);
             assert messageBatch.isEmpty() || msgs.isEmpty();
             log.trace("{} polling returned {} messages", id, msgs.count());
 
@@ -316,8 +313,8 @@ class WorkerSinkTask extends WorkerTask {
                 '}';
     }
 
-    private HeaderConsumerRecords<byte[], byte[], byte[]> pollConsumer(long timeoutMs) {
-        HeaderConsumerRecords<byte[], byte[], byte[]> msgs = consumer.poll(timeoutMs);
+    private ConsumerRecords<byte[], byte[]> pollConsumer(long timeoutMs) {
+        ConsumerRecords<byte[], byte[]> msgs = consumer.poll(timeoutMs);
 
         // Exceptions raised from the task during a rebalance should be rethrown to stop the worker
         if (rebalanceException != null) {
@@ -329,7 +326,7 @@ class WorkerSinkTask extends WorkerTask {
         return msgs;
     }
 
-    private KafkaConsumer<byte[], byte[], byte[]> createConsumer() {
+    private KafkaConsumer<byte[], byte[]> createConsumer() {
         // Include any unknown worker configs so consumer configs can be set globally on the worker
         // and through to the task
         Map<String, Object> props = new HashMap<>();
@@ -344,7 +341,7 @@ class WorkerSinkTask extends WorkerTask {
 
         props.putAll(workerConfig.originalsWithPrefix("consumer."));
 
-        KafkaConsumer<byte[], byte[], byte[]> newConsumer;
+        KafkaConsumer<byte[], byte[]> newConsumer;
         try {
             newConsumer = new KafkaConsumer<>(props);
         } catch (Throwable t) {
@@ -354,11 +351,10 @@ class WorkerSinkTask extends WorkerTask {
         return newConsumer;
     }
 
-    private void convertMessages(HeaderConsumerRecords<byte[], byte[], byte[]> msgs) {
-        for (HeaderConsumerRecord<byte[], byte[], byte[]> msg : msgs) {
+    private void convertMessages(ConsumerRecords<byte[], byte[]> msgs) {
+        for (ConsumerRecord<byte[], byte[]> msg : msgs) {
             log.trace("Consuming message with key {}, value {}", msg.key(), msg.value());
             SchemaAndValue keyAndSchema = keyConverter.toConnectData(msg.topic(), msg.key());
-            SchemaAndValue headerAndSchema = headerConverter.toConnectData(msg.topic(), msg.key());
             SchemaAndValue valueAndSchema = valueConverter.toConnectData(msg.topic(), msg.value());
             messageBatch.add(
                     new SinkRecord(msg.topic(), msg.partition(),

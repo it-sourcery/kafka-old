@@ -33,7 +33,7 @@ import java.util.Map;
  * <p>
  * ConsumerInterceptor callbacks are called from the same thread that invokes {@link org.apache.kafka.clients.consumer.KafkaConsumer#poll(long)}.
  */
-public interface ConsumerInterceptor<K, H, V> extends Configurable {
+public interface ConsumerInterceptor<K, V> extends Configurable {
 
     /**
      * This is called just before the records are returned by {@link org.apache.kafka.clients.consumer.KafkaConsumer#poll(long)}
@@ -57,7 +57,7 @@ public interface ConsumerInterceptor<K, H, V> extends Configurable {
      * @param records records to be consumed by the client or records returned by the previous interceptors in the list.
      * @return records that are either modified by the interceptor or same as records passed to this method.
      */
-    public HeaderConsumerRecords<K, H, V> onConsume(HeaderConsumerRecords<K, H, V> records);
+    public ConsumerRecords<K, V> onConsume(ConsumerRecords<K, V> records);
 
     /**
      * This is called when offsets get committed.

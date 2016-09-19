@@ -16,9 +16,9 @@ package org.apache.kafka.streams.integration;
 
 import kafka.utils.MockTime;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
-import org.apache.kafka.clients.producer.HeaderProducerRecord;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerConfig;
+import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.common.serialization.LongDeserializer;
 import org.apache.kafka.common.serialization.Serde;
 import org.apache.kafka.common.serialization.Serdes;
@@ -729,7 +729,7 @@ public class QueryableStateIntegrationTest {
 
             while (getCurrIteration() < numIterations && !shutdown) {
                 for (int i = 0; i < inputValues.size(); i++) {
-                    producer.send(new HeaderProducerRecord<String, String>(topic, inputValues.get(i)));
+                    producer.send(new ProducerRecord<String, String>(topic, inputValues.get(i)));
                 }
                 incrementInteration();
             }

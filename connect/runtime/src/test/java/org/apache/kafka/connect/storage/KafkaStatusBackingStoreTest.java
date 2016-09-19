@@ -16,7 +16,7 @@
  **/
 package org.apache.kafka.connect.storage;
 
-import org.apache.kafka.clients.consumer.HeaderConsumerRecord;
+import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.producer.Callback;
 import org.apache.kafka.common.errors.TimeoutException;
 import org.apache.kafka.common.errors.UnknownServerException;
@@ -394,9 +394,9 @@ public class KafkaStatusBackingStoreTest extends EasyMockSupport {
         verifyAll();
     }
 
-    private static HeaderConsumerRecord<String, byte[]> consumerRecord(long offset, String key, byte[] value) {
-        return new HeaderConsumerRecord<>(STATUS_TOPIC, 0, offset, System.currentTimeMillis(),
-                                          TimestampType.CREATE_TIME, 0L, 0, 0, key, value);
+    private static ConsumerRecord<String, byte[]> consumerRecord(long offset, String key, byte[] value) {
+        return new ConsumerRecord<>(STATUS_TOPIC, 0, offset, System.currentTimeMillis(),
+                TimestampType.CREATE_TIME, 0L, 0, 0, key, value);
     }
 
 }

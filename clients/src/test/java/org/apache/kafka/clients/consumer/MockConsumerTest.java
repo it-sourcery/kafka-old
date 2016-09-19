@@ -43,14 +43,12 @@ public class MockConsumerTest {
         beginningOffsets.put(new TopicPartition("test", 1), 0L);
         consumer.updateBeginningOffsets(beginningOffsets);
         consumer.seek(new TopicPartition("test", 0), 0);
-        HeaderConsumerRecord<String, String, String>
-           rec1 = new HeaderConsumerRecord<String, String, String>("test", 0, 0, 0L, TimestampType.CREATE_TIME, 0L, 0, 0, "key1", "value1");
-        HeaderConsumerRecord<String, String, String>
-           rec2 = new HeaderConsumerRecord<String, String, String>("test", 0, 1, 0L, TimestampType.CREATE_TIME, 0L, 0, 0, "key2", "value2");
+        ConsumerRecord<String, String> rec1 = new ConsumerRecord<String, String>("test", 0, 0, 0L, TimestampType.CREATE_TIME, 0L, 0, 0, "key1", "value1");
+        ConsumerRecord<String, String> rec2 = new ConsumerRecord<String, String>("test", 0, 1, 0L, TimestampType.CREATE_TIME, 0L, 0, 0, "key2", "value2");
         consumer.addRecord(rec1);
         consumer.addRecord(rec2);
-        HeaderConsumerRecords<String, String, String> recs = consumer.poll(1);
-        Iterator<HeaderConsumerRecord<String, String, String>> iter = recs.iterator();
+        ConsumerRecords<String, String> recs = consumer.poll(1);
+        Iterator<ConsumerRecord<String, String>> iter = recs.iterator();
         assertEquals(rec1, iter.next());
         assertEquals(rec2, iter.next());
         assertFalse(iter.hasNext());

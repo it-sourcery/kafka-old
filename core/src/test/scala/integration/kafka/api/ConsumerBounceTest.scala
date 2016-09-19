@@ -18,7 +18,7 @@ import java.util
 import kafka.server.KafkaConfig
 import kafka.utils.{Logging, ShutdownableThread, TestUtils}
 import org.apache.kafka.clients.consumer._
-import org.apache.kafka.clients.producer.{ProducerConfig, HeaderProducerRecord}
+import org.apache.kafka.clients.producer.{ProducerConfig, ProducerRecord}
 import org.apache.kafka.common.errors.{IllegalGenerationException, UnknownMemberIdException}
 import org.apache.kafka.common.TopicPartition
 import org.junit.Assert._
@@ -167,7 +167,7 @@ class ConsumerBounceTest extends IntegrationTestHarness with Logging {
 
   private def sendRecords(numRecords: Int) {
     val futures = (0 until numRecords).map { i =>
-      this.producers.head.send(new HeaderProducerRecord(topic, part, i.toString.getBytes, i.toString.getBytes))
+      this.producers.head.send(new ProducerRecord(topic, part, i.toString.getBytes, i.toString.getBytes))
     }
     futures.map(_.get)
   }

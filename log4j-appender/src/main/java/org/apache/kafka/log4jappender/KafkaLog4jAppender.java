@@ -21,7 +21,7 @@ import org.apache.kafka.clients.CommonClientConfigs;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.Producer;
 import org.apache.kafka.clients.producer.ProducerConfig;
-import org.apache.kafka.clients.producer.HeaderProducerRecord;
+import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.clients.producer.RecordMetadata;
 import org.apache.kafka.common.config.ConfigException;
 import org.apache.kafka.common.config.SaslConfigs;
@@ -250,7 +250,7 @@ public class KafkaLog4jAppender extends AppenderSkeleton {
     protected void append(LoggingEvent event) {
         String message = subAppend(event);
         LogLog.debug("[" + new Date(event.getTimeStamp()) + "]" + message);
-        Future<RecordMetadata> response = producer.send(new HeaderProducerRecord<byte[], byte[]>(topic, message.getBytes()));
+        Future<RecordMetadata> response = producer.send(new ProducerRecord<byte[], byte[]>(topic, message.getBytes()));
         if (syncSend) {
             try {
                 response.get();

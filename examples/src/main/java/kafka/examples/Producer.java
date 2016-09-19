@@ -17,8 +17,8 @@
 package kafka.examples;
 
 import org.apache.kafka.clients.producer.Callback;
-import org.apache.kafka.clients.producer.HeaderProducerRecord;
 import org.apache.kafka.clients.producer.KafkaProducer;
+import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.clients.producer.RecordMetadata;
 
 import java.util.Properties;
@@ -46,14 +46,14 @@ public class Producer extends Thread {
             String messageStr = "Message_" + messageNo;
             long startTime = System.currentTimeMillis();
             if (isAsync) { // Send asynchronously
-                producer.send(new HeaderProducerRecord<>(topic,
-                                                         messageNo,
-                                                         messageStr), new DemoCallBack(startTime, messageNo, messageStr));
+                producer.send(new ProducerRecord<>(topic,
+                    messageNo,
+                    messageStr), new DemoCallBack(startTime, messageNo, messageStr));
             } else { // Send synchronously
                 try {
-                    producer.send(new HeaderProducerRecord<>(topic,
-                                                             messageNo,
-                                                             messageStr)).get();
+                    producer.send(new ProducerRecord<>(topic,
+                        messageNo,
+                        messageStr)).get();
                     System.out.println("Sent message: (" + messageNo + ", " + messageStr + ")");
                 } catch (InterruptedException | ExecutionException e) {
                     e.printStackTrace();

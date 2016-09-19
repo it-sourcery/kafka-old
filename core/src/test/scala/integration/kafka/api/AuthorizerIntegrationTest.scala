@@ -21,8 +21,8 @@ import kafka.common.TopicAndPartition
 import kafka.security.auth._
 import kafka.server.{BaseRequestTest, KafkaConfig}
 import kafka.utils.TestUtils
-import org.apache.kafka.clients.consumer._
-import org.apache.kafka.clients.producer.{HeaderProducerRecord, KafkaProducer, ProducerRecord}
+import org.apache.kafka.clients.consumer.{Consumer, ConsumerRecord, KafkaConsumer, OffsetAndMetadata}
+import org.apache.kafka.clients.producer.{KafkaProducer, ProducerRecord}
 import org.apache.kafka.common.errors._
 import org.apache.kafka.common.protocol.{ApiKeys, Errors, SecurityProtocol}
 import org.apache.kafka.common.requests._
@@ -605,7 +605,7 @@ class AuthorizerIntegrationTest extends BaseRequestTest {
 
   private def sendRecords(numRecords: Int, tp: TopicPartition) {
     val futures = (0 until numRecords).map { i =>
-      this.producers.head.send(new HeaderProducerRecord(tp.topic(), tp.partition(), i.toString.getBytes, i.toString.getBytes))
+      this.producers.head.send(new ProducerRecord(tp.topic(), tp.partition(), i.toString.getBytes, i.toString.getBytes))
     }
     try {
       futures.foreach(_.get)
@@ -630,7 +630,7 @@ class AuthorizerIntegrationTest extends BaseRequestTest {
                              startingOffset: Int = 0,
                              topic: String = topic,
                              part: Int = part) {
-    val records = new ArrayList[HeaderConsumerRecord[Array[Byte], Array[Byte]]]()
+    val records = new ArrayList[ConsumerRecord[Array[Byte], Array[Byte]]]()
     val maxIters = numRecords * 50
     var iters = 0
     while (records.size < numRecords) {

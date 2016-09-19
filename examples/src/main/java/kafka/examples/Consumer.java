@@ -18,8 +18,8 @@ package kafka.examples;
 
 import kafka.utils.ShutdownableThread;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
-import org.apache.kafka.clients.consumer.HeaderConsumerRecord;
-import org.apache.kafka.clients.consumer.HeaderConsumerRecords;
+import org.apache.kafka.clients.consumer.ConsumerRecord;
+import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 
 import java.util.Collections;
@@ -47,8 +47,8 @@ public class Consumer extends ShutdownableThread {
     @Override
     public void doWork() {
         consumer.subscribe(Collections.singletonList(this.topic));
-        HeaderConsumerRecords<Integer, String> records = consumer.poll(1000);
-        for (HeaderConsumerRecord<Integer, String> record : records) {
+        ConsumerRecords<Integer, String> records = consumer.poll(1000);
+        for (ConsumerRecord<Integer, String> record : records) {
             System.out.println("Received message: (" + record.key() + ", " + record.value() + ") at offset " + record.offset());
         }
     }

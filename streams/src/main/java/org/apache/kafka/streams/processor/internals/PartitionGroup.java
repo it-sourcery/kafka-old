@@ -17,7 +17,7 @@
 
 package org.apache.kafka.streams.processor.internals;
 
-import org.apache.kafka.clients.consumer.HeaderConsumerRecord;
+import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.streams.processor.TimestampExtractor;
 
@@ -110,7 +110,7 @@ public class PartitionGroup {
      * @param rawRecords  the raw records
      * @return the queue size for the partition
      */
-    public int addRawRecords(TopicPartition partition, Iterable<HeaderConsumerRecord<byte[], byte[], byte[]>> rawRecords) {
+    public int addRawRecords(TopicPartition partition, Iterable<ConsumerRecord<byte[], byte[]>> rawRecords) {
         RecordQueue recordQueue = partitionQueues.get(partition);
 
         int oldSize = recordQueue.size();

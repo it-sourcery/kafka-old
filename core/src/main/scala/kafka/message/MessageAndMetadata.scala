@@ -21,11 +21,11 @@ import kafka.serializer.Decoder
 import org.apache.kafka.common.record.TimestampType
 import org.apache.kafka.common.utils.Utils
 
-case class MessageAndMetadata[K, H, V](topic: String,
+case class MessageAndMetadata[K, V](topic: String,
                                     partition: Int,
                                     private val rawMessage: Message,
                                     offset: Long,
-                                    keyDecoder: Decoder[K], headerDecoder: Decoder[H], valueDecoder: Decoder[V],
+                                    keyDecoder: Decoder[K], valueDecoder: Decoder[V],
                                     timestamp: Long = Message.NoTimestamp,
                                     timestampType: TimestampType = TimestampType.CREATE_TIME) {
 
@@ -33,8 +33,6 @@ case class MessageAndMetadata[K, H, V](topic: String,
    * Return the decoded message key and payload
    */
   def key(): K = if(rawMessage.key == null) null.asInstanceOf[K] else keyDecoder.fromBytes(Utils.readBytes(rawMessage.key))
-
-  def header(): H = if(rawMessage.header == null) null.asInstanceOf[H] else headerDecoder.fromBytes(Utils.readBytes(rawMessage.header))
 
   def message(): V = if(rawMessage.isNull) null.asInstanceOf[V] else valueDecoder.fromBytes(Utils.readBytes(rawMessage.payload))
 }

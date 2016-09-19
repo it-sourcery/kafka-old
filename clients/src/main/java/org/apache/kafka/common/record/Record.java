@@ -39,13 +39,10 @@ public final class Record {
     public static final int TIMESTAMP_OFFSET = ATTRIBUTES_OFFSET + ATTRIBUTE_LENGTH;
     public static final int TIMESTAMP_LENGTH = 8;
     public static final int KEY_SIZE_OFFSET_V0 = ATTRIBUTES_OFFSET + ATTRIBUTE_LENGTH;
-    public static final int KEY_SIZE_OFFSET_V1_V2 = TIMESTAMP_OFFSET + TIMESTAMP_LENGTH;
+    public static final int KEY_SIZE_OFFSET_V1 = TIMESTAMP_OFFSET + TIMESTAMP_LENGTH;
     public static final int KEY_SIZE_LENGTH = 4;
     public static final int KEY_OFFSET_V0 = KEY_SIZE_OFFSET_V0 + KEY_SIZE_LENGTH;
-    public static final int KEY_OFFSET_V1_V2 = KEY_SIZE_OFFSET_V1_V2 + KEY_SIZE_LENGTH;
-
-    public static final int HEADER_SIZE_LENGTH = 4;
-
+    public static final int KEY_OFFSET_V1 = KEY_SIZE_OFFSET_V1 + KEY_SIZE_LENGTH;
     public static final int VALUE_SIZE_LENGTH = 4;
 
     /**
@@ -56,19 +53,18 @@ public final class Record {
     /**
      * The amount of overhead bytes in a record
      */
-    public static final int RECORD_OVERHEAD = HEADER_SIZE + TIMESTAMP_LENGTH + KEY_SIZE_LENGTH + HEADER_SIZE_LENGTH + VALUE_SIZE_LENGTH;
+    public static final int RECORD_OVERHEAD = HEADER_SIZE + TIMESTAMP_LENGTH + KEY_SIZE_LENGTH + VALUE_SIZE_LENGTH;
 
     /**
      * The "magic" values
      */
     public static final byte MAGIC_VALUE_V0 = 0;
     public static final byte MAGIC_VALUE_V1 = 1;
-    public static final byte MAGIC_VALUE_V2 = 2;
 
     /**
      * The current "magic" value
      */
-    public static final byte CURRENT_MAGIC_VALUE = MAGIC_VALUE_V2;
+    public static final byte CURRENT_MAGIC_VALUE = MAGIC_VALUE_V1;
 
     /**
      * Specifies the mask for the compression code. 3 bits to hold the compression codec. 0 is reserved to indicate no
@@ -117,37 +113,28 @@ public final class Record {
      *
      * @param timestamp The timestamp of the record
      * @param key The key of the record (null, if none)
-     * @param header The header of the record (null, if none)
      * @param value The record value
      * @param type The compression type used on the contents of the record (if any)
      * @param valueOffset The offset into the payload array used to extract payload
      * @param valueSize The size of the payload to use
      */
-    public Record(long timestamp, byte[] key, byte[] header, byte[] value, CompressionType type, int valueOffset, int valueSize) {
+    public Record(long timestamp, byte[] key, byte[] value, CompressionType type, int valueOffset, int valueSize) {
         this(ByteBuffer.allocate(recordSize(key == null ? 0 : key.length,
             value == null ? 0 : valueSize >= 0 ? valueSize : value.length - valueOffset)));
-        write(this.buffer, timestamp, key, header, value, type, valueOffset, valueSize);
+        write(this.buffer, timestamp, key, value, type, valueOffset, valueSize);
         this.buffer.rewind();
     }
 
-    public Record(long timestamp, byte[] key, byte[] header, byte[] value, CompressionType type) {
-        this(timestamp, key, header, value, type, 0, -1);
-    }
-
     public Record(long timestamp, byte[] key, byte[] value, CompressionType type) {
-        this(timestamp, key, null, value, type);
+        this(timestamp, key, value, type, 0, -1);
     }
 
     public Record(long timestamp, byte[] value, CompressionType type) {
         this(timestamp, null, value, type);
     }
 
-    public Record(long timestamp, byte[] key, byte[] header, byte[] value) {
-        this(timestamp, key, header, value, CompressionType.NONE);
-    }
-
     public Record(long timestamp, byte[] key, byte[] value) {
-        this(timestamp, key, null, value);
+        this(timestamp, key, value, CompressionType.NONE);
     }
 
     public Record(long timestamp, byte[] value) {
@@ -156,18 +143,18 @@ public final class Record {
 
     // Write a record to the buffer, if the record's compression type is none, then
     // its value payload should be already compressed with the specified type
-    public static void write(ByteBuffer buffer, long timestamp, byte[] key, byte[] header, byte[] value, CompressionType type, int valueOffset, int valueSize) {
+    public static void write(ByteBuffer buffer, long timestamp, byte[] key, byte[] value, CompressionType type, int valueOffset, int valueSize) {
         // construct the compressor with compression type none since this function will not do any
         //compression according to the input type, it will just write the record's payload as is
         Compressor compressor = new Compressor(buffer, CompressionType.NONE);
         try {
-            compressor.putRecord(timestamp, key, header, value, type, valueOffset, valueSize);
+            compressor.putRecord(timestamp, key, value, type, valueOffset, valueSize);
         } finally {
             compressor.close();
         }
     }
 
-    public static void write(Compressor compressor, long crc, byte attributes, long timestamp, byte[] key, byte[] header, byte[] value, int valueOffset, int valueSize) {
+    public static void write(Compressor compressor, long crc, byte attributes, long timestamp, byte[] key, byte[] value, int valueOffset, int valueSize) {
         // write crc
         compressor.putInt((int) (crc & 0xffffffffL));
         // write magic value
@@ -182,13 +169,6 @@ public final class Record {
         } else {
             compressor.putInt(key.length);
             compressor.put(key, 0, key.length);
-        }
-        // write the header
-        if (header == null) {
-            compressor.putInt(-1);
-        } else {
-            compressor.putInt(header.length);
-            compressor.put(header, 0, header.length);
         }
         // write the value
         if (value == null) {
@@ -231,7 +211,7 @@ public final class Record {
     /**
      * Compute the checksum of the record from the attributes, key and value payloads
      */
-    public static long computeChecksum(long timestamp, byte[] key, byte[] header, byte[] value, CompressionType type, int valueOffset, int valueSize) {
+    public static long computeChecksum(long timestamp, byte[] key, byte[] value, CompressionType type, int valueOffset, int valueSize) {
         Crc32 crc = new Crc32();
         crc.update(CURRENT_MAGIC_VALUE);
         byte attributes = 0;
@@ -245,13 +225,6 @@ public final class Record {
         } else {
             crc.updateInt(key.length);
             crc.update(key, 0, key.length);
-        }
-        // update for the key
-        if (header == null) {
-            crc.updateInt(-1);
-        } else {
-            crc.updateInt(header.length);
-            crc.update(header, 0, header.length);
         }
         // update for the value
         if (value == null) {
@@ -314,42 +287,14 @@ public final class Record {
         if (magic() == MAGIC_VALUE_V0)
             return buffer.getInt(KEY_SIZE_OFFSET_V0);
         else
-            return buffer.getInt(KEY_SIZE_OFFSET_V1_V2);
-    }
-
-    /**
-     * Does the record have a header?
-     */
-    public boolean hasKey() {
-        return keySize() >= 0;
-    }
-
-    /**
-     * The length of the header in bytes
-     */
-    public int headerSize() {
-        if (magic() == MAGIC_VALUE_V2)
-            return buffer.getInt(headerSizeOffset());
-        else
-            return -1;
+            return buffer.getInt(KEY_SIZE_OFFSET_V1);
     }
 
     /**
      * Does the record have a key?
      */
-    public boolean hasHeader() {
+    public boolean hasKey() {
         return keySize() >= 0;
-    }
-
-
-    /**
-     * The position where the value size is stored
-     */
-    private int headerSizeOffset() {
-        if (magic() == MAGIC_VALUE_V2)
-            return KEY_OFFSET_V1_V2 + Math.max(0, keySize());
-        else
-            return -1;
     }
 
     /**
@@ -358,10 +303,8 @@ public final class Record {
     private int valueSizeOffset() {
         if (magic() == MAGIC_VALUE_V0)
             return KEY_OFFSET_V0 + Math.max(0, keySize());
-        else if (magic() == MAGIC_VALUE_V1)
-            return KEY_OFFSET_V1_V2 + Math.max(0, keySize());
         else
-            return headerSizeOffset() + Math.max(0, headerSize());
+            return KEY_OFFSET_V1 + Math.max(0, keySize());
     }
 
     /**
@@ -429,23 +372,13 @@ public final class Record {
     }
 
     /**
-     * A ByteBuffer containing the value of this record
-     */
-    public ByteBuffer header() {
-        if (magic() == MAGIC_VALUE_V2)
-            return sliceDelimited(headerSizeOffset());
-        else
-            return null;
-    }
-
-    /**
      * A ByteBuffer containing the message key
      */
     public ByteBuffer key() {
         if (magic() == MAGIC_VALUE_V0)
             return sliceDelimited(KEY_SIZE_OFFSET_V0);
         else
-            return sliceDelimited(KEY_SIZE_OFFSET_V1_V2);
+            return sliceDelimited(KEY_SIZE_OFFSET_V1);
     }
 
     /**
@@ -467,7 +400,7 @@ public final class Record {
 
     public String toString() {
         if (magic() > 0)
-            return String.format("Record(magic = %d, attributes = %d, compression = %s, crc = %d, %s = %d, key = %d bytes, header = %d bytes, value = %d bytes)",
+            return String.format("Record(magic = %d, attributes = %d, compression = %s, crc = %d, %s = %d, key = %d bytes, value = %d bytes)",
                                  magic(),
                                  attributes(),
                                  compressionType(),
@@ -475,7 +408,6 @@ public final class Record {
                                  timestampType(),
                                  timestamp(),
                                  key() == null ? 0 : key().limit(),
-                                 header() == null ? 0 : header().limit(),
                                  value() == null ? 0 : value().limit());
         else
             return String.format("Record(magic = %d, attributes = %d, compression = %s, crc = %d, key = %d bytes, value = %d bytes)",

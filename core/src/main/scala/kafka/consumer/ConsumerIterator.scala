@@ -30,20 +30,19 @@ import kafka.common.{KafkaException, MessageSizeTooLargeException}
  * The iterator takes a shutdownCommand object which can be added to the queue to trigger a shutdown
  *
  */
-class ConsumerIterator[K, H, V](private val channel: BlockingQueue[FetchedDataChunk],
+class ConsumerIterator[K, V](private val channel: BlockingQueue[FetchedDataChunk],
                              consumerTimeoutMs: Int,
                              private val keyDecoder: Decoder[K],
-                             private val headerDecoder: Decoder[H],
                              private val valueDecoder: Decoder[V],
                              val clientId: String)
-  extends IteratorTemplate[MessageAndMetadata[K, H, V]] with Logging {
+  extends IteratorTemplate[MessageAndMetadata[K, V]] with Logging {
 
   private val current: AtomicReference[Iterator[MessageAndOffset]] = new AtomicReference(null)
   private var currentTopicInfo: PartitionTopicInfo = null
   private var consumedOffset: Long = -1L
   private val consumerTopicStats = ConsumerTopicStatsRegistry.getConsumerTopicStat(clientId)
 
-  override def next(): MessageAndMetadata[K, H, V] = {
+  override def next(): MessageAndMetadata[K, V] = {
     val item = super.next()
     if(consumedOffset < 0)
       throw new KafkaException("Offset returned by the message set is invalid %d".format(consumedOffset))
@@ -55,7 +54,7 @@ class ConsumerIterator[K, H, V](private val channel: BlockingQueue[FetchedDataCh
     item
   }
 
-  protected def makeNext(): MessageAndMetadata[K, H, V] = {
+  protected def makeNext(): MessageAndMetadata[K, V] = {
     var currentDataChunk: FetchedDataChunk = null
     // if we don't have an iterator, get one
     var localCurrent = current.get()
@@ -106,7 +105,6 @@ class ConsumerIterator[K, H, V](private val channel: BlockingQueue[FetchedDataCh
                            item.message,
                            item.offset,
                            keyDecoder,
-                           headerDecoder,
                            valueDecoder,
                            item.message.timestamp,
                            item.message.timestampType)

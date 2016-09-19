@@ -23,7 +23,7 @@ import org.apache.kafka.connect.data.Schema;
 /**
  * <p>
  * Base class for records containing data to be copied to/from Kafka. This corresponds closely to
- * Kafka's HeaderProducerRecord and HeaderConsumerRecord classes, and holds the data that may be used by both
+ * Kafka's ProducerRecord and ConsumerRecord classes, and holds the data that may be used by both
  * sources and sinks (topic, kafkaPartition, key, value). Although both implementations include a
  * notion of offset, it is not included here because they differ in type.
  * </p>
@@ -34,23 +34,18 @@ public abstract class ConnectRecord {
     private final Integer kafkaPartition;
     private final Schema keySchema;
     private final Object key;
-    private final Schema headerSchema;
-    private final Object header;
     private final Schema valueSchema;
     private final Object value;
     private final Long timestamp;
 
     public ConnectRecord(String topic, Integer kafkaPartition,
                          Schema keySchema, Object key,
-                         Schema headerSchema, Object header,
                          Schema valueSchema, Object value,
                          Long timestamp) {
         this.topic = topic;
         this.kafkaPartition = kafkaPartition;
         this.keySchema = keySchema;
         this.key = key;
-        this.headerSchema = headerSchema;
-        this.header = header;
         this.valueSchema = valueSchema;
         this.value = value;
         this.timestamp = timestamp;
@@ -72,14 +67,6 @@ public abstract class ConnectRecord {
         return keySchema;
     }
 
-    public Object header() {
-        return header;
-    }
-
-    public Schema headerSchema() {
-        return headerSchema;
-    }
-
     public Object value() {
         return value;
     }
@@ -98,7 +85,6 @@ public abstract class ConnectRecord {
                 "topic='" + topic + '\'' +
                 ", kafkaPartition=" + kafkaPartition +
                 ", key=" + key +
-                ", header=" + header +
                 ", value=" + value +
                 ", timestamp=" + timestamp +
                 '}';
@@ -121,10 +107,6 @@ public abstract class ConnectRecord {
             return false;
         if (key != null ? !key.equals(that.key) : that.key != null)
             return false;
-        if (headerSchema != null ? !headerSchema.equals(that.headerSchema) : that.headerSchema != null)
-            return false;
-        if (header != null ? !header.equals(that.header) : that.header != null)
-            return false;
         if (valueSchema != null ? !valueSchema.equals(that.valueSchema) : that.valueSchema != null)
             return false;
         if (value != null ? !value.equals(that.value) : that.value != null)
@@ -141,8 +123,6 @@ public abstract class ConnectRecord {
         result = 31 * result + (kafkaPartition != null ? kafkaPartition.hashCode() : 0);
         result = 31 * result + (keySchema != null ? keySchema.hashCode() : 0);
         result = 31 * result + (key != null ? key.hashCode() : 0);
-        result = 31 * result + (headerSchema != null ? headerSchema.hashCode() : 0);
-        result = 31 * result + (header != null ? header.hashCode() : 0);
         result = 31 * result + (valueSchema != null ? valueSchema.hashCode() : 0);
         result = 31 * result + (value != null ? value.hashCode() : 0);
         result = 31 * result + (value != null ? timestamp.hashCode() : 0);

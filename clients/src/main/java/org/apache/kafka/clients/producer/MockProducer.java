@@ -48,7 +48,7 @@ public class MockProducer<K, V> implements Producer<K, V> {
 
     private final Cluster cluster;
     private final Partitioner partitioner;
-    private final List<HeaderProducerRecord<K, V>> sent;
+    private final List<ProducerRecord<K, V>> sent;
     private final Deque<Completion> completions;
     private boolean autoComplete;
     private Map<TopicPartition, Long> offsets;
@@ -61,7 +61,7 @@ public class MockProducer<K, V> implements Producer<K, V> {
      * @param cluster The cluster holding metadata for this producer
      * @param autoComplete If true automatically complete all requests successfully and execute the callback. Otherwise
      *        the user must call {@link #completeNext()} or {@link #errorNext(RuntimeException)} after
-     *        {@link #send(HeaderProducerRecord) send()} to complete the call and unblock the @{link
+     *        {@link #send(ProducerRecord) send()} to complete the call and unblock the @{link
      *        java.util.concurrent.Future Future&lt;RecordMetadata&gt;} that is returned.
      * @param partitioner The partition strategy
      * @param keySerializer The serializer for key that implements {@link Serializer}.
@@ -74,7 +74,7 @@ public class MockProducer<K, V> implements Producer<K, V> {
         this.keySerializer = keySerializer;
         this.valueSerializer = valueSerializer;
         this.offsets = new HashMap<TopicPartition, Long>();
-        this.sent = new ArrayList<HeaderProducerRecord<K, V>>();
+        this.sent = new ArrayList<ProducerRecord<K, V>>();
         this.completions = new ArrayDeque<Completion>();
     }
 
@@ -102,7 +102,7 @@ public class MockProducer<K, V> implements Producer<K, V> {
      * @see #history()
      */
     @Override
-    public synchronized Future<RecordMetadata> send(HeaderProducerRecord<K, V> record) {
+    public synchronized Future<RecordMetadata> send(ProducerRecord<K, V> record) {
         return send(record, null);
     }
 
@@ -112,7 +112,7 @@ public class MockProducer<K, V> implements Producer<K, V> {
      * @see #history()
      */
     @Override
-    public synchronized Future<RecordMetadata> send(HeaderProducerRecord<K, V> record, Callback callback) {
+    public synchronized Future<RecordMetadata> send(ProducerRecord<K, V> record, Callback callback) {
         int partition = 0;
         if (this.cluster.partitionsForTopic(record.topic()) != null)
             partition = partition(record, this.cluster);
@@ -170,8 +170,8 @@ public class MockProducer<K, V> implements Producer<K, V> {
     /**
      * Get the list of sent records since the last call to {@link #clear()}
      */
-    public synchronized List<HeaderProducerRecord<K, V>> history() {
-        return new ArrayList<HeaderProducerRecord<K, V>>(this.sent);
+    public synchronized List<ProducerRecord<K, V>> history() {
+        return new ArrayList<ProducerRecord<K, V>>(this.sent);
     }
 
     /**
@@ -209,7 +209,7 @@ public class MockProducer<K, V> implements Producer<K, V> {
     /**
      * computes partition for given record.
      */
-    private int partition(HeaderProducerRecord<K, V> record, Cluster cluster) {
+    private int partition(ProducerRecord<K, V> record, Cluster cluster) {
         Integer partition = record.partition();
         String topic = record.topic();
         if (partition != null) {

@@ -20,7 +20,7 @@ import kafka.utils._
 import kafka.server.KafkaConfig
 import org.junit.Test
 import kafka.consumer._
-import org.apache.kafka.clients.producer.{HeaderProducerRecord, KafkaProducer}
+import org.apache.kafka.clients.producer.{ProducerRecord, KafkaProducer}
 import kafka.integration.KafkaServerTestHarness
 
 
@@ -201,7 +201,7 @@ class DeleteConsumerGroupTest extends KafkaServerTestHarness {
   }
 
   private def produceEvents(producer: KafkaProducer[Array[Byte], Array[Byte]], topic: String, messages: List[String]) {
-    messages.foreach(message => producer.send(new HeaderProducerRecord(topic, message.getBytes)))
+    messages.foreach(message => producer.send(new ProducerRecord(topic, message.getBytes)))
   }
 
   private def consumeEvents(messageStream: KafkaStream[Array[Byte], Array[Byte]], n: Int) {

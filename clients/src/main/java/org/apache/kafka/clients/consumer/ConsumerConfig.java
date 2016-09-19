@@ -174,11 +174,6 @@ public class ConsumerConfig extends AbstractConfig {
     public static final String KEY_DESERIALIZER_CLASS_CONFIG = "key.deserializer";
     public static final String KEY_DESERIALIZER_CLASS_DOC = "Deserializer class for key that implements the <code>Deserializer</code> interface.";
 
-    /** <code>header.deserializer</code> */
-    public static final String HEADER_DESERIALIZER_CLASS_CONFIG = "header.deserializer";
-    public static final String HEADER_DESERIALIZER_CLASS_DOC = "Deserializer class for key that implements the <code>Deserializer</code> interface.";
-
-
     /** <code>value.deserializer</code> */
     public static final String VALUE_DESERIALIZER_CLASS_CONFIG = "value.deserializer";
     public static final String VALUE_DESERIALIZER_CLASS_DOC = "Deserializer class for value that implements the <code>Deserializer</code> interface.";
@@ -320,10 +315,6 @@ public class ConsumerConfig extends AbstractConfig {
                                         Type.CLASS,
                                         Importance.HIGH,
                                         KEY_DESERIALIZER_CLASS_DOC)
-                                .define(HEADER_DESERIALIZER_CLASS_CONFIG,
-                                        Type.CLASS,
-                                        Importance.HIGH,
-                                        HEADER_DESERIALIZER_CLASS_DOC)
                                 .define(VALUE_DESERIALIZER_CLASS_CONFIG,
                                         Type.CLASS,
                                         Importance.HIGH,
@@ -376,14 +367,11 @@ public class ConsumerConfig extends AbstractConfig {
 
     public static Map<String, Object> addDeserializerToConfig(Map<String, Object> configs,
                                                               Deserializer<?> keyDeserializer,
-                                                              Deserializer<?> headerDeserializer,
                                                               Deserializer<?> valueDeserializer) {
         Map<String, Object> newConfigs = new HashMap<String, Object>();
         newConfigs.putAll(configs);
         if (keyDeserializer != null)
             newConfigs.put(KEY_DESERIALIZER_CLASS_CONFIG, keyDeserializer.getClass());
-        if (headerDeserializer != null)
-            newConfigs.put(HEADER_DESERIALIZER_CLASS_CONFIG, headerDeserializer.getClass());
         if (valueDeserializer != null)
             newConfigs.put(VALUE_DESERIALIZER_CLASS_CONFIG, valueDeserializer.getClass());
         return newConfigs;
@@ -391,14 +379,11 @@ public class ConsumerConfig extends AbstractConfig {
 
     public static Properties addDeserializerToConfig(Properties properties,
                                                      Deserializer<?> keyDeserializer,
-                                                     Deserializer<?> headerDeserializer,
                                                      Deserializer<?> valueDeserializer) {
         Properties newProperties = new Properties();
         newProperties.putAll(properties);
         if (keyDeserializer != null)
             newProperties.put(KEY_DESERIALIZER_CLASS_CONFIG, keyDeserializer.getClass().getName());
-        if (headerDeserializer != null)
-            newProperties.put(HEADER_DESERIALIZER_CLASS_CONFIG, headerDeserializer.getClass().getName());
         if (valueDeserializer != null)
             newProperties.put(VALUE_DESERIALIZER_CLASS_CONFIG, valueDeserializer.getClass().getName());
         return newProperties;

@@ -24,7 +24,7 @@ import kafka.zk.ZooKeeperTestHarness
 import kafka.common._
 import java.io.File
 
-import org.apache.kafka.clients.producer.{KafkaProducer, HeaderProducerRecord}
+import org.apache.kafka.clients.producer.{KafkaProducer, ProducerRecord}
 import org.apache.kafka.common.serialization.{IntegerSerializer, StringSerializer}
 import org.apache.kafka.common.utils.Utils
 import org.junit.{After, Before, Test}
@@ -233,6 +233,6 @@ class LogRecoveryTest extends ZooKeeperTestHarness {
   }
 
   private def sendMessages(n: Int = 1) {
-    (0 until n).map(_ => producer.send(new HeaderProducerRecord(topic, 0, message))).foreach(_.get)
+    (0 until n).map(_ => producer.send(new ProducerRecord(topic, 0, message))).foreach(_.get)
   }
 }

@@ -17,7 +17,7 @@
 package org.apache.kafka.connect.storage;
 
 import org.apache.kafka.clients.consumer.ConsumerConfig;
-import org.apache.kafka.clients.consumer.HeaderConsumerRecord;
+import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.clients.producer.RecordMetadata;
 import org.apache.kafka.common.config.ConfigException;
@@ -133,9 +133,9 @@ public class KafkaStatusBackingStore implements StatusBackingStore {
         consumerProps.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class.getName());
         consumerProps.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, ByteArrayDeserializer.class.getName());
 
-        Callback<HeaderConsumerRecord<String, byte[]>> readCallback = new Callback<HeaderConsumerRecord<String, byte[]>>() {
+        Callback<ConsumerRecord<String, byte[]>> readCallback = new Callback<ConsumerRecord<String, byte[]>>() {
             @Override
-            public void onCompletion(Throwable error, HeaderConsumerRecord<String, byte[]> record) {
+            public void onCompletion(Throwable error, ConsumerRecord<String, byte[]> record) {
                 read(record);
             }
         };
@@ -412,7 +412,7 @@ public class KafkaStatusBackingStore implements StatusBackingStore {
     }
 
     // visible for testing
-    void read(HeaderConsumerRecord<String, byte[]> record) {
+    void read(ConsumerRecord<String, byte[]> record) {
         String key = record.key();
         if (key.startsWith(CONNECTOR_STATUS_PREFIX)) {
             readConnectorStatus(key, record.value());

@@ -20,8 +20,8 @@ package org.apache.kafka.streams.processor.internals;
 import org.apache.kafka.clients.consumer.CommitFailedException;
 import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.consumer.ConsumerRebalanceListener;
-import org.apache.kafka.clients.consumer.HeaderConsumerRecord;
-import org.apache.kafka.clients.consumer.HeaderConsumerRecords;
+import org.apache.kafka.clients.consumer.ConsumerRecord;
+import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.producer.Producer;
 import org.apache.kafka.common.KafkaException;
 import org.apache.kafka.common.MetricName;
@@ -106,7 +106,7 @@ public class StreamThread extends Thread {
     private long lastCommitMs;
     private Throwable rebalanceException = null;
 
-    private Map<TopicPartition, List<HeaderConsumerRecord<byte[], byte[]>>> standbyRecords;
+    private Map<TopicPartition, List<ConsumerRecord<byte[], byte[]>>> standbyRecords;
     private boolean processStandbyRecords = false;
     private AtomicBoolean initialized = new AtomicBoolean(false);
 
@@ -332,7 +332,7 @@ public class StreamThread extends Thread {
 
                 boolean longPoll = totalNumBuffered == 0;
 
-                HeaderConsumerRecords<byte[], byte[]> records = consumer.poll(longPoll ? this.pollTimeMs : 0);
+                ConsumerRecords<byte[], byte[]> records = consumer.poll(longPoll ? this.pollTimeMs : 0);
                 lastPoll = time.milliseconds();
 
                 if (rebalanceException != null)
@@ -398,10 +398,10 @@ public class StreamThread extends Thread {
         if (!standbyTasks.isEmpty()) {
             if (processStandbyRecords) {
                 if (!standbyRecords.isEmpty()) {
-                    Map<TopicPartition, List<HeaderConsumerRecord<byte[], byte[]>>> remainingStandbyRecords = new HashMap<>();
+                    Map<TopicPartition, List<ConsumerRecord<byte[], byte[]>>> remainingStandbyRecords = new HashMap<>();
 
                     for (TopicPartition partition : standbyRecords.keySet()) {
-                        List<HeaderConsumerRecord<byte[], byte[]>> remaining = standbyRecords.get(partition);
+                        List<ConsumerRecord<byte[], byte[]>> remaining = standbyRecords.get(partition);
                         if (remaining != null) {
                             StandbyTask task = standbyTasksByPartition.get(partition);
                             remaining = task.update(partition, remaining);
@@ -418,7 +418,7 @@ public class StreamThread extends Thread {
                 processStandbyRecords = false;
             }
 
-            HeaderConsumerRecords<byte[], byte[]> records = restoreConsumer.poll(0);
+            ConsumerRecords<byte[], byte[]> records = restoreConsumer.poll(0);
 
             if (!records.isEmpty()) {
                 for (TopicPartition partition : records.partitions()) {
@@ -429,7 +429,7 @@ public class StreamThread extends Thread {
                         throw new StreamsException(String.format("stream-thread [%s] missing standby task for partition %s", this.getName(), partition));
                     }
 
-                    List<HeaderConsumerRecord<byte[], byte[]>> remaining = task.update(partition, records.records(partition));
+                    List<ConsumerRecord<byte[], byte[]>> remaining = task.update(partition, records.records(partition));
                     if (remaining != null) {
                         restoreConsumer.pause(singleton(partition));
                         standbyRecords.put(partition, remaining);

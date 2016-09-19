@@ -18,8 +18,8 @@ package org.apache.kafka.test;
 
 
 import org.apache.kafka.clients.consumer.ConsumerInterceptor;
-import org.apache.kafka.clients.consumer.HeaderConsumerRecord;
-import org.apache.kafka.clients.consumer.HeaderConsumerRecords;
+import org.apache.kafka.clients.consumer.ConsumerRecord;
+import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.OffsetAndMetadata;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.producer.ProducerConfig;
@@ -51,20 +51,20 @@ public class MockConsumerInterceptor implements ConsumerInterceptor<String, Stri
     }
 
     @Override
-    public HeaderConsumerRecords<String, String> onConsume(HeaderConsumerRecords<String, String> records) {
-        Map<TopicPartition, List<HeaderConsumerRecord<String, String>>> recordMap = new HashMap<>();
+    public ConsumerRecords<String, String> onConsume(ConsumerRecords<String, String> records) {
+        Map<TopicPartition, List<ConsumerRecord<String, String>>> recordMap = new HashMap<>();
         for (TopicPartition tp : records.partitions()) {
-            List<HeaderConsumerRecord<String, String>> lst = new ArrayList<>();
-            for (HeaderConsumerRecord<String, String> record: records.records(tp)) {
-                lst.add(new HeaderConsumerRecord<>(record.topic(), record.partition(), record.offset(),
-                                                   record.timestamp(), record.timestampType(),
-                                                   record.checksum(), record.serializedKeySize(),
-                                                   record.serializedValueSize(),
-                                                   record.key(), record.value().toUpperCase(Locale.ROOT)));
+            List<ConsumerRecord<String, String>> lst = new ArrayList<>();
+            for (ConsumerRecord<String, String> record: records.records(tp)) {
+                lst.add(new ConsumerRecord<>(record.topic(), record.partition(), record.offset(),
+                                             record.timestamp(), record.timestampType(),
+                                             record.checksum(), record.serializedKeySize(),
+                                             record.serializedValueSize(),
+                                             record.key(), record.value().toUpperCase(Locale.ROOT)));
             }
             recordMap.put(tp, lst);
         }
-        return new HeaderConsumerRecords<String, String>(recordMap);
+        return new ConsumerRecords<String, String>(recordMap);
     }
 
     @Override

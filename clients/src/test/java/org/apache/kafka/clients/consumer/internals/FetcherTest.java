@@ -20,7 +20,7 @@ import org.apache.kafka.clients.ClientRequest;
 import org.apache.kafka.clients.Metadata;
 import org.apache.kafka.clients.MockClient;
 import org.apache.kafka.clients.consumer.ConsumerRebalanceListener;
-import org.apache.kafka.clients.consumer.HeaderConsumerRecord;
+import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.OffsetAndMetadata;
 import org.apache.kafka.clients.consumer.OffsetOutOfRangeException;
 import org.apache.kafka.clients.consumer.OffsetResetStrategy;
@@ -96,9 +96,9 @@ public class FetcherTest {
 
     private MemoryRecords records = MemoryRecords.emptyRecords(ByteBuffer.allocate(1024), CompressionType.NONE);
     private MemoryRecords nextRecords = MemoryRecords.emptyRecords(ByteBuffer.allocate(1024), CompressionType.NONE);
-    private Fetcher<byte[], byte[], byte[]> fetcher = createFetcher(subscriptions, metrics);
+    private Fetcher<byte[], byte[]> fetcher = createFetcher(subscriptions, metrics);
     private Metrics fetcherMetrics = new Metrics(time);
-    private Fetcher<byte[], byte[], byte[]> fetcherNoAutoReset = createFetcher(subscriptionsNoAutoReset, fetcherMetrics);
+    private Fetcher<byte[], byte[]> fetcherNoAutoReset = createFetcher(subscriptionsNoAutoReset, fetcherMetrics);
 
     @Before
     public void setup() throws Exception {
@@ -136,14 +136,14 @@ public class FetcherTest {
         assertTrue(fetcher.hasCompletedFetches());
         assertFalse(fetcher.hasInFlightFetches());
 
-        Map<TopicPartition, List<HeaderConsumerRecord<byte[], byte[], byte[]>>> partitionRecords = fetcher.fetchedRecords();
+        Map<TopicPartition, List<ConsumerRecord<byte[], byte[]>>> partitionRecords = fetcher.fetchedRecords();
         assertTrue(partitionRecords.containsKey(tp));
 
-        List<HeaderConsumerRecord<byte[], byte[], byte[]>> records = partitionRecords.get(tp);
+        List<ConsumerRecord<byte[], byte[]>> records = partitionRecords.get(tp);
         assertEquals(3, records.size());
         assertEquals(4L, subscriptions.position(tp).longValue()); // this is the next fetching position
         long offset = 1;
-        for (HeaderConsumerRecord<byte[], byte[], byte[]> record : records) {
+        for (ConsumerRecord<byte[], byte[]> record : records) {
             assertEquals(offset, record.offset());
             offset += 1;
         }
@@ -163,7 +163,7 @@ public class FetcherTest {
         assertTrue(fetcher.hasCompletedFetches());
         assertFalse(fetcher.hasInFlightFetches());
 
-        Map<TopicPartition, List<HeaderConsumerRecord<byte[], byte[], byte[]>>> partitionRecords = fetcher.fetchedRecords();
+        Map<TopicPartition, List<ConsumerRecord<byte[], byte[]>>> partitionRecords = fetcher.fetchedRecords();
         assertFalse(partitionRecords.containsKey(tp));
     }
 
@@ -192,7 +192,7 @@ public class FetcherTest {
             }
         };
 
-        Fetcher<byte[], byte[], byte[]> fetcher = createFetcher(subscriptions, new Metrics(time), deserializer, deserializer, deserializer);
+        Fetcher<byte[], byte[]> fetcher = createFetcher(subscriptions, new Metrics(time), deserializer, deserializer);
 
         subscriptions.assignFromUser(singleton(tp));
         subscriptions.seek(tp, 1);
@@ -216,24 +216,22 @@ public class FetcherTest {
         Compressor compressor = new Compressor(buffer, CompressionType.NONE);
 
         byte[] key = "foo".getBytes();
-        byte[] header = "baa".getBytes();
         byte[] value = "baz".getBytes();
-
         long offset = 0;
         long timestamp = 500L;
 
         int size = Record.recordSize(key, value);
-        long crc = Record.computeChecksum(timestamp, key, header, value, CompressionType.NONE, 0, -1);
+        long crc = Record.computeChecksum(timestamp, key, value, CompressionType.NONE, 0, -1);
 
         // write one valid record
         compressor.putLong(offset);
         compressor.putInt(size);
-        Record.write(compressor, crc, Record.computeAttributes(CompressionType.NONE), timestamp, key, header, value, 0, -1);
+        Record.write(compressor, crc, Record.computeAttributes(CompressionType.NONE), timestamp, key, value, 0, -1);
 
         // and one invalid record (note the crc)
         compressor.putLong(offset);
         compressor.putInt(size);
-        Record.write(compressor, crc + 1, Record.computeAttributes(CompressionType.NONE), timestamp, key, header, value, 0, -1);
+        Record.write(compressor, crc + 1, Record.computeAttributes(CompressionType.NONE), timestamp, key, value, 0, -1);
 
         compressor.close();
         buffer.flip();
@@ -256,9 +254,9 @@ public class FetcherTest {
 
     @Test
     public void testFetchMaxPollRecords() {
-        Fetcher<byte[], byte[], byte[]> fetcher = createFetcher(subscriptions, new Metrics(time), 2);
+        Fetcher<byte[], byte[]> fetcher = createFetcher(subscriptions, new Metrics(time), 2);
 
-        List<HeaderConsumerRecord<byte[], byte[], byte[]>> records;
+        List<ConsumerRecord<byte[], byte[]>> records;
         subscriptions.assignFromUser(singleton(tp));
         subscriptions.seek(tp, 1);
 
@@ -300,7 +298,7 @@ public class FetcherTest {
         records.append(30L, 0L, "key".getBytes(), "value-3".getBytes());
         records.close();
 
-        List<HeaderConsumerRecord<byte[], byte[], byte[]>> headerConsumerRecords;
+        List<ConsumerRecord<byte[], byte[]>> consumerRecords;
         subscriptions.assignFromUser(singleton(tp));
         subscriptions.seek(tp, 0);
 
@@ -308,13 +306,13 @@ public class FetcherTest {
         fetcher.sendFetches();
         client.prepareResponse(fetchResponse(records.buffer(), Errors.NONE.code(), 100L, 0));
         consumerClient.poll(0);
-       headerConsumerRecords = fetcher.fetchedRecords().get(tp);
-        assertEquals(3, headerConsumerRecords.size());
+        consumerRecords = fetcher.fetchedRecords().get(tp);
+        assertEquals(3, consumerRecords.size());
         assertEquals(31L, subscriptions.position(tp).longValue()); // this is the next fetching position
 
-        assertEquals(15L, headerConsumerRecords.get(0).offset());
-        assertEquals(20L, headerConsumerRecords.get(1).offset());
-        assertEquals(30L, headerConsumerRecords.get(2).offset());
+        assertEquals(15L, consumerRecords.get(0).offset());
+        assertEquals(20L, consumerRecords.get(1).offset());
+        assertEquals(30L, consumerRecords.get(2).offset());
     }
 
     @Test(expected = RecordTooLargeException.class)
@@ -628,7 +626,7 @@ public class FetcherTest {
      */
     @Test
     public void testQuotaMetrics() throws Exception {
-        List<HeaderConsumerRecord<byte[], byte[], byte[]>> records;
+        List<ConsumerRecord<byte[], byte[]>> records;
         subscriptions.assignFromUser(singleton(tp));
         subscriptions.seek(tp, 0);
 
@@ -699,28 +697,26 @@ public class FetcherTest {
         return new MetadataResponse(cluster.nodes(), MetadataResponse.NO_CONTROLLER_ID, Arrays.asList(topicMetadata));
     }
 
-    private Fetcher<byte[], byte[], byte[]> createFetcher(SubscriptionState subscriptions,
+    private Fetcher<byte[], byte[]> createFetcher(SubscriptionState subscriptions,
                                                   Metrics metrics,
                                                   int maxPollRecords) {
-        return createFetcher(subscriptions, metrics, new ByteArrayDeserializer(), new ByteArrayDeserializer(), new ByteArrayDeserializer(), maxPollRecords);
+        return createFetcher(subscriptions, metrics, new ByteArrayDeserializer(), new ByteArrayDeserializer(), maxPollRecords);
     }
 
-    private Fetcher<byte[], byte[], byte[]> createFetcher(SubscriptionState subscriptions, Metrics metrics) {
+    private Fetcher<byte[], byte[]> createFetcher(SubscriptionState subscriptions, Metrics metrics) {
         return createFetcher(subscriptions, metrics, Integer.MAX_VALUE);
     }
 
-    private <K, H, V> Fetcher<K, H, V> createFetcher(SubscriptionState subscriptions,
+    private <K, V> Fetcher<K, V> createFetcher(SubscriptionState subscriptions,
                                                Metrics metrics,
                                                Deserializer<K> keyDeserializer,
-                                               Deserializer<H> headerDeserializer,
                                                Deserializer<V> valueDeserializer) {
-        return createFetcher(subscriptions, metrics, keyDeserializer, headerDeserializer, valueDeserializer, Integer.MAX_VALUE);
+        return createFetcher(subscriptions, metrics, keyDeserializer, valueDeserializer, Integer.MAX_VALUE);
     }
 
-    private <K, H, V> Fetcher<K, H, V> createFetcher(SubscriptionState subscriptions,
+    private <K, V> Fetcher<K, V> createFetcher(SubscriptionState subscriptions,
                                                Metrics metrics,
                                                Deserializer<K> keyDeserializer,
-                                               Deserializer<H> headerDeserializer,
                                                Deserializer<V> valueDeserializer,
                                                int maxPollRecords) {
         return new Fetcher<>(consumerClient,
@@ -730,7 +726,6 @@ public class FetcherTest {
                 maxPollRecords,
                 true, // check crc
                 keyDeserializer,
-                headerDeserializer,
                 valueDeserializer,
                 metadata,
                 subscriptions,

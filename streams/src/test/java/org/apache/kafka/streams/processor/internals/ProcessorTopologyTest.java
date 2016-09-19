@@ -21,8 +21,8 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 
-import org.apache.kafka.clients.consumer.HeaderConsumerRecord;
-import org.apache.kafka.clients.producer.HeaderProducerRecord;
+import org.apache.kafka.clients.consumer.ConsumerRecord;
+import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.common.serialization.Deserializer;
 import org.apache.kafka.common.serialization.Serdes;
 import org.apache.kafka.common.serialization.Serializer;
@@ -212,7 +212,7 @@ public class ProcessorTopologyTest {
 
 
     protected void assertNextOutputRecord(String topic, String key, String value) {
-        HeaderProducerRecord<String, String> record = driver.readOutput(topic, STRING_DESERIALIZER, STRING_DESERIALIZER);
+        ProducerRecord<String, String> record = driver.readOutput(topic, STRING_DESERIALIZER, STRING_DESERIALIZER);
         assertEquals(topic, record.topic());
         assertEquals(key, record.key());
         assertEquals(value, record.value());
@@ -220,7 +220,7 @@ public class ProcessorTopologyTest {
     }
 
     protected void assertNextOutputRecord(String topic, String key, String value, Integer partition) {
-        HeaderProducerRecord<String, String> record = driver.readOutput(topic, STRING_DESERIALIZER, STRING_DESERIALIZER);
+        ProducerRecord<String, String> record = driver.readOutput(topic, STRING_DESERIALIZER, STRING_DESERIALIZER);
         assertEquals(topic, record.topic());
         assertEquals(key, record.key());
         assertEquals(value, record.value());
@@ -403,7 +403,7 @@ public class ProcessorTopologyTest {
 
     public static class CustomTimestampExtractor implements TimestampExtractor {
         @Override
-        public long extract(HeaderConsumerRecord<Object, Object> record) {
+        public long extract(ConsumerRecord<Object, Object> record) {
             return timestamp;
         }
     }

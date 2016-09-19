@@ -17,7 +17,6 @@
 
 package org.apache.kafka.streams.processor;
 
-import org.apache.kafka.clients.consumer.HeaderConsumerRecord;
 import org.apache.kafka.common.annotation.InterfaceStability;
 import org.apache.kafka.common.serialization.Serde;
 import org.apache.kafka.streams.StreamsMetrics;
@@ -100,19 +99,17 @@ public interface ProcessorContext {
     /**
      * Forwards a key/value pair to the downstream processors
      * @param key key
-     * @param header key
      * @param value value
      */
-    <K, H, V> void forward(K key, H header, V value);
+    <K, V> void forward(K key, V value);
 
     /**
      * Forwards a key/value pair to one of the downstream processors designated by childIndex
      * @param key key
-     * @param header header
      * @param value value
      * @param childIndex index in list of children of this node
      */
-    <K, H, V> void forward(K key, H header, V value, int childIndex);
+    <K, V> void forward(K key, V value, int childIndex);
 
     /**
      * Forwards a key/value pair to one of the downstream processors designated by the downstream processor name
@@ -120,7 +117,7 @@ public interface ProcessorContext {
      * @param value value
      * @param childName name of downstream processor
      */
-    <K, H, V> void forward(K key, H header, V value, String childName);
+    <K, V> void forward(K key, V value, String childName);
 
     /**
      * Requests a commit
@@ -155,7 +152,7 @@ public interface ProcessorContext {
      * Returns the current timestamp.
      *
      * If it is triggered while processing a record streamed from the source processor, timestamp is defined as the timestamp of the current input record; the timestamp is extracted from
-     * {@link HeaderConsumerRecord HeaderConsumerRecord} by {@link TimestampExtractor}.
+     * {@link org.apache.kafka.clients.consumer.ConsumerRecord ConsumerRecord} by {@link TimestampExtractor}.
      *
      * If it is triggered while processing a record generated not from the source processor (for example,
      * if this method is invoked from the punctuate call), timestamp is defined as the current

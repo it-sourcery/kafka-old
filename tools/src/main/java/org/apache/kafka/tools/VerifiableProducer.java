@@ -21,7 +21,7 @@ import org.apache.kafka.clients.producer.Callback;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.Producer;
 import org.apache.kafka.clients.producer.ProducerConfig;
-import org.apache.kafka.clients.producer.HeaderProducerRecord;
+import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.clients.producer.RecordMetadata;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -224,7 +224,7 @@ public class VerifiableProducer {
 
     /** Produce a message with given key and value. */
     public void send(String key, String value) {
-        HeaderProducerRecord<String, String> record = new HeaderProducerRecord<String, String>(topic, key, value);
+        ProducerRecord<String, String> record = new ProducerRecord<String, String>(topic, key, value);
         numSent++;
         try {
             producer.send(record, new PrintInfoCallback(key, value));

@@ -23,7 +23,7 @@ package org.apache.kafka.streams.state.internals;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.apache.kafka.clients.producer.HeaderProducerRecord;
+import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.common.serialization.Serializer;
 import org.apache.kafka.streams.processor.StreamPartitioner;
 import org.apache.kafka.streams.processor.internals.RecordCollector;
@@ -44,12 +44,12 @@ public class StoreChangeLoggerTest {
             new RecordCollector(null, "StoreChangeLoggerTest") {
                 @SuppressWarnings("unchecked")
                 @Override
-                public <K1, V1> void send(HeaderProducerRecord<K1, V1> record, Serializer<K1> keySerializer, Serializer<V1> valueSerializer) {
+                public <K1, V1> void send(ProducerRecord<K1, V1> record, Serializer<K1> keySerializer, Serializer<V1> valueSerializer) {
                     logged.put((Integer) record.key(), (String) record.value());
                 }
 
                 @Override
-                public <K1, V1> void send(HeaderProducerRecord<K1, V1> record, Serializer<K1> keySerializer, Serializer<V1> valueSerializer,
+                public <K1, V1> void send(ProducerRecord<K1, V1> record, Serializer<K1> keySerializer, Serializer<V1> valueSerializer,
                                           StreamPartitioner<K1, V1> partitioner) {
                     // ignore partitioner
                     send(record, keySerializer, valueSerializer);

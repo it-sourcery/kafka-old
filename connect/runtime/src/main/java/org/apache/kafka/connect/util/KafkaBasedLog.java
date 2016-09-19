@@ -19,13 +19,13 @@ package org.apache.kafka.connect.util;
 
 import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
-import org.apache.kafka.clients.consumer.HeaderConsumerRecord;
-import org.apache.kafka.clients.consumer.HeaderConsumerRecords;
+import org.apache.kafka.clients.consumer.ConsumerRecord;
+import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
-import org.apache.kafka.clients.producer.HeaderProducerRecord;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.Producer;
 import org.apache.kafka.clients.producer.ProducerConfig;
+import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.common.KafkaException;
 import org.apache.kafka.common.PartitionInfo;
 import org.apache.kafka.common.TopicPartition;
@@ -69,7 +69,7 @@ import static java.util.Collections.singleton;
  *     and only reads it in {@link #readToEnd(Callback)} callbacks then no additional synchronization will be required.
  * </p>
  */
-public class KafkaBasedLog<K, H, V> {
+public class KafkaBasedLog<K, V> {
     private static final Logger log = LoggerFactory.getLogger(KafkaBasedLog.class);
     private static final long CREATE_TOPIC_TIMEOUT_MS = 30000;
 
@@ -77,9 +77,9 @@ public class KafkaBasedLog<K, H, V> {
     private final String topic;
     private final Map<String, Object> producerConfigs;
     private final Map<String, Object> consumerConfigs;
-    private final Callback<HeaderConsumerRecord<K, H, V>> consumedCallback;
-    private Consumer<K, H, V> consumer;
-    private Producer<K, H, V> producer;
+    private final Callback<ConsumerRecord<K, V>> consumedCallback;
+    private Consumer<K, V> consumer;
+    private Producer<K, V> producer;
 
     private Thread thread;
     private boolean stopRequested;
@@ -98,13 +98,13 @@ public class KafkaBasedLog<K, H, V> {
      *                        contain compatible serializer settings for the generic types used on this class. Some
      *                        setting, such as the auto offset reset policy, will be overridden to ensure correct
      *                        behavior of this class.
-     * @param consumedCallback callback to invoke for each {@link HeaderConsumerRecord} consumed when tailing the log
+     * @param consumedCallback callback to invoke for each {@link ConsumerRecord} consumed when tailing the log
      * @param time Time interface
      */
     public KafkaBasedLog(String topic,
                          Map<String, Object> producerConfigs,
                          Map<String, Object> consumerConfigs,
-                         Callback<HeaderConsumerRecord<K, H, V>> consumedCallback,
+                         Callback<ConsumerRecord<K, V>> consumedCallback,
                          Time time) {
         this.topic = topic;
         this.producerConfigs = producerConfigs;
@@ -219,25 +219,16 @@ public class KafkaBasedLog<K, H, V> {
         return future;
     }
 
-    public void send(K key, V value){
-        this.send(key, null, value);
+    public void send(K key, V value) {
+        send(key, value, null);
     }
 
-    public void send(K key, V value, org.apache.kafka.clients.producer.Callback callback){
-        this.send(key, null, value, callback);
-    }
-
-
-    public void send(K key, H header, V value) {
-        send(key, header, value, null);
-    }
-
-    public void send(K key, H header, V value, org.apache.kafka.clients.producer.Callback callback) {
-        producer.send(new HeaderProducerRecord<>(topic, key, header, value), callback);
+    public void send(K key, V value, org.apache.kafka.clients.producer.Callback callback) {
+        producer.send(new ProducerRecord<>(topic, key, value), callback);
     }
 
 
-    private Producer<K, H, V> createProducer() {
+    private Producer<K, V> createProducer() {
         // Always require producer acks to all to ensure durable writes
         producerConfigs.put(ProducerConfig.ACKS_CONFIG, "all");
 
@@ -246,7 +237,7 @@ public class KafkaBasedLog<K, H, V> {
         return new KafkaProducer<>(producerConfigs);
     }
 
-    private Consumer<K, H, V> createConsumer() {
+    private Consumer<K, V> createConsumer() {
         // Always force reset to the beginning of the log since this class wants to consume all available log data
         consumerConfigs.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
 
@@ -257,8 +248,8 @@ public class KafkaBasedLog<K, H, V> {
 
     private void poll(long timeoutMs) {
         try {
-            HeaderConsumerRecords<K, H, V> records = consumer.poll(timeoutMs);
-            for (HeaderConsumerRecord<K, H, V> record : records)
+            ConsumerRecords<K, V> records = consumer.poll(timeoutMs);
+            for (ConsumerRecord<K, V> record : records)
                 consumedCallback.onCompletion(null, record);
         } catch (WakeupException e) {
             // Expected on get() or stop(). The calling code should handle this

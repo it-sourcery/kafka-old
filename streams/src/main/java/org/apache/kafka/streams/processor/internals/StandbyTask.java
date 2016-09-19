@@ -18,7 +18,7 @@
 package org.apache.kafka.streams.processor.internals;
 
 import org.apache.kafka.clients.consumer.Consumer;
-import org.apache.kafka.clients.consumer.HeaderConsumerRecord;
+import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.streams.StreamsConfig;
 import org.apache.kafka.streams.StreamsMetrics;
@@ -85,7 +85,7 @@ public class StandbyTask extends AbstractTask {
      * Updates a state store using records from one change log partition
      * @return a list of records not consumed
      */
-    public List<HeaderConsumerRecord<byte[], byte[]>> update(TopicPartition partition, List<HeaderConsumerRecord<byte[], byte[]>> records) {
+    public List<ConsumerRecord<byte[], byte[]>> update(TopicPartition partition, List<ConsumerRecord<byte[], byte[]>> records) {
         log.debug("task [{}] updates for partition [{}]", id(), partition);
         return stateMgr.updateStandbyStates(partition, records);
     }

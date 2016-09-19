@@ -14,7 +14,7 @@ package org.apache.kafka.clients.consumer.internals;
 
 
 import org.apache.kafka.clients.consumer.ConsumerInterceptor;
-import org.apache.kafka.clients.consumer.HeaderConsumerRecords;
+import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.OffsetAndMetadata;
 import org.apache.kafka.common.TopicPartition;
 import org.slf4j.Logger;
@@ -28,18 +28,18 @@ import java.util.Map;
  * A container that holds the list {@link org.apache.kafka.clients.consumer.ConsumerInterceptor}
  * and wraps calls to the chain of custom interceptors.
  */
-public class ConsumerInterceptors<K, H, V> implements Closeable {
+public class ConsumerInterceptors<K, V> implements Closeable {
     private static final Logger log = LoggerFactory.getLogger(ConsumerInterceptors.class);
-    private final List<ConsumerInterceptor<K, H, V>> interceptors;
+    private final List<ConsumerInterceptor<K, V>> interceptors;
 
-    public ConsumerInterceptors(List<ConsumerInterceptor<K, H, V>> interceptors) {
+    public ConsumerInterceptors(List<ConsumerInterceptor<K, V>> interceptors) {
         this.interceptors = interceptors;
     }
 
     /**
      * This is called when the records are about to be returned to the user.
      * <p>
-     * This method calls {@link ConsumerInterceptor#onConsume(HeaderConsumerRecords)} for each
+     * This method calls {@link ConsumerInterceptor#onConsume(ConsumerRecords)} for each
      * interceptor. Records returned from each interceptor get passed to onConsume() of the next interceptor
      * in the chain of interceptors.
      * <p>
@@ -50,9 +50,9 @@ public class ConsumerInterceptors<K, H, V> implements Closeable {
      * @param records records to be consumed by the client.
      * @return records that are either modified by interceptors or same as records passed to this method.
      */
-    public HeaderConsumerRecords<K, H, V> onConsume(HeaderConsumerRecords<K, H, V> records) {
-        HeaderConsumerRecords<K, H, V> interceptRecords = records;
-        for (ConsumerInterceptor<K, H, V> interceptor : this.interceptors) {
+    public ConsumerRecords<K, V> onConsume(ConsumerRecords<K, V> records) {
+        ConsumerRecords<K, V> interceptRecords = records;
+        for (ConsumerInterceptor<K, V> interceptor : this.interceptors) {
             try {
                 interceptRecords = interceptor.onConsume(interceptRecords);
             } catch (Exception e) {
@@ -73,7 +73,7 @@ public class ConsumerInterceptors<K, H, V> implements Closeable {
      * @param offsets A map of offsets by partition with associated metadata
      */
     public void onCommit(Map<TopicPartition, OffsetAndMetadata> offsets) {
-        for (ConsumerInterceptor<K, H, V> interceptor : this.interceptors) {
+        for (ConsumerInterceptor<K, V> interceptor : this.interceptors) {
             try {
                 interceptor.onCommit(offsets);
             } catch (Exception e) {
@@ -88,7 +88,7 @@ public class ConsumerInterceptors<K, H, V> implements Closeable {
      */
     @Override
     public void close() {
-        for (ConsumerInterceptor<K, H, V> interceptor : this.interceptors) {
+        for (ConsumerInterceptor<K, V> interceptor : this.interceptors) {
             try {
                 interceptor.close();
             } catch (Exception e) {

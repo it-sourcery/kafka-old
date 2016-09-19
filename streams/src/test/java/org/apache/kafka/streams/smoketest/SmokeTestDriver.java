@@ -18,12 +18,12 @@
 package org.apache.kafka.streams.smoketest;
 
 import org.apache.kafka.clients.consumer.ConsumerConfig;
-import org.apache.kafka.clients.consumer.HeaderConsumerRecord;
-import org.apache.kafka.clients.consumer.HeaderConsumerRecords;
+import org.apache.kafka.clients.consumer.ConsumerRecord;
+import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
-import org.apache.kafka.clients.producer.HeaderProducerRecord;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerConfig;
+import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.common.PartitionInfo;
 import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.common.serialization.ByteArrayDeserializer;
@@ -156,8 +156,8 @@ public class SmokeTestDriver extends SmokeTestUtil {
                 value = END;
             }
 
-            HeaderProducerRecord<byte[], byte[]> record =
-                    new HeaderProducerRecord<>("data", stringSerde.serializer().serialize("", key), intSerde.serializer().serialize("", value));
+            ProducerRecord<byte[], byte[]> record =
+                    new ProducerRecord<>("data", stringSerde.serializer().serialize("", key), intSerde.serializer().serialize("", value));
 
             producer.send(record);
 
@@ -225,14 +225,14 @@ public class SmokeTestDriver extends SmokeTestUtil {
         int maxRetry = 240; // max two minutes (500ms * 240) (before we reach the end of records)
 
         while (true) {
-            HeaderConsumerRecords<byte[], byte[]> records = consumer.poll(500);
+            ConsumerRecords<byte[], byte[]> records = consumer.poll(500);
             if (records.isEmpty()) {
                 retryCount++;
                 if (retryCount > maxRetry) break;
             } else {
                 retryCount = 0;
 
-                for (HeaderConsumerRecord<byte[], byte[]> record : records) {
+                for (ConsumerRecord<byte[], byte[]> record : records) {
                     String key = stringSerde.deserializer().deserialize("", record.key());
                     switch (record.topic()) {
                         case "echo":

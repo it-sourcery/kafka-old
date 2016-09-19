@@ -21,8 +21,7 @@ import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
 
-public class HeaderConsumerRecordTest
-{
+public class ConsumerRecordTest {
 
     @Test
     public void testOldConstructor() {
@@ -39,10 +38,10 @@ public class HeaderConsumerRecordTest
         assertEquals(key, record.key());
         assertEquals(value, record.value());
         assertEquals(TimestampType.NO_TIMESTAMP_TYPE, record.timestampType());
-        assertEquals(HeaderConsumerRecord.NO_TIMESTAMP, record.timestamp());
-        assertEquals(HeaderConsumerRecord.NULL_CHECKSUM, record.checksum());
-        assertEquals(HeaderConsumerRecord.NULL_SIZE, record.serializedKeySize());
-        assertEquals(HeaderConsumerRecord.NULL_SIZE, record.serializedValueSize());
+        assertEquals(ConsumerRecord.NO_TIMESTAMP, record.timestamp());
+        assertEquals(ConsumerRecord.NULL_CHECKSUM, record.checksum());
+        assertEquals(ConsumerRecord.NULL_SIZE, record.serializedKeySize());
+        assertEquals(ConsumerRecord.NULL_SIZE, record.serializedValueSize());
     }
 
 

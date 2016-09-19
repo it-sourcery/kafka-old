@@ -20,10 +20,10 @@ package kafka.common
 import java.io.PrintStream
 import java.util.Properties
 
-import org.apache.kafka.clients.consumer.HeaderConsumerRecord
+import org.apache.kafka.clients.consumer.ConsumerRecord
 
 /**
-  * Typical implementations of this interface convert a `HeaderConsumerRecord` into a type that can then be passed to
+  * Typical implementations of this interface convert a `ConsumerRecord` into a type that can then be passed to
   * a `PrintStream`.
   *
   * This is used by the `ConsoleConsumer`.
@@ -32,7 +32,7 @@ trait MessageFormatter {
 
   def init(props: Properties) {}
 
-  def writeTo(consumerRecord: HeaderConsumerRecord[Array[Byte], Array[Byte]], output: PrintStream): Unit
+  def writeTo(consumerRecord: ConsumerRecord[Array[Byte], Array[Byte]], output: PrintStream): Unit
 
   def close() {}
 

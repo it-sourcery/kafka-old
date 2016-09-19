@@ -135,7 +135,7 @@ class ProducerBounceTest extends KafkaServerTestHarness {
     override def doWork(): Unit = {
       val responses =
         for (i <- sent+1 to sent+numRecords)
-        yield producer.send(new HeaderProducerRecord[Array[Byte],Array[Byte]](topic1, null, null, i.toString.getBytes),
+        yield producer.send(new ProducerRecord[Array[Byte],Array[Byte]](topic1, null, null, i.toString.getBytes),
                             new ErrorLoggingCallback(topic1, null, null, true))
       val futures = responses.toList
 

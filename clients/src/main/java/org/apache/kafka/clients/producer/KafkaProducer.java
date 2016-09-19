@@ -84,7 +84,7 @@ import org.slf4j.LoggerFactory;
  *
  * Producer<String, String> producer = new KafkaProducer<>(props);
  * for(int i = 0; i < 100; i++)
- *     producer.send(new HeaderProducerRecord<String, String>("my-topic", Integer.toString(i), Integer.toString(i)));
+ *     producer.send(new ProducerRecord<String, String>("my-topic", Integer.toString(i), Integer.toString(i)));
  *
  * producer.close();
  * }</pre>
@@ -93,7 +93,7 @@ import org.slf4j.LoggerFactory;
  * as well as a background I/O thread that is responsible for turning these records into requests and transmitting them
  * to the cluster. Failure to close the producer after use will leak these resources.
  * <p>
- * The {@link #send(HeaderProducerRecord) send()} method is asynchronous. When called it adds the record to a buffer of pending record sends
+ * The {@link #send(ProducerRecord) send()} method is asynchronous. When called it adds the record to a buffer of pending record sends
  * and immediately returns. This allows the producer to batch together individual records for efficiency.
  * <p>
  * The <code>acks</code> config controls the criteria under which requests are considered complete. The "all" setting
@@ -123,7 +123,7 @@ import org.slf4j.LoggerFactory;
  * a TimeoutException.
  * <p>
  * The <code>key.serializer</code> and <code>value.serializer</code> instruct how to turn the key and value objects the user provides with
- * their <code>HeaderProducerRecord</code> into bytes. You can use the included {@link org.apache.kafka.common.serialization.ByteArraySerializer} or
+ * their <code>ProducerRecord</code> into bytes. You can use the included {@link org.apache.kafka.common.serialization.ByteArraySerializer} or
  * {@link org.apache.kafka.common.serialization.StringSerializer} for simple string or byte types.
  */
 public class KafkaProducer<K, V> implements Producer<K, V> {
@@ -346,10 +346,10 @@ public class KafkaProducer<K, V> implements Producer<K, V> {
 
     /**
      * Asynchronously send a record to a topic. Equivalent to <code>send(record, null)</code>.
-     * See {@link #send(HeaderProducerRecord, Callback)} for details.
+     * See {@link #send(ProducerRecord, Callback)} for details.
      */
     @Override
-    public Future<RecordMetadata> send(HeaderProducerRecord<K, V> record) {
+    public Future<RecordMetadata> send(ProducerRecord<K, V> record) {
         return send(record, null);
     }
 
@@ -378,7 +378,7 @@ public class KafkaProducer<K, V> implements Producer<K, V> {
      * {@code
      * byte[] key = "key".getBytes();
      * byte[] value = "value".getBytes();
-     * HeaderProducerRecord<byte[],byte[]> record = new HeaderProducerRecord<byte[],byte[]>("my-topic", key, value)
+     * ProducerRecord<byte[],byte[]> record = new ProducerRecord<byte[],byte[]>("my-topic", key, value)
      * producer.send(record).get();
      * }</pre>
      * <p>
@@ -387,7 +387,7 @@ public class KafkaProducer<K, V> implements Producer<K, V> {
      *
      * <pre>
      * {@code
-     * HeaderProducerRecord<byte[],byte[]> record = new HeaderProducerRecord<byte[],byte[]>("the-topic", key, value);
+     * ProducerRecord<byte[],byte[]> record = new ProducerRecord<byte[],byte[]>("the-topic", key, value);
      * producer.send(myRecord,
      *               new Callback() {
      *                   public void onCompletion(RecordMetadata metadata, Exception e) {
@@ -406,8 +406,8 @@ public class KafkaProducer<K, V> implements Producer<K, V> {
      *
      * <pre>
      * {@code
-     * producer.send(new HeaderProducerRecord<byte[],byte[]>(topic, partition, key1, value1), callback1);
-     * producer.send(new HeaderProducerRecord<byte[],byte[]>(topic, partition, key2, value2), callback2);
+     * producer.send(new ProducerRecord<byte[],byte[]>(topic, partition, key1, value1), callback1);
+     * producer.send(new ProducerRecord<byte[],byte[]>(topic, partition, key2, value2), callback2);
      * }
      * </pre>
      * <p>
@@ -426,16 +426,16 @@ public class KafkaProducer<K, V> implements Producer<K, V> {
      *
      */
     @Override
-    public Future<RecordMetadata> send(HeaderProducerRecord<K, V> record, Callback callback) {
+    public Future<RecordMetadata> send(ProducerRecord<K, V> record, Callback callback) {
         // intercept the record, which can be potentially modified; this method does not throw exceptions
-        HeaderProducerRecord<K, V> interceptedRecord = this.interceptors == null ? record : this.interceptors.onSend(record);
+        ProducerRecord<K, V> interceptedRecord = this.interceptors == null ? record : this.interceptors.onSend(record);
         return doSend(interceptedRecord, callback);
     }
 
     /**
      * Implementation of asynchronously send a record to a topic.
      */
-    private Future<RecordMetadata> doSend(HeaderProducerRecord<K, V> record, Callback callback) {
+    private Future<RecordMetadata> doSend(ProducerRecord<K, V> record, Callback callback) {
         TopicPartition tp = null;
         try {
             // first make sure the metadata for the topic is available
@@ -577,8 +577,8 @@ public class KafkaProducer<K, V> implements Producer<K, V> {
      * This example shows how to consume from one Kafka topic and produce to another Kafka topic:
      * <pre>
      * {@code
-     * for(HeaderConsumerRecord<String, String> record: consumer.poll(100))
-     *     producer.send(new HeaderProducerRecord("my-topic", record.key(), record.value());
+     * for(ConsumerRecord<String, String> record: consumer.poll(100))
+     *     producer.send(new ProducerRecord("my-topic", record.key(), record.value());
      * producer.flush();
      * consumer.commit();
      * }
@@ -717,7 +717,7 @@ public class KafkaProducer<K, V> implements Producer<K, V> {
      * if the record has partition returns the value otherwise
      * calls configured partitioner class to compute the partition.
      */
-    private int partition(HeaderProducerRecord<K, V> record, byte[] serializedKey , byte[] serializedValue, Cluster cluster) {
+    private int partition(ProducerRecord<K, V> record, byte[] serializedKey , byte[] serializedValue, Cluster cluster) {
         Integer partition = record.partition();
         if (partition != null) {
             List<PartitionInfo> partitions = cluster.partitionsForTopic(record.topic());

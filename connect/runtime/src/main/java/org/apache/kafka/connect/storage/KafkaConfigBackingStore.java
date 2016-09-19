@@ -18,7 +18,7 @@
 package org.apache.kafka.connect.storage;
 
 import org.apache.kafka.clients.consumer.ConsumerConfig;
-import org.apache.kafka.clients.consumer.HeaderConsumerRecord;
+import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.common.config.ConfigException;
 import org.apache.kafka.common.serialization.ByteArrayDeserializer;
@@ -417,14 +417,14 @@ public class KafkaConfigBackingStore implements ConfigBackingStore {
     }
 
     private KafkaBasedLog<String, byte[]> createKafkaBasedLog(String topic, Map<String, Object> producerProps,
-                                                              Map<String, Object> consumerProps, Callback<HeaderConsumerRecord<String, byte[]>> consumedCallback) {
+                                                              Map<String, Object> consumerProps, Callback<ConsumerRecord<String, byte[]>> consumedCallback) {
         return new KafkaBasedLog<>(topic, producerProps, consumerProps, consumedCallback, new SystemTime());
     }
 
     @SuppressWarnings("unchecked")
-    private class ConsumeCallback implements Callback<HeaderConsumerRecord<String, byte[]>> {
+    private class ConsumeCallback implements Callback<ConsumerRecord<String, byte[]>> {
         @Override
-        public void onCompletion(Throwable error, HeaderConsumerRecord<String, byte[]> record) {
+        public void onCompletion(Throwable error, ConsumerRecord<String, byte[]> record) {
             if (error != null) {
                 log.error("Unexpected in consumer callback for KafkaConfigBackingStore: ", error);
                 return;

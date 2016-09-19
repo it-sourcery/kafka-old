@@ -17,8 +17,8 @@
 package org.apache.kafka.clients.producer.internals;
 
 
-import org.apache.kafka.clients.producer.HeaderProducerRecord;
 import org.apache.kafka.clients.producer.ProducerInterceptor;
+import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.clients.producer.RecordMetadata;
 import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.common.record.Record;
@@ -42,7 +42,7 @@ public class ProducerInterceptors<K, V> implements Closeable {
 
     /**
      * This is called when client sends the record to KafkaProducer, before key and value gets serialized.
-     * The method calls {@link ProducerInterceptor#onSend(HeaderProducerRecord)} method. HeaderProducerRecord
+     * The method calls {@link ProducerInterceptor#onSend(ProducerRecord)} method. ProducerRecord
      * returned from the first interceptor's onSend() is passed to the second interceptor onSend(), and so on in the
      * interceptor chain. The record returned from the last interceptor is returned from this method.
      *
@@ -54,8 +54,8 @@ public class ProducerInterceptors<K, V> implements Closeable {
      * @param record the record from client
      * @return producer record to send to topic/partition
      */
-    public HeaderProducerRecord<K, V> onSend(HeaderProducerRecord<K, V> record) {
-        HeaderProducerRecord<K, V> interceptRecord = record;
+    public ProducerRecord<K, V> onSend(ProducerRecord<K, V> record) {
+        ProducerRecord<K, V> interceptRecord = record;
         for (ProducerInterceptor<K, V> interceptor : this.interceptors) {
             try {
                 interceptRecord = interceptor.onSend(interceptRecord);
@@ -95,7 +95,7 @@ public class ProducerInterceptors<K, V> implements Closeable {
 
     /**
      * This method is called when sending the record fails in {@link ProducerInterceptor#onSend
-     * (HeaderProducerRecord)} method. This method calls {@link ProducerInterceptor#onAcknowledgement(RecordMetadata, Exception)}
+     * (ProducerRecord)} method. This method calls {@link ProducerInterceptor#onAcknowledgement(RecordMetadata, Exception)}
      * method for each interceptor
      *
      * @param record The record from client
@@ -103,7 +103,7 @@ public class ProducerInterceptors<K, V> implements Closeable {
      *        after partition gets assigned; the topic part of interceptTopicPartition is the same as in record.
      * @param exception The exception thrown during processing of this record.
      */
-    public void onSendError(HeaderProducerRecord<K, V> record, TopicPartition interceptTopicPartition, Exception exception) {
+    public void onSendError(ProducerRecord<K, V> record, TopicPartition interceptTopicPartition, Exception exception) {
         for (ProducerInterceptor<K, V> interceptor : this.interceptors) {
             try {
                 if (record == null && interceptTopicPartition == null) {

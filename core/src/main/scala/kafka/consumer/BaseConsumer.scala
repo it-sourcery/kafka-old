@@ -30,7 +30,8 @@ import kafka.message.Message
 import kafka.common.TopicAndPartition
 import kafka.message.MessageAndOffset
 import kafka.utils.ToolsUtils
-import org.apache.kafka.clients.consumer.HeaderConsumerRecord
+
+import org.apache.kafka.clients.consumer.ConsumerRecord
 import org.apache.kafka.clients.consumer.internals.NoOpConsumerRebalanceListener
 import org.apache.kafka.common.record.TimestampType
 import org.apache.kafka.common.utils.Utils
@@ -54,7 +55,6 @@ case class BaseConsumerRecord(topic: String,
                               timestamp: Long = Message.NoTimestamp,
                               timestampType: TimestampType = TimestampType.NO_TIMESTAMP_TYPE,
                               key: Array[Byte],
-                              header: Array[Byte] = null,
                               value: Array[Byte])
 
 class NewShinyConsumer(topic: Option[String], partitionId: Option[Int], offset: Option[Long], whitelist: Option[String], consumerProps: Properties, val timeoutMs: Long = Long.MaxValue) extends BaseConsumer {
@@ -109,7 +109,6 @@ class NewShinyConsumer(topic: Option[String], partitionId: Option[Int], offset: 
                        record.timestamp,
                        record.timestampType,
                        record.key,
-                       record.header(),
                        record.value)
   }
 
@@ -145,7 +144,6 @@ class OldConsumer(topicFilter: TopicFilter, consumerProps: Properties) extends B
                        messageAndMetadata.timestamp,
                        messageAndMetadata.timestampType,
                        messageAndMetadata.key,
-                       messageAndMetadata.
                        messageAndMetadata.message)
   }
 

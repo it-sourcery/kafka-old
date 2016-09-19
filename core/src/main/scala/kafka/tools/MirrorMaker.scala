@@ -31,9 +31,9 @@ import kafka.metrics.KafkaMetricsGroup
 import kafka.serializer.DefaultDecoder
 import kafka.utils.{CommandLineUtils, CoreUtils, Logging}
 import org.apache.kafka.clients.consumer
-import org.apache.kafka.clients.consumer.{OffsetAndMetadata, Consumer, HeaderConsumerRecord, KafkaConsumer, CommitFailedException}
+import org.apache.kafka.clients.consumer.{OffsetAndMetadata, Consumer, ConsumerRecord, KafkaConsumer, CommitFailedException}
 import org.apache.kafka.clients.producer.internals.ErrorLoggingCallback
-import org.apache.kafka.clients.producer.{KafkaProducer, ProducerConfig, HeaderProducerRecord, RecordMetadata}
+import org.apache.kafka.clients.producer.{KafkaProducer, ProducerConfig, ProducerRecord, RecordMetadata}
 import org.apache.kafka.common.TopicPartition
 import org.apache.kafka.common.serialization.ByteArrayDeserializer
 import org.apache.kafka.common.utils.Utils
@@ -530,7 +530,7 @@ object MirrorMaker extends Logging with KafkaMetricsGroup {
                                        whitelistOpt: Option[String])
     extends MirrorMakerBaseConsumer {
     val regex = whitelistOpt.getOrElse(throw new IllegalArgumentException("New consumer only supports whitelist."))
-    var recordIter: java.util.Iterator[HeaderConsumerRecord[Array[Byte], Array[Byte], Array[Byte]]] = null
+    var recordIter: java.util.Iterator[ConsumerRecord[Array[Byte], Array[Byte]]] = null
 
     // TODO: we need to manually maintain the consumed offsets for new consumer
     // since its internal consumed position is updated in batch rather than one
@@ -631,7 +631,7 @@ object MirrorMaker extends Logging with KafkaMetricsGroup {
 
     val producer = new KafkaProducer[Array[Byte], Array[Byte]](producerProps)
 
-    def send(record: HeaderProducerRecord[Array[Byte], Array[Byte]]) {
+    def send(record: ProducerRecord[Array[Byte], Array[Byte]]) {
       if (sync) {
         this.producer.send(record).get()
       } else {
@@ -676,13 +676,13 @@ object MirrorMaker extends Logging with KafkaMetricsGroup {
    * If message.handler.args is specified. A constructor that takes in a String as argument must exist.
    */
   trait MirrorMakerMessageHandler {
-    def handle(record: BaseConsumerRecord): util.List[HeaderProducerRecord[Array[Byte], Array[Byte]]]
+    def handle(record: BaseConsumerRecord): util.List[ProducerRecord[Array[Byte], Array[Byte]]]
   }
 
   private[tools] object defaultMirrorMakerMessageHandler extends MirrorMakerMessageHandler {
-    override def handle(record: BaseConsumerRecord): util.List[HeaderProducerRecord[Array[Byte], Array[Byte]]] = {
+    override def handle(record: BaseConsumerRecord): util.List[ProducerRecord[Array[Byte], Array[Byte]]] = {
       val timestamp: java.lang.Long = if (record.timestamp == Record.NO_TIMESTAMP) null else record.timestamp
-      Collections.singletonList(new HeaderProducerRecord[Array[Byte], Array[Byte], Array[Byte]](record.topic, null, timestamp, record.key, record.h record.value))
+      Collections.singletonList(new ProducerRecord[Array[Byte], Array[Byte]](record.topic, null, timestamp, record.key, record.value))
     }
   }
 

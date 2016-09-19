@@ -18,14 +18,13 @@ package kafka.api
 
 import java.util.Properties
 
-import kafka.admin.{AdminUtils, RackAwareMode, RackAwareTest}
+import kafka.admin.{RackAwareMode, AdminUtils, RackAwareTest}
 import kafka.integration.KafkaServerTestHarness
 import kafka.server.KafkaConfig
 import kafka.utils.TestUtils
-import org.apache.kafka.clients.producer.{HeaderProducerRecord, ProducerRecord}
+import org.apache.kafka.clients.producer.ProducerRecord
 import org.junit.Assert._
 import org.junit.Test
-
 import scala.collection.Map
 
 class RackAwareAutoTopicCreationTest extends KafkaServerTestHarness with RackAwareTest {
@@ -48,7 +47,7 @@ class RackAwareAutoTopicCreationTest extends KafkaServerTestHarness with RackAwa
     val producer = TestUtils.createNewProducer(brokerList, retries = 5)
     try {
       // Send a message to auto-create the topic
-      val record = new HeaderProducerRecord(topic, null, "key".getBytes, "value".getBytes)
+      val record = new ProducerRecord(topic, null, "key".getBytes, "value".getBytes)
       assertEquals("Should have offset 0", 0L, producer.send(record).get.offset)
 
       // double check that the topic is created with leader elected

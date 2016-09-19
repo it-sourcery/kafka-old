@@ -17,8 +17,8 @@
 
 package org.apache.kafka.streams.processor.internals;
 
-import org.apache.kafka.clients.producer.HeaderProducerRecord;
 import org.apache.kafka.clients.producer.MockProducer;
+import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.clients.producer.internals.DefaultPartitioner;
 import org.apache.kafka.common.Cluster;
 import org.apache.kafka.common.Node;
@@ -68,14 +68,14 @@ public class RecordCollectorTest {
                 new MockProducer<>(cluster, true, new DefaultPartitioner(), byteArraySerializer, byteArraySerializer),
                 "RecordCollectorTest-TestSpecificPartition");
 
-        collector.send(new HeaderProducerRecord<>("topic1", 0, "999", "0"), stringSerializer, stringSerializer);
-        collector.send(new HeaderProducerRecord<>("topic1", 0, "999", "0"), stringSerializer, stringSerializer);
-        collector.send(new HeaderProducerRecord<>("topic1", 0, "999", "0"), stringSerializer, stringSerializer);
+        collector.send(new ProducerRecord<>("topic1", 0, "999", "0"), stringSerializer, stringSerializer);
+        collector.send(new ProducerRecord<>("topic1", 0, "999", "0"), stringSerializer, stringSerializer);
+        collector.send(new ProducerRecord<>("topic1", 0, "999", "0"), stringSerializer, stringSerializer);
 
-        collector.send(new HeaderProducerRecord<>("topic1", 1, "999", "0"), stringSerializer, stringSerializer);
-        collector.send(new HeaderProducerRecord<>("topic1", 1, "999", "0"), stringSerializer, stringSerializer);
+        collector.send(new ProducerRecord<>("topic1", 1, "999", "0"), stringSerializer, stringSerializer);
+        collector.send(new ProducerRecord<>("topic1", 1, "999", "0"), stringSerializer, stringSerializer);
 
-        collector.send(new HeaderProducerRecord<>("topic1", 2, "999", "0"), stringSerializer, stringSerializer);
+        collector.send(new ProducerRecord<>("topic1", 2, "999", "0"), stringSerializer, stringSerializer);
 
         Map<TopicPartition, Long> offsets = collector.offsets();
 
@@ -84,9 +84,9 @@ public class RecordCollectorTest {
         assertEquals((Long) 0L, offsets.get(new TopicPartition("topic1", 2)));
 
         // ignore StreamPartitioner
-        collector.send(new HeaderProducerRecord<>("topic1", 0, "999", "0"), stringSerializer, stringSerializer, streamPartitioner);
-        collector.send(new HeaderProducerRecord<>("topic1", 1, "999", "0"), stringSerializer, stringSerializer, streamPartitioner);
-        collector.send(new HeaderProducerRecord<>("topic1", 2, "999", "0"), stringSerializer, stringSerializer, streamPartitioner);
+        collector.send(new ProducerRecord<>("topic1", 0, "999", "0"), stringSerializer, stringSerializer, streamPartitioner);
+        collector.send(new ProducerRecord<>("topic1", 1, "999", "0"), stringSerializer, stringSerializer, streamPartitioner);
+        collector.send(new ProducerRecord<>("topic1", 2, "999", "0"), stringSerializer, stringSerializer, streamPartitioner);
 
         assertEquals((Long) 3L, offsets.get(new TopicPartition("topic1", 0)));
         assertEquals((Long) 2L, offsets.get(new TopicPartition("topic1", 1)));
@@ -100,17 +100,17 @@ public class RecordCollectorTest {
                 new MockProducer<>(cluster, true, new DefaultPartitioner(), byteArraySerializer, byteArraySerializer),
                 "RecordCollectorTest-TestStreamPartitioner");
 
-        collector.send(new HeaderProducerRecord<>("topic1", "3", "0"), stringSerializer, stringSerializer, streamPartitioner);
-        collector.send(new HeaderProducerRecord<>("topic1", "9", "0"), stringSerializer, stringSerializer, streamPartitioner);
-        collector.send(new HeaderProducerRecord<>("topic1", "27", "0"), stringSerializer, stringSerializer, streamPartitioner);
-        collector.send(new HeaderProducerRecord<>("topic1", "81", "0"), stringSerializer, stringSerializer, streamPartitioner);
-        collector.send(new HeaderProducerRecord<>("topic1", "243", "0"), stringSerializer, stringSerializer, streamPartitioner);
+        collector.send(new ProducerRecord<>("topic1", "3", "0"), stringSerializer, stringSerializer, streamPartitioner);
+        collector.send(new ProducerRecord<>("topic1", "9", "0"), stringSerializer, stringSerializer, streamPartitioner);
+        collector.send(new ProducerRecord<>("topic1", "27", "0"), stringSerializer, stringSerializer, streamPartitioner);
+        collector.send(new ProducerRecord<>("topic1", "81", "0"), stringSerializer, stringSerializer, streamPartitioner);
+        collector.send(new ProducerRecord<>("topic1", "243", "0"), stringSerializer, stringSerializer, streamPartitioner);
 
-        collector.send(new HeaderProducerRecord<>("topic1", "28", "0"), stringSerializer, stringSerializer, streamPartitioner);
-        collector.send(new HeaderProducerRecord<>("topic1", "82", "0"), stringSerializer, stringSerializer, streamPartitioner);
-        collector.send(new HeaderProducerRecord<>("topic1", "244", "0"), stringSerializer, stringSerializer, streamPartitioner);
+        collector.send(new ProducerRecord<>("topic1", "28", "0"), stringSerializer, stringSerializer, streamPartitioner);
+        collector.send(new ProducerRecord<>("topic1", "82", "0"), stringSerializer, stringSerializer, streamPartitioner);
+        collector.send(new ProducerRecord<>("topic1", "244", "0"), stringSerializer, stringSerializer, streamPartitioner);
 
-        collector.send(new HeaderProducerRecord<>("topic1", "245", "0"), stringSerializer, stringSerializer, streamPartitioner);
+        collector.send(new ProducerRecord<>("topic1", "245", "0"), stringSerializer, stringSerializer, streamPartitioner);
 
         Map<TopicPartition, Long> offsets = collector.offsets();
 
