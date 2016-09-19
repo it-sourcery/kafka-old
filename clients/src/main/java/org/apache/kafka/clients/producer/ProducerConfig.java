@@ -18,6 +18,7 @@ import org.apache.kafka.common.config.AbstractConfig;
 import org.apache.kafka.common.config.ConfigDef;
 import org.apache.kafka.common.config.ConfigDef.Importance;
 import org.apache.kafka.common.config.ConfigDef.Type;
+import org.apache.kafka.common.serialization.HeadersStringDeserializer;
 import org.apache.kafka.common.serialization.Serializer;
 
 import java.util.HashMap;
@@ -193,6 +194,11 @@ public class ProducerConfig extends AbstractConfig {
                                               + " ordering of records because if two batches are sent to a single partition, and the first fails and is retried but the second"
                                               + " succeeds, then the records in the second batch may appear first.";
 
+    /** <code>headers.serializer</code> */
+    public static final String HEADERS_SERIALIZER_CLASS_CONFIG = "headers.serializer";
+    public static final String HEADERS_SERIALIZER_CLASS_DOC = "Serializer class for headers that implements the <code>Serializer</code> interface.";
+
+
     /** <code>key.serializer</code> */
     public static final String KEY_SERIALIZER_CLASS_CONFIG = "key.serializer";
     public static final String KEY_SERIALIZER_CLASS_DOC = "Serializer class for key that implements the <code>Serializer</code> interface.";
@@ -277,6 +283,11 @@ public class ProducerConfig extends AbstractConfig {
                                         atLeast(1),
                                         Importance.LOW,
                                         MAX_IN_FLIGHT_REQUESTS_PER_CONNECTION_DOC)
+                                .define(HEADERS_SERIALIZER_CLASS_CONFIG,
+                                        Type.CLASS,
+                                        HeadersStringDeserializer.class,
+                                        Importance.HIGH,
+                                        HEADERS_SERIALIZER_CLASS_DOC)
                                 .define(KEY_SERIALIZER_CLASS_CONFIG,
                                         Type.CLASS,
                                         Importance.HIGH,
@@ -312,10 +323,12 @@ public class ProducerConfig extends AbstractConfig {
 
     }
 
-    public static Map<String, Object> addSerializerToConfig(Map<String, Object> configs,
+    public static Map<String, Object> addSerializerToConfig(Map<String, Object> configs, Serializer<?> headersSerializer,
                                                             Serializer<?> keySerializer, Serializer<?> valueSerializer) {
         Map<String, Object> newConfigs = new HashMap<String, Object>();
         newConfigs.putAll(configs);
+        if (headersSerializer != null)
+            newConfigs.put(HEADERS_SERIALIZER_CLASS_CONFIG, headersSerializer.getClass());
         if (keySerializer != null)
             newConfigs.put(KEY_SERIALIZER_CLASS_CONFIG, keySerializer.getClass());
         if (valueSerializer != null)
@@ -323,10 +336,12 @@ public class ProducerConfig extends AbstractConfig {
         return newConfigs;
     }
 
-    public static Properties addSerializerToConfig(Properties properties,
+    public static Properties addSerializerToConfig(Properties properties, Serializer<?> headersSerializer,
                                                    Serializer<?> keySerializer, Serializer<?> valueSerializer) {
         Properties newProperties = new Properties();
         newProperties.putAll(properties);
+        if (headersSerializer != null)
+            newProperties.put(HEADERS_SERIALIZER_CLASS_CONFIG, headersSerializer.getClass());
         if (keySerializer != null)
             newProperties.put(KEY_SERIALIZER_CLASS_CONFIG, keySerializer.getClass().getName());
         if (valueSerializer != null)

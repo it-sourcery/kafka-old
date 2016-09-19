@@ -18,6 +18,7 @@ import org.apache.kafka.common.config.ConfigDef;
 import org.apache.kafka.common.config.ConfigDef.Importance;
 import org.apache.kafka.common.config.ConfigDef.Type;
 import org.apache.kafka.common.serialization.Deserializer;
+import org.apache.kafka.common.serialization.HeadersStringDeserializer;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -170,6 +171,12 @@ public class ConsumerConfig extends AbstractConfig {
     public static final String CHECK_CRCS_CONFIG = "check.crcs";
     private static final String CHECK_CRCS_DOC = "Automatically check the CRC32 of the records consumed. This ensures no on-the-wire or on-disk corruption to the messages occurred. This check adds some overhead, so it may be disabled in cases seeking extreme performance.";
 
+
+    /** <code>headers.deserializer</code> */
+    public static final String HEADERS_DESERIALIZER_CLASS_CONFIG = "headers.deserializer";
+    public static final String HEADERS_DESERIALIZER_CLASS_DOC = "Deserializer class for headers that implements the <code>Deserializer</code> interface.";
+
+
     /** <code>key.deserializer</code> */
     public static final String KEY_DESERIALIZER_CLASS_CONFIG = "key.deserializer";
     public static final String KEY_DESERIALIZER_CLASS_DOC = "Deserializer class for key that implements the <code>Deserializer</code> interface.";
@@ -311,6 +318,11 @@ public class ConsumerConfig extends AbstractConfig {
                                         "",
                                         Importance.LOW,
                                         CommonClientConfigs.METRIC_REPORTER_CLASSES_DOC)
+                                .define(HEADERS_DESERIALIZER_CLASS_CONFIG,
+                                        Type.CLASS,
+                                        HeadersStringDeserializer.class,
+                                        Importance.HIGH,
+                                        HEADERS_DESERIALIZER_CLASS_DOC)
                                 .define(KEY_DESERIALIZER_CLASS_CONFIG,
                                         Type.CLASS,
                                         Importance.HIGH,
@@ -366,10 +378,13 @@ public class ConsumerConfig extends AbstractConfig {
     }
 
     public static Map<String, Object> addDeserializerToConfig(Map<String, Object> configs,
+                                                              Deserializer<Map<String, String>> headersDeserializer,
                                                               Deserializer<?> keyDeserializer,
                                                               Deserializer<?> valueDeserializer) {
         Map<String, Object> newConfigs = new HashMap<String, Object>();
         newConfigs.putAll(configs);
+        if (headersDeserializer != null)
+            newConfigs.put(HEADERS_DESERIALIZER_CLASS_CONFIG, headersDeserializer.getClass());
         if (keyDeserializer != null)
             newConfigs.put(KEY_DESERIALIZER_CLASS_CONFIG, keyDeserializer.getClass());
         if (valueDeserializer != null)
@@ -378,10 +393,13 @@ public class ConsumerConfig extends AbstractConfig {
     }
 
     public static Properties addDeserializerToConfig(Properties properties,
+                                                     Deserializer<Map<String, String>> headersDeserializer,
                                                      Deserializer<?> keyDeserializer,
                                                      Deserializer<?> valueDeserializer) {
         Properties newProperties = new Properties();
         newProperties.putAll(properties);
+        if (headersDeserializer != null)
+            newProperties.put(HEADERS_DESERIALIZER_CLASS_CONFIG, headersDeserializer.getClass().getName());
         if (keyDeserializer != null)
             newProperties.put(KEY_DESERIALIZER_CLASS_CONFIG, keyDeserializer.getClass().getName());
         if (valueDeserializer != null)

@@ -96,7 +96,7 @@ public class SenderTest {
     @Test
     public void testSimple() throws Exception {
         long offset = 0;
-        Future<RecordMetadata> future = accumulator.append(tp, 0L, "key".getBytes(), "value".getBytes(), null, MAX_BLOCK_TIMEOUT).future;
+        Future<RecordMetadata> future = accumulator.append(tp, 0L, "key".getBytes(), new byte[0], "value".getBytes(), null, MAX_BLOCK_TIMEOUT).future;
         sender.run(time.milliseconds()); // connect
         sender.run(time.milliseconds()); // send produce request
         assertEquals("We should have a single produce request in flight.", 1, client.inFlightRequestCount());
@@ -115,7 +115,7 @@ public class SenderTest {
     public void testQuotaMetrics() throws Exception {
         final long offset = 0;
         for (int i = 1; i <= 3; i++) {
-            Future<RecordMetadata> future = accumulator.append(tp, 0L, "key".getBytes(), "value".getBytes(), null, MAX_BLOCK_TIMEOUT).future;
+            Future<RecordMetadata> future = accumulator.append(tp, 0L, "key".getBytes(), new byte[0], "value".getBytes(), null, MAX_BLOCK_TIMEOUT).future;
             sender.run(time.milliseconds()); // send produce request
             client.respond(produceResponse(tp, offset, Errors.NONE.code(), 100 * i));
             sender.run(time.milliseconds());
@@ -145,7 +145,7 @@ public class SenderTest {
                                        "clientId",
                                        REQUEST_TIMEOUT);
             // do a successful retry
-            Future<RecordMetadata> future = accumulator.append(tp, 0L, "key".getBytes(), "value".getBytes(), null, MAX_BLOCK_TIMEOUT).future;
+            Future<RecordMetadata> future = accumulator.append(tp, 0L, "key".getBytes(), new byte[0], "value".getBytes(), null, MAX_BLOCK_TIMEOUT).future;
             sender.run(time.milliseconds()); // connect
             sender.run(time.milliseconds()); // send produce request
             String id = client.requests().peek().request().destination();
@@ -166,7 +166,7 @@ public class SenderTest {
             assertEquals(offset, future.get().offset());
 
             // do an unsuccessful retry
-            future = accumulator.append(tp, 0L, "key".getBytes(), "value".getBytes(), null, MAX_BLOCK_TIMEOUT).future;
+            future = accumulator.append(tp, 0L, "key".getBytes(), new byte[0], "value".getBytes(), null, MAX_BLOCK_TIMEOUT).future;
             sender.run(time.milliseconds()); // send produce request
             for (int i = 0; i < maxRetries + 1; i++) {
                 client.disconnect(client.requests().peek().request().destination());
@@ -204,7 +204,7 @@ public class SenderTest {
 
             // Send the first message.
             TopicPartition tp2 = new TopicPartition("test", 1);
-            accumulator.append(tp2, 0L, "key1".getBytes(), "value1".getBytes(), null, MAX_BLOCK_TIMEOUT);
+            accumulator.append(tp2, 0L, "key1".getBytes(), new byte[0], "value1".getBytes(), null, MAX_BLOCK_TIMEOUT);
             sender.run(time.milliseconds()); // connect
             sender.run(time.milliseconds()); // send produce request
             String id = client.requests().peek().request().destination();
@@ -215,7 +215,7 @@ public class SenderTest {
 
             time.sleep(900);
             // Now send another message to tp2
-            accumulator.append(tp2, 0L, "key2".getBytes(), "value2".getBytes(), null, MAX_BLOCK_TIMEOUT);
+            accumulator.append(tp2, 0L, "key2".getBytes(), new byte[0], "value2".getBytes(), null, MAX_BLOCK_TIMEOUT);
 
             // Update metadata before sender receives response from broker 0. Now partition 2 moves to broker 0
             Cluster cluster2 = TestUtils.singletonCluster("test", 2);
@@ -237,7 +237,7 @@ public class SenderTest {
         long offset = 0;
         metadata.update(Cluster.empty(), time.milliseconds());
 
-        Future<RecordMetadata> future = accumulator.append(tp, time.milliseconds(), "key".getBytes(), "value".getBytes(), null, MAX_BLOCK_TIMEOUT).future;
+        Future<RecordMetadata> future = accumulator.append(tp, time.milliseconds(), "key".getBytes(), new byte[0], "value".getBytes(), null, MAX_BLOCK_TIMEOUT).future;
         sender.run(time.milliseconds());
         assertTrue("Topic not added to metadata", metadata.containsTopic(tp.topic()));
         metadata.update(cluster, time.milliseconds());
@@ -252,7 +252,7 @@ public class SenderTest {
         time.sleep(Metadata.TOPIC_EXPIRY_MS);
         metadata.update(Cluster.empty(), time.milliseconds());
         assertFalse("Unused topic has not been expired", metadata.containsTopic(tp.topic()));
-        future = accumulator.append(tp, time.milliseconds(), "key".getBytes(), "value".getBytes(), null, MAX_BLOCK_TIMEOUT).future;
+        future = accumulator.append(tp, time.milliseconds(), "key".getBytes(), new byte[0], "value".getBytes(), null, MAX_BLOCK_TIMEOUT).future;
         sender.run(time.milliseconds());
         assertTrue("Topic not added to metadata", metadata.containsTopic(tp.topic()));
         metadata.update(cluster, time.milliseconds());

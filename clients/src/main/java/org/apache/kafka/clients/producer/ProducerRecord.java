@@ -12,6 +12,9 @@
  */
 package org.apache.kafka.clients.producer;
 
+import java.util.HashMap;
+import java.util.Map;
+
 /**
  * A key/value pair to be sent to Kafka. This consists of a topic name to which the record is being sent, an optional
  * partition number, and an optional key and value.
@@ -40,6 +43,7 @@ public final class ProducerRecord<K, V> {
 
     private final String topic;
     private final Integer partition;
+    private final Map<String, String> headers;
     private final K key;
     private final V value;
     private final Long timestamp;
@@ -53,7 +57,7 @@ public final class ProducerRecord<K, V> {
      * @param key The key that will be included in the record
      * @param value The record contents
      */
-    public ProducerRecord(String topic, Integer partition, Long timestamp, K key, V value) {
+    public ProducerRecord(String topic, Integer partition, Long timestamp, Map<String, String> headers, K key, V value) {
         if (topic == null)
             throw new IllegalArgumentException("Topic cannot be null");
         if (timestamp != null && timestamp < 0)
@@ -62,7 +66,13 @@ public final class ProducerRecord<K, V> {
         this.partition = partition;
         this.key = key;
         this.value = value;
+        this.headers = headers == null ? new HashMap<String, String>() : headers;
         this.timestamp = timestamp;
+    }
+
+    public ProducerRecord(String topic, Integer partition, Long timestamp, K key, V value)
+    {
+        this(topic, partition, timestamp, null, key, value);
     }
 
     /**
@@ -108,6 +118,13 @@ public final class ProducerRecord<K, V> {
     /**
      * @return The key (or null if no key is specified)
      */
+    public Map<String, String> headers() {
+        return headers;
+    }
+
+    /**
+     * @return The key (or null if no key is specified)
+     */
     public K key() {
         return key;
     }
@@ -135,10 +152,11 @@ public final class ProducerRecord<K, V> {
 
     @Override
     public String toString() {
+        String headers = this.headers == null ? "null" : this.headers.toString();
         String key = this.key == null ? "null" : this.key.toString();
         String value = this.value == null ? "null" : this.value.toString();
         String timestamp = this.timestamp == null ? "null" : this.timestamp.toString();
-        return "ProducerRecord(topic=" + topic + ", partition=" + partition + ", key=" + key + ", value=" + value +
+        return "ProducerRecord(topic=" + topic + ", partition=" + partition + ", headers=" + headers + ", key=" + key + ", value=" + value +
             ", timestamp=" + timestamp + ")";
     }
 
@@ -152,6 +170,8 @@ public final class ProducerRecord<K, V> {
         ProducerRecord<?, ?> that = (ProducerRecord<?, ?>) o;
 
         if (key != null ? !key.equals(that.key) : that.key != null) 
+            return false;
+        else if (headers != null ? !headers.equals(that.headers) : that.headers != null)
             return false;
         else if (partition != null ? !partition.equals(that.partition) : that.partition != null) 
             return false;
@@ -169,6 +189,7 @@ public final class ProducerRecord<K, V> {
     public int hashCode() {
         int result = topic != null ? topic.hashCode() : 0;
         result = 31 * result + (partition != null ? partition.hashCode() : 0);
+        result = 31 * result + (headers != null ? headers.hashCode() : 0);
         result = 31 * result + (key != null ? key.hashCode() : 0);
         result = 31 * result + (value != null ? value.hashCode() : 0);
         result = 31 * result + (timestamp != null ? timestamp.hashCode() : 0);

@@ -53,7 +53,7 @@ public class Compressor {
         @Override
         public Constructor get() throws ClassNotFoundException, NoSuchMethodException {
             return Class.forName("org.xerial.snappy.SnappyOutputStream")
-                .getConstructor(OutputStream.class, Integer.TYPE);
+                        .getConstructor(OutputStream.class, Integer.TYPE);
         }
     });
 
@@ -61,7 +61,7 @@ public class Compressor {
         @Override
         public Constructor get() throws ClassNotFoundException, NoSuchMethodException {
             return Class.forName("org.apache.kafka.common.record.KafkaLZ4BlockOutputStream")
-                .getConstructor(OutputStream.class);
+                        .getConstructor(OutputStream.class);
         }
     });
 
@@ -69,7 +69,7 @@ public class Compressor {
         @Override
         public Constructor get() throws ClassNotFoundException, NoSuchMethodException {
             return Class.forName("org.xerial.snappy.SnappyInputStream")
-                .getConstructor(InputStream.class);
+                        .getConstructor(InputStream.class);
         }
     });
 
@@ -77,7 +77,7 @@ public class Compressor {
         @Override
         public Constructor get() throws ClassNotFoundException, NoSuchMethodException {
             return Class.forName("org.apache.kafka.common.record.KafkaLZ4BlockInputStream")
-                .getConstructor(InputStream.class, Boolean.TYPE);
+                        .getConstructor(InputStream.class, Boolean.TYPE);
         }
     });
 
@@ -134,14 +134,14 @@ public class Compressor {
             buffer.putLong(numRecords - 1);
             buffer.putInt(pos - initPos - Records.LOG_OVERHEAD);
             // write the shallow message (the crc and value size are not correct yet)
-            Record.write(buffer, maxTimestamp, null, null, type, 0, -1);
+            Record.write(buffer, maxTimestamp, null, null, null, type, 0, -1);
             // compute the fill the value size
             int valueSize = pos - initPos - Records.LOG_OVERHEAD - Record.RECORD_OVERHEAD;
-            buffer.putInt(initPos + Records.LOG_OVERHEAD + Record.KEY_OFFSET_V1, valueSize);
+            buffer.putInt(initPos + Records.LOG_OVERHEAD + Record.KEY_OFFSET_V1_V2, valueSize);
             // compute and fill the crc at the beginning of the message
             long crc = Record.computeChecksum(buffer,
-                initPos + Records.LOG_OVERHEAD + Record.MAGIC_OFFSET,
-                pos - initPos - Records.LOG_OVERHEAD - Record.MAGIC_OFFSET);
+                                              initPos + Records.LOG_OVERHEAD + Record.MAGIC_OFFSET,
+                                              pos - initPos - Records.LOG_OVERHEAD - Record.MAGIC_OFFSET);
             Utils.writeUnsignedInt(buffer, initPos + Records.LOG_OVERHEAD + Record.CRC_OFFSET, crc);
             // reset the position
             buffer.position(pos);
@@ -149,7 +149,7 @@ public class Compressor {
             // update the compression ratio
             this.compressionRate = (float) buffer.position() / this.writtenUncompressed;
             TYPE_TO_RATE[type.id] = TYPE_TO_RATE[type.id] * COMPRESSION_RATE_DAMPING_FACTOR +
-                compressionRate * (1 - COMPRESSION_RATE_DAMPING_FACTOR);
+                                    compressionRate * (1 - COMPRESSION_RATE_DAMPING_FACTOR);
         }
     }
 
@@ -200,12 +200,12 @@ public class Compressor {
     /**
      * @return CRC of the record
      */
-    public long putRecord(long timestamp, byte[] key, byte[] value, CompressionType type,
+    public long putRecord(long timestamp, byte[] key, byte[] headers, byte[] value, CompressionType type,
                           int valueOffset, int valueSize) {
         // put a record as un-compressed into the underlying stream
-        long crc = Record.computeChecksum(timestamp, key, value, type, valueOffset, valueSize);
+        long crc = Record.computeChecksum(timestamp, key, headers, value, type, valueOffset, valueSize);
         byte attributes = Record.computeAttributes(type);
-        putRecord(crc, attributes, timestamp, key, value, valueOffset, valueSize);
+        putRecord(crc, attributes, timestamp, key, headers, value, valueOffset, valueSize);
         return crc;
     }
 
@@ -213,13 +213,13 @@ public class Compressor {
      * Put a record as uncompressed into the underlying stream
      * @return CRC of the record
      */
-    public long putRecord(long timestamp, byte[] key, byte[] value) {
-        return putRecord(timestamp, key, value, CompressionType.NONE, 0, -1);
+    public long putRecord(long timestamp, byte[] key, byte[] headers, byte[] value) {
+        return putRecord(timestamp, key, headers, value, CompressionType.NONE, 0, -1);
     }
 
-    private void putRecord(final long crc, final byte attributes, final long timestamp, final byte[] key, final byte[] value, final int valueOffset, final int valueSize) {
+    private void putRecord(final long crc, final byte attributes, final long timestamp, final byte[] key, final byte[] headers, final byte[] value, final int valueOffset, final int valueSize) {
         maxTimestamp = Math.max(maxTimestamp, timestamp);
-        Record.write(this, crc, attributes, timestamp, key, value, valueOffset, valueSize);
+        Record.write(this, crc, attributes, timestamp, key, headers, value, valueOffset, valueSize);
     }
 
     public void recordWritten(int size) {
@@ -288,7 +288,7 @@ public class Compressor {
                 case LZ4:
                     try {
                         InputStream stream = (InputStream) lz4InputStreamSupplier.get().newInstance(buffer,
-                                messageVersion == Record.MAGIC_VALUE_V0);
+                                                                                                    messageVersion == Record.MAGIC_VALUE_V0);
                         return new DataInputStream(stream);
                     } catch (Exception e) {
                         throw new KafkaException(e);

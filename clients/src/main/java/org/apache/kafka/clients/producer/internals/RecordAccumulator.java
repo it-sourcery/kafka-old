@@ -158,6 +158,7 @@ public final class RecordAccumulator {
     public RecordAppendResult append(TopicPartition tp,
                                      long timestamp,
                                      byte[] key,
+                                     byte[] headers,
                                      byte[] value,
                                      Callback callback,
                                      long maxTimeToBlock) throws InterruptedException {
@@ -170,13 +171,13 @@ public final class RecordAccumulator {
             synchronized (dq) {
                 if (closed)
                     throw new IllegalStateException("Cannot send after the producer is closed.");
-                RecordAppendResult appendResult = tryAppend(timestamp, key, value, callback, dq);
+                RecordAppendResult appendResult = tryAppend(timestamp, key, headers, value, callback, dq);
                 if (appendResult != null)
                     return appendResult;
             }
 
             // we don't have an in-progress record batch try to allocate a new batch
-            int size = Math.max(this.batchSize, Records.LOG_OVERHEAD + Record.recordSize(key, value));
+            int size = Math.max(this.batchSize, Records.LOG_OVERHEAD + Record.recordSize(key, headers, value));
             log.trace("Allocating a new {} byte message buffer for topic {} partition {}", size, tp.topic(), tp.partition());
             ByteBuffer buffer = free.allocate(size, maxTimeToBlock);
             synchronized (dq) {
@@ -184,7 +185,7 @@ public final class RecordAccumulator {
                 if (closed)
                     throw new IllegalStateException("Cannot send after the producer is closed.");
 
-                RecordAppendResult appendResult = tryAppend(timestamp, key, value, callback, dq);
+                RecordAppendResult appendResult = tryAppend(timestamp, key, headers, value, callback, dq);
                 if (appendResult != null) {
                     // Somebody else found us a batch, return the one we waited for! Hopefully this doesn't happen often...
                     free.deallocate(buffer);
@@ -192,7 +193,7 @@ public final class RecordAccumulator {
                 }
                 MemoryRecords records = MemoryRecords.emptyRecords(buffer, compression, this.batchSize);
                 RecordBatch batch = new RecordBatch(tp, records, time.milliseconds());
-                FutureRecordMetadata future = Utils.notNull(batch.tryAppend(timestamp, key, value, callback, time.milliseconds()));
+                FutureRecordMetadata future = Utils.notNull(batch.tryAppend(timestamp, key, headers, value, callback, time.milliseconds()));
 
                 dq.addLast(batch);
                 incomplete.add(batch);
@@ -207,10 +208,10 @@ public final class RecordAccumulator {
      * If `RecordBatch.tryAppend` fails (i.e. the record batch is full), close its memory records to release temporary
      * resources (like compression streams buffers).
      */
-    private RecordAppendResult tryAppend(long timestamp, byte[] key, byte[] value, Callback callback, Deque<RecordBatch> deque) {
+    private RecordAppendResult tryAppend(long timestamp, byte[] key, byte[] headers, byte[] value, Callback callback, Deque<RecordBatch> deque) {
         RecordBatch last = deque.peekLast();
         if (last != null) {
-            FutureRecordMetadata future = last.tryAppend(timestamp, key, value, callback, time.milliseconds());
+            FutureRecordMetadata future = last.tryAppend(timestamp, key, headers, value, callback, time.milliseconds());
             if (future == null)
                 last.records.close();
             else

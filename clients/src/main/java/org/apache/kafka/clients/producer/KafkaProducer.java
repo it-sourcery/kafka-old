@@ -144,6 +144,7 @@ public class KafkaProducer<K, V> implements Producer<K, V> {
     private final CompressionType compressionType;
     private final Sensor errors;
     private final Time time;
+    private final Serializer<Map<String, String>> headersSerializer;
     private final Serializer<K> keySerializer;
     private final Serializer<V> valueSerializer;
     private final ProducerConfig producerConfig;
@@ -160,7 +161,25 @@ public class KafkaProducer<K, V> implements Producer<K, V> {
      *
      */
     public KafkaProducer(Map<String, Object> configs) {
-        this(new ProducerConfig(configs), null, null);
+        this(new ProducerConfig(configs), null, null, null);
+    }
+
+    /**
+     * A producer is instantiated by providing a set of key-value pairs as configuration, a key and a value {@link Serializer}.
+     * Valid configuration strings are documented <a href="http://kafka.apache.org/documentation.html#producerconfigs">here</a>.
+     * Values can be either strings or Objects of the appropriate type (for example a numeric configuration would accept
+     * either the string "42" or the integer 42).
+     * @param configs   The producer configs
+     * @param headersSerializer  The serializer for headers that implements {@link Serializer}. The configure() method won't be
+     *                       called in the producer when the serializer is passed in directly.
+     * @param keySerializer  The serializer for key that implements {@link Serializer}. The configure() method won't be
+     *                       called in the producer when the serializer is passed in directly.
+     * @param valueSerializer  The serializer for value that implements {@link Serializer}. The configure() method won't
+     *                         be called in the producer when the serializer is passed in directly.
+     */
+    public KafkaProducer(Map<String, Object> configs, Serializer<Map<String, String>> headersSerializer, Serializer<K> keySerializer, Serializer<V> valueSerializer) {
+        this(new ProducerConfig(ProducerConfig.addSerializerToConfig(configs, headersSerializer, keySerializer, valueSerializer)),
+             headersSerializer, keySerializer, valueSerializer);
     }
 
     /**
@@ -175,9 +194,9 @@ public class KafkaProducer<K, V> implements Producer<K, V> {
      *                         be called in the producer when the serializer is passed in directly.
      */
     public KafkaProducer(Map<String, Object> configs, Serializer<K> keySerializer, Serializer<V> valueSerializer) {
-        this(new ProducerConfig(ProducerConfig.addSerializerToConfig(configs, keySerializer, valueSerializer)),
-             keySerializer, valueSerializer);
+        this(configs, null, keySerializer, valueSerializer);
     }
+
 
     /**
      * A producer is instantiated by providing a set of key-value pairs as configuration. Valid configuration strings
@@ -185,7 +204,23 @@ public class KafkaProducer<K, V> implements Producer<K, V> {
      * @param properties   The producer configs
      */
     public KafkaProducer(Properties properties) {
-        this(new ProducerConfig(properties), null, null);
+        this(new ProducerConfig(properties), null, null, null);
+    }
+
+    /**
+     * A producer is instantiated by providing a set of key-value pairs as configuration, a key and a value {@link Serializer}.
+     * Valid configuration strings are documented <a href="http://kafka.apache.org/documentation.html#producerconfigs">here</a>.
+     * @param properties   The producer configs
+     * @param keySerializer  The serializer for key that implements {@link Serializer}. The configure() method won't be
+     *                       called in the producer when the serializer is passed in directly.
+     * @param headersSerializer  The serializer for headers that implements {@link Serializer}. The configure() method won't be
+     *                       called in the producer when the serializer is passed in directly.
+     * @param valueSerializer  The serializer for value that implements {@link Serializer}. The configure() method won't
+     *                         be called in the producer when the serializer is passed in directly.
+     */
+    public KafkaProducer(Properties properties, Serializer<Map<String, String>> headersSerializer, Serializer<K> keySerializer, Serializer<V> valueSerializer) {
+        this(new ProducerConfig(ProducerConfig.addSerializerToConfig(properties, headersSerializer, keySerializer, valueSerializer)),
+             headersSerializer, keySerializer, valueSerializer);
     }
 
     /**
@@ -197,13 +232,13 @@ public class KafkaProducer<K, V> implements Producer<K, V> {
      * @param valueSerializer  The serializer for value that implements {@link Serializer}. The configure() method won't
      *                         be called in the producer when the serializer is passed in directly.
      */
-    public KafkaProducer(Properties properties, Serializer<K> keySerializer, Serializer<V> valueSerializer) {
-        this(new ProducerConfig(ProducerConfig.addSerializerToConfig(properties, keySerializer, valueSerializer)),
-             keySerializer, valueSerializer);
+    public KafkaProducer(Properties properties, Serializer<K> keySerializer, Serializer<V> valueSerializer)
+    {
+        this(properties, null, keySerializer, valueSerializer);
     }
 
     @SuppressWarnings({"unchecked", "deprecation"})
-    private KafkaProducer(ProducerConfig config, Serializer<K> keySerializer, Serializer<V> valueSerializer) {
+    private KafkaProducer(ProducerConfig config, Serializer<Map<String, String>> headersSerializer, Serializer<K> keySerializer, Serializer<V> valueSerializer) {
         try {
             log.trace("Starting the Kafka producer");
             Map<String, Object> userProvidedConfigs = config.originals();
@@ -301,9 +336,18 @@ public class KafkaProducer<K, V> implements Producer<K, V> {
 
             this.errors = this.metrics.sensor("errors");
 
+            if (headersSerializer == null) {
+                this.headersSerializer = config.getConfiguredInstance(ProducerConfig.HEADERS_SERIALIZER_CLASS_CONFIG,
+                                                                  Serializer.class);
+                this.headersSerializer.configure(config.originals(), true);
+            } else {
+                config.ignore(ProducerConfig.HEADERS_SERIALIZER_CLASS_CONFIG);
+                this.headersSerializer = headersSerializer;
+            }
+
             if (keySerializer == null) {
                 this.keySerializer = config.getConfiguredInstance(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG,
-                        Serializer.class);
+                                                                  Serializer.class);
                 this.keySerializer.configure(config.originals(), true);
             } else {
                 config.ignore(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG);
@@ -450,6 +494,14 @@ public class KafkaProducer<K, V> implements Producer<K, V> {
                         " to class " + producerConfig.getClass(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG).getName() +
                         " specified in key.serializer");
             }
+            byte[] serializedHeaders;
+            try {
+                serializedHeaders = headersSerializer.serialize(record.topic(), record.headers());
+            } catch (ClassCastException cce) {
+                throw new SerializationException("Can't convert headers of class " + record.headers().getClass().getName() +
+                                                 " to class " + producerConfig.getClass(ProducerConfig.HEADERS_SERIALIZER_CLASS_CONFIG).getName() +
+                                                 " specified in headers.serializer");
+            }
             byte[] serializedValue;
             try {
                 serializedValue = valueSerializer.serialize(record.topic(), record.value());
@@ -460,14 +512,14 @@ public class KafkaProducer<K, V> implements Producer<K, V> {
             }
 
             int partition = partition(record, serializedKey, serializedValue, cluster);
-            int serializedSize = Records.LOG_OVERHEAD + Record.recordSize(serializedKey, serializedValue);
+            int serializedSize = Records.LOG_OVERHEAD + Record.recordSize(serializedKey, serializedHeaders, serializedValue);
             ensureValidRecordSize(serializedSize);
             tp = new TopicPartition(record.topic(), partition);
             long timestamp = record.timestamp() == null ? time.milliseconds() : record.timestamp();
             log.trace("Sending record {} with callback {} to topic {} partition {}", record, callback, record.topic(), partition);
             // producer callback will make sure to call both 'callback' and interceptor callback
             Callback interceptCallback = this.interceptors == null ? callback : new InterceptorCallback<>(callback, this.interceptors, tp);
-            RecordAccumulator.RecordAppendResult result = accumulator.append(tp, timestamp, serializedKey, serializedValue, interceptCallback, remainingWaitMs);
+            RecordAccumulator.RecordAppendResult result = accumulator.append(tp, timestamp, serializedKey, serializedHeaders, serializedValue, interceptCallback, remainingWaitMs);
             if (result.batchIsFull || result.newBatchCreated) {
                 log.trace("Waking up the sender since topic {} partition {} is either full or getting a new batch", record.topic(), partition);
                 this.sender.wakeup();

@@ -36,13 +36,15 @@ import org.junit.runners.Parameterized.Parameters;
 public class RecordTest {
 
     private long timestamp;
+    private ByteBuffer headers;
     private ByteBuffer key;
     private ByteBuffer value;
     private CompressionType compression;
     private Record record;
 
-    public RecordTest(long timestamp, byte[] key, byte[] value, CompressionType compression) {
+    public RecordTest(long timestamp, byte[] key, byte[] headers, byte[] value, CompressionType compression) {
         this.timestamp = timestamp;
+        this.headers = headers == null ? null : ByteBuffer.wrap(headers);
         this.key = key == null ? null : ByteBuffer.wrap(key);
         this.value = value == null ? null : ByteBuffer.wrap(value);
         this.compression = compression;
@@ -67,6 +69,7 @@ public class RecordTest {
         assertEquals(record.checksum(), record.computeChecksum());
         assertEquals(record.checksum(), Record.computeChecksum(
             this.timestamp,
+            this.headers == null ? null : this.headers.array(),
             this.key == null ? null : this.key.array(),
             this.value == null ? null : this.value.array(),
             this.compression, 0, -1));

@@ -52,6 +52,7 @@ import org.apache.kafka.common.requests.OffsetFetchResponse;
 import org.apache.kafka.common.requests.SyncGroupResponse;
 import org.apache.kafka.common.serialization.ByteArrayDeserializer;
 import org.apache.kafka.common.serialization.Deserializer;
+import org.apache.kafka.common.serialization.HeadersStringDeserializer;
 import org.apache.kafka.common.serialization.StringDeserializer;
 import org.apache.kafka.common.utils.MockTime;
 import org.apache.kafka.common.utils.Time;
@@ -1044,7 +1045,7 @@ public class KafkaConsumerTest {
             int fetchCount = fetchEntry.getValue().count;
             MemoryRecords records = MemoryRecords.emptyRecords(ByteBuffer.allocate(1024), CompressionType.NONE);
             for (int i = 0; i < fetchCount; i++)
-                records.append(fetchOffset + i, 0L, ("key-" + i).getBytes(), ("value-" + i).getBytes());
+                records.append(fetchOffset + i, 0L, ("key-" + i).getBytes(), ("headers-" + i).getBytes(), ("value-" + i).getBytes());
             records.close();
             tpResponses.put(partition, new FetchResponse.PartitionData(Errors.NONE.code(), 0, records.buffer()));
         }
@@ -1082,6 +1083,7 @@ public class KafkaConsumerTest {
 
         Deserializer<String> keyDeserializer = new StringDeserializer();
         Deserializer<String> valueDeserializer = new StringDeserializer();
+        Deserializer<Map<String, String>> headersDeserializer = new HeadersStringDeserializer();
 
         OffsetResetStrategy autoResetStrategy = OffsetResetStrategy.EARLIEST;
         OffsetCommitCallback defaultCommitCallback = new ConsumerCoordinator.DefaultOffsetCommitCallback();
@@ -1117,6 +1119,7 @@ public class KafkaConsumerTest {
                 fetchSize,
                 maxPollRecords,
                 checkCrcs,
+                headersDeserializer,
                 keyDeserializer,
                 valueDeserializer,
                 metadata,
@@ -1129,6 +1132,7 @@ public class KafkaConsumerTest {
         return new KafkaConsumer<>(
                 clientId,
                 consumerCoordinator,
+                headersDeserializer,
                 keyDeserializer,
                 valueDeserializer,
                 fetcher,
