@@ -34,7 +34,7 @@ import org.apache.kafka.clients.consumer.HeaderConsumerRecord;
  */
 public class ConsumerRecordTimestampExtractor implements TimestampExtractor {
     @Override
-    public long extract(HeaderConsumerRecord<Object, ? extends Object, Object> record) {
+    public long extract(HeaderConsumerRecord<Object, Object> record) {
         return record.timestamp();
     }
 }

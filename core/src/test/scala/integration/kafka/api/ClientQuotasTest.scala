@@ -57,8 +57,8 @@ class ClientQuotasTest extends KafkaServerTestHarness {
             .map(KafkaConfig.fromProps(_, overridingProps))
   }
 
-  var producers = mutable.Buffer[KafkaProducer[Array[Byte], Array[Byte], Array[Byte]]]()
-  var consumers = mutable.Buffer[KafkaConsumer[Array[Byte], Array[Byte], Array[Byte]]]()
+  var producers = mutable.Buffer[KafkaProducer[Array[Byte], Array[Byte]]]()
+  var consumers = mutable.Buffer[KafkaConsumer[Array[Byte], Array[Byte]]]()
   var replicaConsumers = mutable.Buffer[SimpleConsumer]()
 
   var leaderNode: KafkaServer = null
@@ -77,10 +77,10 @@ class ClientQuotasTest extends KafkaServerTestHarness {
                       classOf[org.apache.kafka.common.serialization.ByteArraySerializer])
     producerProps.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG,
                       classOf[org.apache.kafka.common.serialization.ByteArraySerializer])
-    producers += new KafkaProducer[Array[Byte], Array[Byte], Array[Byte]](producerProps)
+    producers += new KafkaProducer[Array[Byte], Array[Byte]](producerProps)
 
     producerProps.put(ProducerConfig.CLIENT_ID_CONFIG, producerId2)
-    producers += new KafkaProducer[Array[Byte], Array[Byte], Array[Byte]](producerProps)
+    producers += new KafkaProducer[Array[Byte], Array[Byte]](producerProps)
 
     val numPartitions = 1
     val leaders = TestUtils.createTopic(zkUtils, topic1, numPartitions, numServers, servers)
@@ -182,19 +182,19 @@ class ClientQuotasTest extends KafkaServerTestHarness {
     assertEquals("Should not have been throttled", 0.0, allMetrics(consumerMetricName).value(), 0.0)
   }
 
-  def produce(p: KafkaProducer[Array[Byte], Array[Byte], Array[Byte]], count: Int): Int = {
+  def produce(p: KafkaProducer[Array[Byte], Array[Byte]], count: Int): Int = {
     var numBytesProduced = 0
     for (i <- 0 to count) {
       val payload = i.toString.getBytes
       numBytesProduced += payload.length
-      p.send(new HeaderProducerRecord[Array[Byte], Array[Byte], Array[Byte]](topic1, null, null, null, payload),
-             new ErrorLoggingCallback(topic1, null, null, null, true)).get()
+      p.send(new HeaderProducerRecord[Array[Byte], Array[Byte]](topic1, null, null, payload),
+             new ErrorLoggingCallback(topic1, null, null, true)).get()
       Thread.sleep(1)
     }
     numBytesProduced
   }
 
-  def consume(consumer: KafkaConsumer[Array[Byte], Array[Byte], Array[Byte]], numRecords: Int) {
+  def consume(consumer: KafkaConsumer[Array[Byte], Array[Byte]], numRecords: Int) {
     consumer.subscribe(List(topic1))
     var numConsumed = 0
     while (numConsumed < numRecords) {

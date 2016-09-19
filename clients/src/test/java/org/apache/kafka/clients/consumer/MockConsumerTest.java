@@ -30,7 +30,7 @@ import static org.junit.Assert.assertFalse;
 
 public class MockConsumerTest {
     
-    private MockConsumer<String, String, String> consumer = new MockConsumer<String, String, String>(OffsetResetStrategy.EARLIEST);
+    private MockConsumer<String, String> consumer = new MockConsumer<String, String>(OffsetResetStrategy.EARLIEST);
 
     @Test
     public void testSimpleMock() {

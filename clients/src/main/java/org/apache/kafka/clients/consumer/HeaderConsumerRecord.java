@@ -214,7 +214,7 @@ public class HeaderConsumerRecord<K, H, V> {
      * The size of the serialized, uncompressed header in bytes. If header is null, the returned size
      * is -1.
      */
-    public int serializedHeaderSize() {
+    public int getSerializedHeaderSize() {
         return this.serializedHeaderSize;
     }
 

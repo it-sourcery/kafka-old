@@ -270,7 +270,7 @@ class UncleanLeaderElectionTest extends ZooKeeperTestHarness {
     // resetting the ZK offset
     val consumerProps = createConsumerProperties(zkConnect, "group" + random.nextLong, "id", 1000)
     val consumerConnector = Consumer.create(new ConsumerConfig(consumerProps))
-    val messageStream = consumerConnector.createMessageStreams(Map(topic -> 1), new StringDecoder(), new StringDecoder(), new StringDecoder())
+    val messageStream = consumerConnector.createMessageStreams(Map(topic -> 1), new StringDecoder(), new StringDecoder())
 
     val messages = getMessages(messageStream)
     consumerConnector.shutdown

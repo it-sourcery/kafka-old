@@ -26,7 +26,7 @@ import org.apache.kafka.clients.producer.HeaderProducerRecord
 @deprecated("This trait has been deprecated and will be removed in a future release. " +
             "Please use org.apache.kafka.clients.producer.KafkaProducer instead.", "0.10.0.0")
 trait BaseProducer {
-  def send(topic: String, key: Array[Byte], header: Array[Byte], value: Array[Byte])
+  def send(topic: String, key: Array[Byte], value: Array[Byte])
   def close()
 }
 
@@ -39,15 +39,15 @@ class NewShinyProducer(producerProps: Properties) extends BaseProducer {
   // decide whether to send synchronously based on producer properties
   val sync = producerProps.getProperty("producer.type", "async").equals("sync")
 
-  val producer = new KafkaProducer[Array[Byte],Array[Byte],Array[Byte]](producerProps)
+  val producer = new KafkaProducer[Array[Byte],Array[Byte]](producerProps)
 
-  override def send(topic: String, key: Array[Byte], header: Array[Byte], value: Array[Byte]) {
-    val record = new HeaderProducerRecord[Array[Byte],Array[Byte],Array[Byte]](topic, key, header, value)
+  override def send(topic: String, key: Array[Byte], value: Array[Byte]) {
+    val record = new HeaderProducerRecord[Array[Byte],Array[Byte]](topic, key, value)
     if(sync) {
       this.producer.send(record).get()
     } else {
       this.producer.send(record,
-        new ErrorLoggingCallback(topic, key, header, value, false))
+        new ErrorLoggingCallback(topic, key, value, false))
     }
   }
 
@@ -65,7 +65,7 @@ class OldProducer(producerProps: Properties) extends BaseProducer {
     producerProps.setProperty("partitioner.class", classOf[kafka.producer.ByteArrayPartitioner].getName)
   val producer = new kafka.producer.Producer[Array[Byte], Array[Byte]](new ProducerConfig(producerProps))
 
-  override def send(topic: String, key: Array[Byte], header: Array[Byte], value: Array[Byte]) {
+  override def send(topic: String, key: Array[Byte], value: Array[Byte]) {
     this.producer.send(new KeyedMessage[Array[Byte], Array[Byte]](topic, key, value))
   }
 

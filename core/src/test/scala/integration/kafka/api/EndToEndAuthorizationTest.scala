@@ -265,7 +265,7 @@ trait EndToEndAuthorizationTest extends IntegrationTestHarness with SaslSetup {
   
   private def sendRecords(numRecords: Int, tp: TopicPartition) {
     val futures = (0 until numRecords).map { i =>
-      val record = new HeaderProducerRecord(tp.topic(), tp.partition(), s"$i".getBytes, s"$i".getBytes, s"$i".getBytes)
+      val record = new HeaderProducerRecord(tp.topic(), tp.partition(), s"$i".getBytes, s"$i".getBytes)
       debug(s"Sending this record: $record")
       this.producers.head.send(record)
     }
@@ -276,12 +276,12 @@ trait EndToEndAuthorizationTest extends IntegrationTestHarness with SaslSetup {
     }
   }
 
-  private def consumeRecords(consumer: Consumer[Array[Byte], Array[Byte], Array[Byte]],
+  private def consumeRecords(consumer: Consumer[Array[Byte], Array[Byte]],
                              numRecords: Int = 1,
                              startingOffset: Int = 0,
                              topic: String = topic,
                              part: Int = part) {
-    val records = new ArrayList[HeaderConsumerRecord[Array[Byte], Array[Byte], Array[Byte]]]()
+    val records = new ArrayList[HeaderConsumerRecord[Array[Byte], Array[Byte]]]()
     val maxIters = numRecords * 50
     var iters = 0
     while (records.size < numRecords) {

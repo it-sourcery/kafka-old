@@ -63,17 +63,16 @@ public final class RecordBatch {
      * 
      * @return The RecordSend corresponding to this record or null if there isn't sufficient room.
      */
-    public FutureRecordMetadata tryAppend(long timestamp, byte[] key, byte[] header, byte[] value, Callback callback, long now) {
-        if (!this.records.hasRoomFor(key, header, value)) {
+    public FutureRecordMetadata tryAppend(long timestamp, byte[] key, byte[] value, Callback callback, long now) {
+        if (!this.records.hasRoomFor(key, value)) {
             return null;
         } else {
-            long checksum = this.records.append(offsetCounter++, timestamp, key, header, value);
-            this.maxRecordSize = Math.max(this.maxRecordSize, Record.recordSize(key, header, value));
+            long checksum = this.records.append(offsetCounter++, timestamp, key, value);
+            this.maxRecordSize = Math.max(this.maxRecordSize, Record.recordSize(key, value));
             this.lastAppendTime = now;
             FutureRecordMetadata future = new FutureRecordMetadata(this.produceFuture, this.recordCount,
                                                                    timestamp, checksum,
                                                                    key == null ? -1 : key.length,
-                                                                   header == null ? -1 : header.length,
                                                                    value == null ? -1 : value.length);
             if (callback != null)
                 thunks.add(new Thunk(callback, future));
@@ -104,7 +103,6 @@ public final class RecordBatch {
                                                                  timestamp == Record.NO_TIMESTAMP ? thunk.future.timestamp() : timestamp,
                                                                  thunk.future.checksum(),
                                                                  thunk.future.serializedKeySize(),
-                                                                 thunk.future.serializedHeaderSize(),
                                                                  thunk.future.serializedValueSize());
                     thunk.callback.onCompletion(metadata, null);
                 } else {

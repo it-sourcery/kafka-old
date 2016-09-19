@@ -51,11 +51,11 @@ object ConsoleProducer {
           }
         })
 
-        var message: HeaderProducerRecord[Array[Byte], Array[Byte], Array[Byte]] = null
+        var message: HeaderProducerRecord[Array[Byte], Array[Byte]] = null
         do {
           message = reader.readMessage()
           if (message != null)
-            producer.send(message.topic, message.key, message.header, message.value)
+            producer.send(message.topic, message.key, message.value)
         } while (message != null)
     } catch {
       case e: joptsimple.OptionException =>

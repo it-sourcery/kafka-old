@@ -33,7 +33,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
-public class MockConsumerInterceptor implements ConsumerInterceptor<String, String, String> {
+public class MockConsumerInterceptor implements ConsumerInterceptor<String, String> {
     public static final AtomicInteger INIT_COUNT = new AtomicInteger(0);
     public static final AtomicInteger CLOSE_COUNT = new AtomicInteger(0);
     public static final AtomicInteger ON_COMMIT_COUNT = new AtomicInteger(0);
@@ -51,21 +51,20 @@ public class MockConsumerInterceptor implements ConsumerInterceptor<String, Stri
     }
 
     @Override
-    public HeaderConsumerRecords<String, String, String> onConsume(HeaderConsumerRecords<String, String, String> records) {
-        Map<TopicPartition, List<HeaderConsumerRecord<String, String, String>>> recordMap = new HashMap<>();
+    public HeaderConsumerRecords<String, String> onConsume(HeaderConsumerRecords<String, String> records) {
+        Map<TopicPartition, List<HeaderConsumerRecord<String, String>>> recordMap = new HashMap<>();
         for (TopicPartition tp : records.partitions()) {
-            List<HeaderConsumerRecord<String, String, String>> lst = new ArrayList<>();
-            for (HeaderConsumerRecord<String, String, String> record: records.records(tp)) {
+            List<HeaderConsumerRecord<String, String>> lst = new ArrayList<>();
+            for (HeaderConsumerRecord<String, String> record: records.records(tp)) {
                 lst.add(new HeaderConsumerRecord<>(record.topic(), record.partition(), record.offset(),
                                                    record.timestamp(), record.timestampType(),
                                                    record.checksum(), record.serializedKeySize(),
-                                                   record.serializedHeaderSize(),
                                                    record.serializedValueSize(),
-                                                   record.key(), record.header(), record.value().toUpperCase(Locale.ROOT)));
+                                                   record.key(), record.value().toUpperCase(Locale.ROOT)));
             }
             recordMap.put(tp, lst);
         }
-        return new HeaderConsumerRecords<String, String, String>(recordMap);
+        return new HeaderConsumerRecords<String, String>(recordMap);
     }
 
     @Override

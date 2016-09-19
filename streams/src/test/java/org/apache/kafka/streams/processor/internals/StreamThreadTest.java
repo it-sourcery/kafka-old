@@ -128,9 +128,9 @@ public class StreamThreadTest {
                               String applicationId,
                               Collection<TopicPartition> partitions,
                               ProcessorTopology topology,
-                              Consumer<byte[], Void, byte[]> consumer,
-                              Producer<byte[], Void, byte[]> producer,
-                              Consumer<byte[], Void, byte[]> restoreConsumer,
+                              Consumer<byte[], byte[]> consumer,
+                              Producer<byte[], byte[]> producer,
+                              Consumer<byte[], byte[]> restoreConsumer,
                               StreamsConfig config,
                               StateDirectory stateDirectory) {
             super(id, applicationId, partitions, topology, consumer, producer, restoreConsumer, config, null, stateDirectory, null);

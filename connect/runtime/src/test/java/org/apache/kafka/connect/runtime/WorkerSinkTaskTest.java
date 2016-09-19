@@ -106,7 +106,7 @@ public class WorkerSinkTaskTest {
     @Mock
     private TaskStatus.Listener statusListener;
     @Mock
-    private KafkaConsumer<byte[], Void, byte[]> consumer;
+    private KafkaConsumer<byte[], byte[]> consumer;
     private Capture<ConsumerRebalanceListener> rebalanceListener = EasyMock.newCapture();
 
     private long recordsReturned;
@@ -322,9 +322,9 @@ public class WorkerSinkTaskTest {
         EasyMock.expectLastCall();
 
         EasyMock.expect(consumer.poll(EasyMock.anyLong())).andAnswer(
-                new IAnswer<HeaderConsumerRecords<byte[], Void, byte[]>>() {
+                new IAnswer<HeaderConsumerRecords<byte[], byte[]>>() {
                     @Override
-                    public HeaderConsumerRecords<byte[], Void, byte[]> answer() throws Throwable {
+                    public HeaderConsumerRecords<byte[], byte[]> answer() throws Throwable {
                         rebalanceListener.getValue().onPartitionsRevoked(partitions);
                         rebalanceListener.getValue().onPartitionsAssigned(partitions);
                         return HeaderConsumerRecords.empty();
@@ -419,9 +419,9 @@ public class WorkerSinkTaskTest {
         EasyMock.expectLastCall().andThrow(e);
 
         EasyMock.expect(consumer.poll(EasyMock.anyLong())).andAnswer(
-                new IAnswer<HeaderConsumerRecords<byte[], Void, byte[]>>() {
+                new IAnswer<HeaderConsumerRecords<byte[], byte[]>>() {
                     @Override
-                    public HeaderConsumerRecords<byte[], Void, byte[]> answer() throws Throwable {
+                    public HeaderConsumerRecords<byte[], byte[]> answer() throws Throwable {
                         rebalanceListener.getValue().onPartitionsRevoked(partitions);
                         return HeaderConsumerRecords.empty();
                     }
@@ -447,9 +447,9 @@ public class WorkerSinkTaskTest {
         EasyMock.expectLastCall().andThrow(e);
 
         EasyMock.expect(consumer.poll(EasyMock.anyLong())).andAnswer(
-                new IAnswer<HeaderConsumerRecords<byte[], Void, byte[]>>() {
+                new IAnswer<HeaderConsumerRecords<byte[], byte[]>>() {
                     @Override
-                    public HeaderConsumerRecords<byte[], Void, byte[]> answer() throws Throwable {
+                    public HeaderConsumerRecords<byte[], byte[]> answer() throws Throwable {
                         rebalanceListener.getValue().onPartitionsRevoked(partitions);
                         rebalanceListener.getValue().onPartitionsAssigned(partitions);
                         return HeaderConsumerRecords.empty();
@@ -463,9 +463,9 @@ public class WorkerSinkTaskTest {
         sinkTask.open(partitions);
         EasyMock.expectLastCall();
 
-        EasyMock.expect(consumer.poll(EasyMock.anyLong())).andAnswer(new IAnswer<HeaderConsumerRecords<byte[], Void, byte[]>>() {
+        EasyMock.expect(consumer.poll(EasyMock.anyLong())).andAnswer(new IAnswer<HeaderConsumerRecords<byte[], byte[]>>() {
             @Override
-            public HeaderConsumerRecords<byte[], Void, byte[]> answer() throws Throwable {
+            public HeaderConsumerRecords<byte[], byte[]> answer() throws Throwable {
                 rebalanceListener.getValue().onPartitionsAssigned(partitions);
                 return HeaderConsumerRecords.empty();
             }
@@ -489,17 +489,17 @@ public class WorkerSinkTaskTest {
 
     private void expectConsumerPoll(final int numMessages, final long timestamp, final TimestampType timestampType) {
         EasyMock.expect(consumer.poll(EasyMock.anyLong())).andAnswer(
-                new IAnswer<HeaderConsumerRecords<byte[], Void, byte[]>>() {
+                new IAnswer<HeaderConsumerRecords<byte[], byte[]>>() {
                     @Override
-                    public HeaderConsumerRecords<byte[], Void, byte[]> answer() throws Throwable {
-                        List<HeaderConsumerRecord<byte[], Void, byte[]>> records = new ArrayList<>();
+                    public HeaderConsumerRecords<byte[], byte[]> answer() throws Throwable {
+                        List<HeaderConsumerRecord<byte[], byte[]>> records = new ArrayList<>();
                         for (int i = 0; i < numMessages; i++)
-                            records.add(new HeaderConsumerRecord<byte[], Void, byte[]>(TOPIC, PARTITION, FIRST_OFFSET + recordsReturned + i, timestamp, timestampType, 0L, 0, 0, RAW_KEY, RAW_VALUE));
+                            records.add(new HeaderConsumerRecord<>(TOPIC, PARTITION, FIRST_OFFSET + recordsReturned + i, timestamp, timestampType, 0L, 0, 0, RAW_KEY, RAW_VALUE));
                         recordsReturned += numMessages;
                         return new HeaderConsumerRecords<>(
                                 numMessages > 0 ?
                                         Collections.singletonMap(new TopicPartition(TOPIC, PARTITION), records) :
-                                        Collections.<TopicPartition, List<HeaderConsumerRecord<byte[], Void, byte[]>>>emptyMap()
+                                        Collections.<TopicPartition, List<HeaderConsumerRecord<byte[], byte[]>>>emptyMap()
                         );
                     }
                 });

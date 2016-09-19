@@ -65,14 +65,14 @@ class ZookeeperConsumerConnectorTest extends KafkaServerTestHarness with Logging
     // create a consumer
     val consumerConfig1 = new ConsumerConfig(TestUtils.createConsumerProperties(zkConnect, group, consumer1))
     val zkConsumerConnector1 = new ZookeeperConsumerConnector(consumerConfig1, true)
-    val topicMessageStreams1 = zkConsumerConnector1.createMessageStreams(toJavaMap(Map(topic -> numNodes*numParts/2)), new StringDecoder(),  new StringDecoder(), new StringDecoder())
+    val topicMessageStreams1 = zkConsumerConnector1.createMessageStreams(toJavaMap(Map(topic -> numNodes*numParts/2)), new StringDecoder(), new StringDecoder())
 
     val receivedMessages1 = getMessages(nMessages*2, topicMessageStreams1)
     assertEquals(sentMessages1.sorted, receivedMessages1.sorted)
 
     // call createMesssageStreams twice should throw MessageStreamsExistException
     try {
-      val topicMessageStreams2 = zkConsumerConnector1.createMessageStreams(toJavaMap(Map(topic -> numNodes*numParts/2)), new StringDecoder(), new StringDecoder(), new StringDecoder())
+      val topicMessageStreams2 = zkConsumerConnector1.createMessageStreams(toJavaMap(Map(topic -> numNodes*numParts/2)), new StringDecoder(), new StringDecoder())
       fail("Should fail with MessageStreamsExistException")
     } catch {
       case e: MessageStreamsExistException => // expected
@@ -104,7 +104,7 @@ class ZookeeperConsumerConnectorTest extends KafkaServerTestHarness with Logging
   }
 
   def getMessages(nMessagesPerThread: Int,
-                  jTopicMessageStreams: java.util.Map[String, java.util.List[KafkaStream[String, String, String]]]): List[String] = {
+                  jTopicMessageStreams: java.util.Map[String, java.util.List[KafkaStream[String, String]]]): List[String] = {
     var messages: List[String] = Nil
     import scala.collection.JavaConversions._
     val topicMessageStreams = jTopicMessageStreams.mapValues(_.toList)

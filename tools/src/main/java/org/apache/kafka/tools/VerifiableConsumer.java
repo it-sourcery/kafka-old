@@ -82,7 +82,7 @@ public class VerifiableConsumer implements Closeable, OffsetCommitCallback, Cons
 
     private final ObjectMapper mapper = new ObjectMapper();
     private final PrintStream out;
-    private final KafkaConsumer<String, String, String> consumer;
+    private final KafkaConsumer<String, String> consumer;
     private final String topic;
     private final boolean useAutoCommit;
     private final boolean useAsyncCommit;
@@ -92,7 +92,7 @@ public class VerifiableConsumer implements Closeable, OffsetCommitCallback, Cons
 
     private CountDownLatch shutdownLatch = new CountDownLatch(1);
 
-    public VerifiableConsumer(KafkaConsumer<String, String, String> consumer,
+    public VerifiableConsumer(KafkaConsumer<String, String> consumer,
                               PrintStream out,
                               String topic,
                               int maxMessages,
@@ -591,7 +591,7 @@ public class VerifiableConsumer implements Closeable, OffsetCommitCallback, Cons
         consumerProps.put(ConsumerConfig.PARTITION_ASSIGNMENT_STRATEGY_CONFIG, res.getString("assignmentStrategy"));
 
         StringDeserializer deserializer = new StringDeserializer();
-        KafkaConsumer<String, String, String> consumer = new KafkaConsumer<>(consumerProps, deserializer, deserializer, deserializer);
+        KafkaConsumer<String, String> consumer = new KafkaConsumer<>(consumerProps, deserializer, deserializer);
 
         return new VerifiableConsumer(
                 consumer,

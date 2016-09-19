@@ -70,9 +70,9 @@ public class KafkaLog4jAppender extends AppenderSkeleton {
     private int retries = 0;
     private int requiredNumAcks = Integer.MAX_VALUE;
     private boolean syncSend = false;
-    private Producer<byte[], byte[], byte[]> producer = null;
+    private Producer<byte[], byte[]> producer = null;
 
-    public Producer<byte[], byte[], byte[]> getProducer() {
+    public Producer<byte[], byte[]> getProducer() {
         return producer;
     }
 
@@ -242,15 +242,15 @@ public class KafkaLog4jAppender extends AppenderSkeleton {
         LogLog.debug("Logging for topic: " + topic);
     }
 
-    protected Producer<byte[], byte[], byte[]> getKafkaProducer(Properties props) {
-        return new KafkaProducer<byte[], byte[], byte[]>(props);
+    protected Producer<byte[], byte[]> getKafkaProducer(Properties props) {
+        return new KafkaProducer<byte[], byte[]>(props);
     }
 
     @Override
     protected void append(LoggingEvent event) {
         String message = subAppend(event);
         LogLog.debug("[" + new Date(event.getTimeStamp()) + "]" + message);
-        Future<RecordMetadata> response = producer.send(new HeaderProducerRecord<byte[], byte[], byte[]>(topic, message.getBytes()));
+        Future<RecordMetadata> response = producer.send(new HeaderProducerRecord<byte[], byte[]>(topic, message.getBytes()));
         if (syncSend) {
             try {
                 response.get();

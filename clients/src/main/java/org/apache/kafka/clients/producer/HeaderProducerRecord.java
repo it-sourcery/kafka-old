@@ -69,20 +69,6 @@ public class HeaderProducerRecord<K, H, V> {
     }
 
     /**
-     * Creates a record with a specified timestamp to be sent to a specified topic and partition
-     *
-     * @param topic The topic the record will be appended to
-     * @param partition The partition to which the record should be sent
-     * @param timestamp The timestamp of the record
-     * @param key The key that will be included in the record
-     * @param value The record contents
-     */
-    public HeaderProducerRecord(String topic, Integer partition, Long timestamp, K key, V value)
-    {
-        this(topic, partition, timestamp, key, null, value);
-    }
-
-    /**
      * Creates a record to be sent to a specified topic and partition
      *
      * @param topic The topic the record will be appended to
@@ -93,6 +79,18 @@ public class HeaderProducerRecord<K, H, V> {
      */
     public HeaderProducerRecord(String topic, Integer partition, K key, H header, V value) {
         this(topic, partition, null, key, header, value);
+    }
+
+    /**
+     * Creates a record to be sent to a specified topic and partition
+     *
+     * @param topic The topic the record will be appended to
+     * @param partition The partition to which the record should be sent
+     * @param key The key that will be included in the record
+     * @param value The record contents
+     */
+    public HeaderProducerRecord(String topic, Integer partition, K key, V value) {
+        this(topic, partition, null, key, null, value);
     }
 
     /**
@@ -118,10 +116,6 @@ public class HeaderProducerRecord<K, H, V> {
         this(topic, null, null, key, null, value);
     }
 
-    public HeaderProducerRecord(String topic, Integer partition, K key, V value){
-        this(topic, partition, key, null, value);
-    }
-
     /**
      * Create a record with no key
      * 
@@ -129,7 +123,7 @@ public class HeaderProducerRecord<K, H, V> {
      * @param value The record contents
      */
     public HeaderProducerRecord(String topic, V value) {
-        this(topic, null, null, null, null, value);
+        this(topic, null, null, null, value);
     }
 
     /**

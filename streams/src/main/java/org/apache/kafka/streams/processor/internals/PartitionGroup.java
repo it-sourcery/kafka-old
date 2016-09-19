@@ -110,7 +110,7 @@ public class PartitionGroup {
      * @param rawRecords  the raw records
      * @return the queue size for the partition
      */
-    public int addRawRecords(TopicPartition partition, Iterable<HeaderConsumerRecord<byte[], Void, byte[]>> rawRecords) {
+    public int addRawRecords(TopicPartition partition, Iterable<HeaderConsumerRecord<byte[], byte[], byte[]>> rawRecords) {
         RecordQueue recordQueue = partitionQueues.get(partition);
 
         int oldSize = recordQueue.size();

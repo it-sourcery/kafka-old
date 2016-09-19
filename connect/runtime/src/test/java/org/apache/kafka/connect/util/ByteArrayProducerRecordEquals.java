@@ -24,14 +24,14 @@ import org.easymock.IArgumentMatcher;
 import java.util.Arrays;
 
 public class ByteArrayProducerRecordEquals implements IArgumentMatcher {
-    private HeaderProducerRecord<byte[], Void, byte[]> record;
+    private HeaderProducerRecord<byte[], byte[]> record;
 
-    public static HeaderProducerRecord<byte[], Void, byte[]> eqProducerRecord(HeaderProducerRecord<byte[], Void, byte[]> in) {
+    public static HeaderProducerRecord<byte[], byte[]> eqProducerRecord(HeaderProducerRecord<byte[], byte[]> in) {
         EasyMock.reportMatcher(new ByteArrayProducerRecordEquals(in));
         return null;
     }
 
-    public ByteArrayProducerRecordEquals(HeaderProducerRecord<byte[], Void, byte[]> record) {
+    public ByteArrayProducerRecordEquals(HeaderProducerRecord<byte[], byte[]> record) {
         this.record = record;
     }
 
@@ -40,7 +40,7 @@ public class ByteArrayProducerRecordEquals implements IArgumentMatcher {
     public boolean matches(Object argument) {
         if (!(argument instanceof HeaderProducerRecord))
             return false;
-        HeaderProducerRecord<byte[], Void, byte[]> other = (HeaderProducerRecord<byte[], Void, byte[]>) argument;
+        HeaderProducerRecord<byte[], byte[]> other = (HeaderProducerRecord<byte[], byte[]>) argument;
         return record.topic().equals(other.topic()) &&
                 record.partition() != null ? record.partition().equals(other.partition()) : other.partition() == null &&
                 record.key() != null ? Arrays.equals(record.key(), other.key()) : other.key() == null &&

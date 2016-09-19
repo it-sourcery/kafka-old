@@ -69,7 +69,7 @@ public class SinkNode<K, V> extends ProcessorNode<K, V> {
     @Override
     public void process(final K key, final V value) {
         RecordCollector collector = ((RecordCollector.Supplier) context).recordCollector();
-        collector.send(new HeaderProducerRecord<>(topic, null, context.timestamp(), key, null, value), keySerializer, valSerializer, partitioner);
+        collector.send(new HeaderProducerRecord<>(topic, null, context.timestamp(), key, value), keySerializer, valSerializer, partitioner);
     }
 
     @Override

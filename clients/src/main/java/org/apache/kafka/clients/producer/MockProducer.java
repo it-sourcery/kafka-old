@@ -36,7 +36,6 @@ import org.apache.kafka.common.PartitionInfo;
 import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.common.record.Record;
 import org.apache.kafka.common.serialization.Serializer;
-import org.apache.kafka.common.serialization.VoidSerializer;
 
 
 /**
@@ -45,16 +44,15 @@ import org.apache.kafka.common.serialization.VoidSerializer;
  * By default this mock will synchronously complete each send call successfully. However it can be configured to allow
  * the user to control the completion of the call and supply an optional error for the producer to throw.
  */
-public class MockProducer<K, H, V> implements Producer<K, H, V> {
+public class MockProducer<K, V> implements Producer<K, V> {
 
     private final Cluster cluster;
     private final Partitioner partitioner;
-    private final List<HeaderProducerRecord<K, H, V>> sent;
+    private final List<HeaderProducerRecord<K, V>> sent;
     private final Deque<Completion> completions;
     private boolean autoComplete;
     private Map<TopicPartition, Long> offsets;
     private final Serializer<K> keySerializer;
-    private final Serializer<H> headerSerializer;
     private final Serializer<V> valueSerializer;
 
     /**
@@ -67,28 +65,17 @@ public class MockProducer<K, H, V> implements Producer<K, H, V> {
      *        java.util.concurrent.Future Future&lt;RecordMetadata&gt;} that is returned.
      * @param partitioner The partition strategy
      * @param keySerializer The serializer for key that implements {@link Serializer}.
-     * @param headerSerializer The serializer for header that implements {@link Serializer}.
      * @param valueSerializer The serializer for value that implements {@link Serializer}.
      */
-    public MockProducer(Cluster cluster, boolean autoComplete, Partitioner partitioner, Serializer<K> keySerializer, Serializer<H> headerSerializer, Serializer<V> valueSerializer) {
+    public MockProducer(Cluster cluster, boolean autoComplete, Partitioner partitioner, Serializer<K> keySerializer, Serializer<V> valueSerializer) {
         this.cluster = cluster;
         this.autoComplete = autoComplete;
         this.partitioner = partitioner;
         this.keySerializer = keySerializer;
-        this.headerSerializer = headerSerializer;
         this.valueSerializer = valueSerializer;
         this.offsets = new HashMap<TopicPartition, Long>();
-        this.sent = new ArrayList<HeaderProducerRecord<K, H, V>>();
+        this.sent = new ArrayList<HeaderProducerRecord<K, V>>();
         this.completions = new ArrayDeque<Completion>();
-    }
-
-    /**
-     * Create a new mock producer with invented metadata the given autoComplete setting and key\value serializers
-     *
-     * Equivalent to {@link #MockProducer(Cluster, boolean, Partitioner, Serializer, Serializer)} new MockProducer(Cluster.empty(), autoComplete, new DefaultPartitioner(), keySerializer, valueSerializer)}
-     */
-    public MockProducer(Cluster cluster, boolean autoComplete, Partitioner partitioner, Serializer<K> keySerializer, Serializer<V> valueSerializer) {
-        this(Cluster.empty(), autoComplete, new DefaultPartitioner(), keySerializer, new NoOpSerializer<H>(), valueSerializer);
     }
 
     /**
@@ -115,7 +102,7 @@ public class MockProducer<K, H, V> implements Producer<K, H, V> {
      * @see #history()
      */
     @Override
-    public synchronized Future<RecordMetadata> send(HeaderProducerRecord<K, H, V> record) {
+    public synchronized Future<RecordMetadata> send(HeaderProducerRecord<K, V> record) {
         return send(record, null);
     }
 
@@ -125,16 +112,16 @@ public class MockProducer<K, H, V> implements Producer<K, H, V> {
      * @see #history()
      */
     @Override
-    public synchronized Future<RecordMetadata> send(HeaderProducerRecord<K, H, V> record, Callback callback) {
+    public synchronized Future<RecordMetadata> send(HeaderProducerRecord<K, V> record, Callback callback) {
         int partition = 0;
         if (this.cluster.partitionsForTopic(record.topic()) != null)
             partition = partition(record, this.cluster);
         ProduceRequestResult result = new ProduceRequestResult();
-        FutureRecordMetadata future = new FutureRecordMetadata(result, 0, Record.NO_TIMESTAMP, 0, 0, 0, 0);
+        FutureRecordMetadata future = new FutureRecordMetadata(result, 0, Record.NO_TIMESTAMP, 0, 0, 0);
         TopicPartition topicPartition = new TopicPartition(record.topic(), partition);
         long offset = nextOffset(topicPartition);
         Completion completion = new Completion(topicPartition, offset,
-                                               new RecordMetadata(topicPartition, 0, offset, Record.NO_TIMESTAMP, 0, 0, 0, 0),
+                                               new RecordMetadata(topicPartition, 0, offset, Record.NO_TIMESTAMP, 0, 0, 0),
                                                result, callback);
         this.sent.add(record);
         if (autoComplete)
@@ -183,8 +170,8 @@ public class MockProducer<K, H, V> implements Producer<K, H, V> {
     /**
      * Get the list of sent records since the last call to {@link #clear()}
      */
-    public synchronized List<HeaderProducerRecord<K, H, V>> history() {
-        return new ArrayList<HeaderProducerRecord<K, H, V>>(this.sent);
+    public synchronized List<HeaderProducerRecord<K, V>> history() {
+        return new ArrayList<HeaderProducerRecord<K, V>>(this.sent);
     }
 
     /**
@@ -222,7 +209,7 @@ public class MockProducer<K, H, V> implements Producer<K, H, V> {
     /**
      * computes partition for given record.
      */
-    private int partition(HeaderProducerRecord<K, H, V> record, Cluster cluster) {
+    private int partition(HeaderProducerRecord<K, V> record, Cluster cluster) {
         Integer partition = record.partition();
         String topic = record.topic();
         if (partition != null) {
@@ -268,27 +255,6 @@ public class MockProducer<K, H, V> implements Producer<K, H, V> {
                 else
                     callback.onCompletion(null, e);
             }
-        }
-    }
-
-    public static class NoOpSerializer<T> implements Serializer<T> {
-
-        @Override
-        public void configure(Map<String, ?> configs, boolean isKey)
-        {
-
-        }
-
-        @Override
-        public byte[] serialize(String topic, T data)
-        {
-            return new byte[0];
-        }
-
-        @Override
-        public void close()
-        {
-
         }
     }
 

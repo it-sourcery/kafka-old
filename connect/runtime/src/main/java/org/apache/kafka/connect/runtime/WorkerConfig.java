@@ -50,13 +50,6 @@ public class WorkerConfig extends AbstractConfig {
                     " independent of connectors it allows any connector to work with any serialization format." +
                     " Examples of common formats include JSON and Avro.";
 
-    public static final String HEADER_CONVERTER_CLASS_CONFIG = "header.converter";
-    public static final String HEADER_CONVERTER_CLASS_DOC =
-       "Converter class used to convert between Kafka Connect format and the serialized form that is written to Kafka." +
-       " This controls the format of the header in messages written to or read from Kafka, and since this is" +
-       " independent of connectors it allows any connector to work with any serialization format." +
-       " Examples of common formats include JSON and Avro.";
-
     public static final String VALUE_CONVERTER_CLASS_CONFIG = "value.converter";
     public static final String VALUE_CONVERTER_CLASS_DOC =
             "Converter class used to convert between Kafka Connect format and the serialized form that is written to Kafka." +
@@ -72,17 +65,6 @@ public class WorkerConfig extends AbstractConfig {
                     " Examples of common formats include JSON and Avro." +
                     " This setting controls the format used for internal bookkeeping data used by the framework, such as" +
                     " configs and offsets, so users can typically use any functioning Converter implementation.";
-
-
-    public static final String INTERNAL_HEADER_CONVERTER_CLASS_CONFIG = "internal.header.converter";
-    public static final String INTERNAL_HEADER_CONVERTER_CLASS_DOC =
-       "Converter class used to convert between Kafka Connect format and the serialized form that is written to Kafka." +
-       " This controls the format of the header in messages written to or read from Kafka, and since this is" +
-       " independent of connectors it allows any connector to work with any serialization format." +
-       " Examples of common formats include JSON and Avro." +
-       " This setting controls the format used for internal bookkeeping data used by the framework, such as" +
-       " configs and offsets, so users can typically use any functioning Converter implementation.";
-
 
     public static final String INTERNAL_VALUE_CONVERTER_CLASS_CONFIG = "internal.value.converter";
     public static final String INTERNAL_VALUE_CONVERTER_CLASS_DOC =

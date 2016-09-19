@@ -26,27 +26,27 @@ public class HeaderProducerRecordTest
 
     @Test
     public void testEqualsAndHashCode() {
-        HeaderProducerRecord<String, String, Integer> headerProducerRecord = new HeaderProducerRecord<String, String, Integer>("test", 1 , "key", "header", 1);
+        HeaderProducerRecord<String, Integer> headerProducerRecord = new HeaderProducerRecord<String, Integer>("test", 1 , "key", 1);
         assertEquals(headerProducerRecord, headerProducerRecord);
         assertEquals(headerProducerRecord.hashCode(), headerProducerRecord.hashCode());
 
-        HeaderProducerRecord<String, String, Integer> equalRecord = new HeaderProducerRecord<String, String, Integer>("test", 1 , "key", "header", 1);
+        HeaderProducerRecord<String, Integer> equalRecord = new HeaderProducerRecord<String, Integer>("test", 1 , "key", 1);
         assertEquals(headerProducerRecord, equalRecord);
         assertEquals(headerProducerRecord.hashCode(), equalRecord.hashCode());
 
-        HeaderProducerRecord<String, String, Integer> topicMisMatch = new HeaderProducerRecord<String, String, Integer>("test-1", 1 , "key", "header", 1);
+        HeaderProducerRecord<String, Integer> topicMisMatch = new HeaderProducerRecord<String, Integer>("test-1", 1 , "key", 1);
         assertFalse(headerProducerRecord.equals(topicMisMatch));
 
-        HeaderProducerRecord<String, String, Integer> partitionMismatch = new HeaderProducerRecord<String, String, Integer>("test", 2 , "key", "header", 1);
+        HeaderProducerRecord<String, Integer> partitionMismatch = new HeaderProducerRecord<String, Integer>("test", 2 , "key", 1);
         assertFalse(headerProducerRecord.equals(partitionMismatch));
 
-        HeaderProducerRecord<String, String, Integer> keyMisMatch = new HeaderProducerRecord<String, String, Integer>("test", 1 , "key-1", "header", 1);
+        HeaderProducerRecord<String, Integer> keyMisMatch = new HeaderProducerRecord<String, Integer>("test", 1 , "key-1", 1);
         assertFalse(headerProducerRecord.equals(keyMisMatch));
 
-        HeaderProducerRecord<String, String, Integer> valueMisMatch = new HeaderProducerRecord<String, String, Integer>("test", 1 , "key", "header", 2);
+        HeaderProducerRecord<String, Integer> valueMisMatch = new HeaderProducerRecord<String, Integer>("test", 1 , "key", 2);
         assertFalse(headerProducerRecord.equals(valueMisMatch));
 
-        HeaderProducerRecord<String, String, Integer> nullFieldsRecord = new HeaderProducerRecord<String, String, Integer>("topic", null, null, null, null, null);
+        HeaderProducerRecord<String, Integer> nullFieldsRecord = new HeaderProducerRecord<String, Integer>("topic", null, null, null, null);
         assertEquals(nullFieldsRecord, nullFieldsRecord);
         assertEquals(nullFieldsRecord.hashCode(), nullFieldsRecord.hashCode());
     }

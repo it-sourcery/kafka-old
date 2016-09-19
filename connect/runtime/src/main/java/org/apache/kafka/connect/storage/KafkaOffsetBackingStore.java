@@ -55,7 +55,7 @@ import java.util.concurrent.TimeoutException;
 public class KafkaOffsetBackingStore implements OffsetBackingStore {
     private static final Logger log = LoggerFactory.getLogger(KafkaOffsetBackingStore.class);
 
-    private KafkaBasedLog<byte[], byte[], byte[]> offsetLog;
+    private KafkaBasedLog<byte[], byte[]> offsetLog;
     private HashMap<ByteBuffer, ByteBuffer> data;
 
     @Override
@@ -69,14 +69,12 @@ public class KafkaOffsetBackingStore implements OffsetBackingStore {
         Map<String, Object> producerProps = new HashMap<>();
         producerProps.putAll(config.originals());
         producerProps.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, ByteArraySerializer.class.getName());
-        producerProps.put(ProducerConfig.HEADER_SERIALIZER_CLASS_CONFIG, ByteArraySerializer.class.getName());
         producerProps.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, ByteArraySerializer.class.getName());
         producerProps.put(ProducerConfig.RETRIES_CONFIG, Integer.MAX_VALUE);
 
         Map<String, Object> consumerProps = new HashMap<>();
         consumerProps.putAll(config.originals());
         consumerProps.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, ByteArrayDeserializer.class.getName());
-        producerProps.put(ConsumerConfig.HEADER_DESERIALIZER_CLASS_CONFIG, ByteArrayDeserializer.class.getName());
         consumerProps.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, ByteArrayDeserializer.class.getName());
 
         offsetLog = createKafkaBasedLog(topic, producerProps, consumerProps, consumedCallback);
@@ -129,17 +127,17 @@ public class KafkaOffsetBackingStore implements OffsetBackingStore {
         return producerCallback;
     }
 
-    private final Callback<HeaderConsumerRecord<byte[], byte[], byte[]>> consumedCallback = new Callback<HeaderConsumerRecord<byte[], byte[], byte[]>>() {
+    private final Callback<HeaderConsumerRecord<byte[], byte[]>> consumedCallback = new Callback<HeaderConsumerRecord<byte[], byte[]>>() {
         @Override
-        public void onCompletion(Throwable error, HeaderConsumerRecord<byte[], byte[], byte[]> record) {
+        public void onCompletion(Throwable error, HeaderConsumerRecord<byte[], byte[]> record) {
             ByteBuffer key = record.key() != null ? ByteBuffer.wrap(record.key()) : null;
             ByteBuffer value = record.value() != null ? ByteBuffer.wrap(record.value()) : null;
             data.put(key, value);
         }
     };
 
-    private KafkaBasedLog<byte[], byte[], byte[]> createKafkaBasedLog(String topic, Map<String, Object> producerProps,
-                                                              Map<String, Object> consumerProps, Callback<HeaderConsumerRecord<byte[], byte[], byte[]>> consumedCallback) {
+    private KafkaBasedLog<byte[], byte[]> createKafkaBasedLog(String topic, Map<String, Object> producerProps,
+                                                              Map<String, Object> consumerProps, Callback<HeaderConsumerRecord<byte[], byte[]>> consumedCallback) {
         return new KafkaBasedLog<>(topic, producerProps, consumerProps, consumedCallback, new SystemTime());
     }
 

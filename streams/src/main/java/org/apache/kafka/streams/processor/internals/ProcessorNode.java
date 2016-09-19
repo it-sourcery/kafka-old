@@ -24,12 +24,12 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
-public class ProcessorNode<K, V> {
+public class ProcessorNode<K, H, V> {
 
-    private final List<ProcessorNode<?, ?>> children;
+    private final List<ProcessorNode<?, ?, ?>> children;
 
     private final String name;
-    private final Processor<K, V> processor;
+    private final Processor<K, H, V> processor;
 
     public final Set<String> stateStores;
 
@@ -37,7 +37,7 @@ public class ProcessorNode<K, V> {
         this(name, null, null);
     }
 
-    public ProcessorNode(String name, Processor<K, V> processor, Set<String> stateStores) {
+    public ProcessorNode(String name, Processor<K, H, V> processor, Set<String> stateStores) {
         this.name = name;
         this.processor = processor;
         this.children = new ArrayList<>();
@@ -49,15 +49,15 @@ public class ProcessorNode<K, V> {
         return name;
     }
 
-    public final Processor<K, V> processor() {
+    public final Processor<K, H, V> processor() {
         return processor;
     }
 
-    public final List<ProcessorNode<?, ?>> children() {
+    public final List<ProcessorNode<?, ?, ?>> children() {
         return children;
     }
 
-    public void addChild(ProcessorNode<?, ?> child) {
+    public void addChild(ProcessorNode<?, ?, ?> child) {
         children.add(child);
     }
 
@@ -69,8 +69,8 @@ public class ProcessorNode<K, V> {
         processor.close();
     }
 
-    public void process(final K key, final V value) {
-        processor.process(key, value);
+    public void process(final K key, final H header, final V value) {
+        processor.process(key, header, value);
     }
 
     /**

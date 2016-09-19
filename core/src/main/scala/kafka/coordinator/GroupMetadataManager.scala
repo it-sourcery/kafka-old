@@ -1019,7 +1019,7 @@ object GroupMetadataManager {
   // Formatter for use with tools such as console consumer: Consumer should also set exclude.internal.topics to false.
   // (specify --formatter "kafka.coordinator.GroupMetadataManager\$OffsetsMessageFormatter" when consuming __consumer_offsets)
   class OffsetsMessageFormatter extends MessageFormatter {
-    def writeTo(consumerRecord: HeaderConsumerRecord[Array[Byte], Array[Byte], Array[Byte]], output: PrintStream) {
+    def writeTo(consumerRecord: HeaderConsumerRecord[Array[Byte], Array[Byte]], output: PrintStream) {
       Option(consumerRecord.key).map(key => GroupMetadataManager.readMessageKey(ByteBuffer.wrap(key))).foreach {
         // Only print if the message is an offset record.
         // We ignore the timestamp of the message because GroupMetadataMessage has its own timestamp.
@@ -1040,7 +1040,7 @@ object GroupMetadataManager {
 
   // Formatter for use with tools to read group metadata history
   class GroupMetadataMessageFormatter extends MessageFormatter {
-    def writeTo(consumerRecord: HeaderConsumerRecord[Array[Byte], Array[Byte], Array[Byte]], output: PrintStream) {
+    def writeTo(consumerRecord: HeaderConsumerRecord[Array[Byte], Array[Byte]], output: PrintStream) {
       Option(consumerRecord.key).map(key => GroupMetadataManager.readMessageKey(ByteBuffer.wrap(key))).foreach {
         // Only print if the message is a group metadata record.
         // We ignore the timestamp of the message because GroupMetadataMessage has its own timestamp.

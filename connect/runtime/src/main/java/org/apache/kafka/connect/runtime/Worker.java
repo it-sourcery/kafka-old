@@ -66,10 +66,8 @@ public class Worker {
     private final ConnectorFactory connectorFactory;
     private final WorkerConfig config;
     private final Converter defaultKeyConverter;
-    private final Converter defaultHeaderConverter;
     private final Converter defaultValueConverter;
     private final Converter internalKeyConverter;
-    private final Converter internalHeaderConverter;
     private final Converter internalValueConverter;
     private final OffsetBackingStore offsetBackingStore;
     private final Map<String, Object> producerProps;
@@ -86,14 +84,10 @@ public class Worker {
         this.config = config;
         this.defaultKeyConverter = config.getConfiguredInstance(WorkerConfig.KEY_CONVERTER_CLASS_CONFIG, Converter.class);
         this.defaultKeyConverter.configure(config.originalsWithPrefix("key.converter."), true);
-        this.defaultHeaderConverter = config.getConfiguredInstance(WorkerConfig.HEADER_CONVERTER_CLASS_CONFIG, Converter.class);
-        this.defaultHeaderConverter.configure(config.originalsWithPrefix("header.converter."), true);
         this.defaultValueConverter = config.getConfiguredInstance(WorkerConfig.VALUE_CONVERTER_CLASS_CONFIG, Converter.class);
         this.defaultValueConverter.configure(config.originalsWithPrefix("value.converter."), false);
         this.internalKeyConverter = config.getConfiguredInstance(WorkerConfig.INTERNAL_KEY_CONVERTER_CLASS_CONFIG, Converter.class);
         this.internalKeyConverter.configure(config.originalsWithPrefix("internal.key.converter."), true);
-        this.internalHeaderConverter = config.getConfiguredInstance(WorkerConfig.INTERNAL_KEY_CONVERTER_CLASS_CONFIG, Converter.class);
-        this.internalHeaderConverter.configure(config.originalsWithPrefix("internal.header.converter."), true);
         this.internalValueConverter = config.getConfiguredInstance(WorkerConfig.INTERNAL_VALUE_CONVERTER_CLASS_CONFIG, Converter.class);
         this.internalValueConverter.configure(config.originalsWithPrefix("internal.value.converter."), false);
 
@@ -103,7 +97,6 @@ public class Worker {
         producerProps = new HashMap<>();
         producerProps.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, Utils.join(config.getList(WorkerConfig.BOOTSTRAP_SERVERS_CONFIG), ","));
         producerProps.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, "org.apache.kafka.common.serialization.ByteArraySerializer");
-        producerProps.put(ProducerConfig.HEADER_SERIALIZER_CLASS_CONFIG, "org.apache.kafka.common.serialization.ByteArraySerializer");
         producerProps.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, "org.apache.kafka.common.serialization.ByteArraySerializer");
         // These settings are designed to ensure there is no data loss. They *may* be overridden via configs passed to the
         // worker, but this may compromise the delivery guarantees of Kafka Connect.
@@ -275,20 +268,13 @@ public class Worker {
                 keyConverter.configure(connConfig.originalsWithPrefix("key.converter."), true);
             else
                 keyConverter = defaultKeyConverter;
-
-            Converter headerConverter = connConfig.getConfiguredInstance(WorkerConfig.HEADER_CONVERTER_CLASS_CONFIG, Converter.class);
-            if (headerConverter != null)
-                headerConverter.configure(connConfig.originalsWithPrefix("header.converter."), true);
-            else
-                headerConverter = defaultHeaderConverter;
-
             Converter valueConverter = connConfig.getConfiguredInstance(WorkerConfig.VALUE_CONVERTER_CLASS_CONFIG, Converter.class);
             if (valueConverter != null)
                 valueConverter.configure(connConfig.originalsWithPrefix("value.converter."), false);
             else
                 valueConverter = defaultValueConverter;
 
-            workerTask = buildWorkerTask(id, task, statusListener, initialState, keyConverter, headerConverter, valueConverter);
+            workerTask = buildWorkerTask(id, task, statusListener, initialState, keyConverter, valueConverter);
             workerTask.initialize(taskConfig);
         } catch (Throwable t) {
             log.error("Failed to start task {}", id, t);
@@ -309,7 +295,6 @@ public class Worker {
                                        TaskStatus.Listener statusListener,
                                        TargetState initialState,
                                        Converter keyConverter,
-                                       Converter headerConverter,
                                        Converter valueConverter) {
         // Decide which type of worker task we need based on the type of task.
         if (task instanceof SourceTask) {
@@ -317,11 +302,11 @@ public class Worker {
                     internalKeyConverter, internalValueConverter);
             OffsetStorageWriter offsetWriter = new OffsetStorageWriter(offsetBackingStore, id.connector(),
                     internalKeyConverter, internalValueConverter);
-            KafkaProducer<byte[], byte[], byte[]> producer = new KafkaProducer<>(producerProps);
-            return new WorkerSourceTask(id, (SourceTask) task, statusListener, initialState, keyConverter, headerConverter,
+            KafkaProducer<byte[], byte[]> producer = new KafkaProducer<>(producerProps);
+            return new WorkerSourceTask(id, (SourceTask) task, statusListener, initialState, keyConverter,
                      valueConverter, producer, offsetReader, offsetWriter, config, time);
         } else if (task instanceof SinkTask) {
-            return new WorkerSinkTask(id, (SinkTask) task, statusListener, initialState, config, keyConverter, headerConverter,
+            return new WorkerSinkTask(id, (SinkTask) task, statusListener, initialState, config, keyConverter,
                     valueConverter, time);
         } else {
             log.error("Tasks must be a subclass of either SourceTask or SinkTask", task);

@@ -361,7 +361,7 @@ public class SimpleBenchmark {
         props.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, ByteArraySerializer.class);
         int key = 0;
         Random rand = new Random();
-        KafkaProducer<Integer, Void, byte[]> producer = new KafkaProducer<>(props);
+        KafkaProducer<Integer, byte[]> producer = new KafkaProducer<>(props);
 
         byte[] value = new byte[valueSizeBytes];
         long startTime = System.currentTimeMillis();
@@ -369,7 +369,7 @@ public class SimpleBenchmark {
         if (sequential) key = 0;
         else key = rand.nextInt(upperRange);
         for (int i = 0; i < numRecords; i++) {
-            producer.send(new HeaderProducerRecord<Integer, Void, byte[]>(topic, key, value));
+            producer.send(new HeaderProducerRecord<>(topic, key, value));
             if (sequential) key++;
             else key = rand.nextInt(upperRange);
         }
@@ -389,7 +389,7 @@ public class SimpleBenchmark {
         props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, ByteArrayDeserializer.class);
         props.put(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, "false");
 
-        KafkaConsumer<Integer, Void, byte[]> consumer = new KafkaConsumer<>(props);
+        KafkaConsumer<Integer, byte[]> consumer = new KafkaConsumer<>(props);
 
         List<TopicPartition> partitions = getAllPartitions(consumer, topic);
         consumer.assign(partitions);
@@ -400,12 +400,12 @@ public class SimpleBenchmark {
         long startTime = System.currentTimeMillis();
 
         while (true) {
-            HeaderConsumerRecords<Integer, Void, byte[]> records = consumer.poll(500);
+            HeaderConsumerRecords<Integer, byte[]> records = consumer.poll(500);
             if (records.isEmpty()) {
                 if (endKey.equals(key))
                     break;
             } else {
-                for (HeaderConsumerRecord<Integer, Void, byte[]> record : records) {
+                for (HeaderConsumerRecord<Integer, byte[]> record : records) {
                     Integer recKey = record.key();
 
                     if (key == null || key < recKey)
@@ -613,7 +613,7 @@ public class SimpleBenchmark {
         return (double) (recordSizeBytes * numRecords / 1024 / 1024) / ((double) time / 1000);
     }
 
-    private List<TopicPartition> getAllPartitions(KafkaConsumer<?, ?, ?> consumer, String... topics) {
+    private List<TopicPartition> getAllPartitions(KafkaConsumer<?, ?> consumer, String... topics) {
         ArrayList<TopicPartition> partitions = new ArrayList<>();
 
         for (String topic : topics) {

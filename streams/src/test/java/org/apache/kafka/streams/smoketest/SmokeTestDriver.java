@@ -131,7 +131,7 @@ public class SmokeTestDriver extends SmokeTestUtil {
         props.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, ByteArraySerializer.class);
         props.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, ByteArraySerializer.class);
 
-        KafkaProducer<byte[], byte[], byte[]> producer = new KafkaProducer<>(props);
+        KafkaProducer<byte[], byte[]> producer = new KafkaProducer<>(props);
 
         int numRecordsProduced = 0;
 
@@ -156,7 +156,7 @@ public class SmokeTestDriver extends SmokeTestUtil {
                 value = END;
             }
 
-            HeaderProducerRecord<byte[], byte[], byte[]> record =
+            HeaderProducerRecord<byte[], byte[]> record =
                     new HeaderProducerRecord<>("data", stringSerde.serializer().serialize("", key), intSerde.serializer().serialize("", value));
 
             producer.send(record);
@@ -197,7 +197,7 @@ public class SmokeTestDriver extends SmokeTestUtil {
         props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, ByteArrayDeserializer.class);
         props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, ByteArrayDeserializer.class);
 
-        KafkaConsumer<byte[], byte[], byte[]> consumer = new KafkaConsumer<>(props);
+        KafkaConsumer<byte[], byte[]> consumer = new KafkaConsumer<>(props);
         List<TopicPartition> partitions = getAllPartitions(consumer, "echo", "max", "min", "dif", "sum", "cnt", "avg", "wcnt", "tagg");
         consumer.assign(partitions);
         consumer.seekToBeginning(partitions);
@@ -225,14 +225,14 @@ public class SmokeTestDriver extends SmokeTestUtil {
         int maxRetry = 240; // max two minutes (500ms * 240) (before we reach the end of records)
 
         while (true) {
-            HeaderConsumerRecords<byte[], byte[], byte[]> records = consumer.poll(500);
+            HeaderConsumerRecords<byte[], byte[]> records = consumer.poll(500);
             if (records.isEmpty()) {
                 retryCount++;
                 if (retryCount > maxRetry) break;
             } else {
                 retryCount = 0;
 
-                for (HeaderConsumerRecord<byte[], byte[], byte[]> record : records) {
+                for (HeaderConsumerRecord<byte[], byte[]> record : records) {
                     String key = stringSerde.deserializer().deserialize("", record.key());
                     switch (record.topic()) {
                         case "echo":
@@ -562,7 +562,7 @@ public class SmokeTestDriver extends SmokeTestUtil {
         return Long.parseLong(key.split("@")[1]);
     }
 
-    private static List<TopicPartition> getAllPartitions(KafkaConsumer<?, ?, ?> consumer, String... topics) {
+    private static List<TopicPartition> getAllPartitions(KafkaConsumer<?, ?> consumer, String... topics) {
         ArrayList<TopicPartition> partitions = new ArrayList<>();
 
         for (String topic : topics) {

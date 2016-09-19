@@ -43,7 +43,7 @@ public class StreamTask extends AbstractTask implements Punctuator {
 
     private static final Logger log = LoggerFactory.getLogger(StreamTask.class);
 
-    private static final HeaderConsumerRecord<Object, Void, Object>
+    private static final HeaderConsumerRecord<Object, Object, Object>
        DUMMY_RECORD = new HeaderConsumerRecord<>(ProcessorContextImpl.NONEXIST_TOPIC, -1, -1L, null, null, null);
 
     private final int maxBufferedSize;
@@ -78,9 +78,9 @@ public class StreamTask extends AbstractTask implements Punctuator {
                       String applicationId,
                       Collection<TopicPartition> partitions,
                       ProcessorTopology topology,
-                      Consumer<byte[], Void, byte[]> consumer,
-                      Producer<byte[], Void, byte[]> producer,
-                      Consumer<byte[], Void, byte[]> restoreConsumer,
+                      Consumer<byte[], byte[]> consumer,
+                      Producer<byte[], byte[]> producer,
+                      Consumer<byte[], byte[]> restoreConsumer,
                       StreamsConfig config,
                       StreamsMetrics metrics,
                       StateDirectory stateDirectory,
@@ -136,7 +136,7 @@ public class StreamTask extends AbstractTask implements Punctuator {
      * @param records  the records
      */
     @SuppressWarnings("unchecked")
-    public void addRecords(TopicPartition partition, Iterable<HeaderConsumerRecord<byte[], Void, byte[]>> records) {
+    public void addRecords(TopicPartition partition, Iterable<HeaderConsumerRecord<byte[], byte[], byte[]>> records) {
         int queueSize = partitionGroup.addRawRecords(partition, records);
 
         // if after adding these records, its partition queue's buffered size has been
@@ -172,7 +172,7 @@ public class StreamTask extends AbstractTask implements Punctuator {
             log.debug("task [{}] Start processing one record [{}]", id(), record);
             final ProcessorRecordContext recordContext = createRecordContext(record);
             updateProcessorContext(recordContext, currNode);
-            this.currNode.process(record.key(), record.value());
+            this.currNode.process(record.key(), record.header(), record.value());
 
             log.debug("task [{}] Completed processing one record [{}]", id(), record);
 

@@ -21,9 +21,10 @@ package org.apache.kafka.streams.processor;
  * A processor of key-value pair records.
  *
  * @param <K> the type of keys
+ * @param <H> the type of headers
  * @param <V> the type of values
  */
-public interface Processor<K, V> {
+public interface Processor<K, H, V> {
 
     /**
      * Initialize this processor with the given context. The framework ensures this is called once per processor when the topology
@@ -40,9 +41,10 @@ public interface Processor<K, V> {
      * Process the record with the given key and value.
      *
      * @param key the key for the record
+     * @param header the header for the record
      * @param value the value for the record
      */
-    void process(K key, V value);
+    void process(K key, H header, V value);
 
     /**
      * Perform any periodic operations, if this processor {@link ProcessorContext#schedule(long) schedule itself} with the context

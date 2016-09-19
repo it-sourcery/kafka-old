@@ -199,7 +199,7 @@ public class KafkaConfigBackingStore implements ConfigBackingStore {
     private String topic;
     // Data is passed to the log already serialized. We use a converter to handle translating to/from generic Connect
     // format to serialized form
-    private KafkaBasedLog<String, byte[], byte[]> configLog;
+    private KafkaBasedLog<String, byte[]> configLog;
     // Connector -> # of tasks
     private Map<String, Integer> connectorTaskCounts = new HashMap<>();
     // Connector and task configs: name or id -> config map
@@ -239,14 +239,12 @@ public class KafkaConfigBackingStore implements ConfigBackingStore {
         Map<String, Object> producerProps = new HashMap<>();
         producerProps.putAll(config.originals());
         producerProps.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName());
-        producerProps.put(ProducerConfig.HEADER_SERIALIZER_CLASS_CONFIG, ByteArraySerializer.class.getName());
         producerProps.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, ByteArraySerializer.class.getName());
         producerProps.put(ProducerConfig.RETRIES_CONFIG, Integer.MAX_VALUE);
 
         Map<String, Object> consumerProps = new HashMap<>();
         consumerProps.putAll(config.originals());
         consumerProps.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class.getName());
-        producerProps.put(ConsumerConfig.HEADER_DESERIALIZER_CLASS_CONFIG, ByteArrayDeserializer.class.getName());
         consumerProps.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, ByteArrayDeserializer.class.getName());
 
         configLog = createKafkaBasedLog(topic, producerProps, consumerProps, new ConsumeCallback());
@@ -418,15 +416,15 @@ public class KafkaConfigBackingStore implements ConfigBackingStore {
         configLog.send(TARGET_STATE_KEY(connector), serializedTargetState);
     }
 
-    private KafkaBasedLog<String, byte[], byte[]> createKafkaBasedLog(String topic, Map<String, Object> producerProps,
-                                                              Map<String, Object> consumerProps, Callback<HeaderConsumerRecord<String, byte[], byte[]>> consumedCallback) {
+    private KafkaBasedLog<String, byte[]> createKafkaBasedLog(String topic, Map<String, Object> producerProps,
+                                                              Map<String, Object> consumerProps, Callback<HeaderConsumerRecord<String, byte[]>> consumedCallback) {
         return new KafkaBasedLog<>(topic, producerProps, consumerProps, consumedCallback, new SystemTime());
     }
 
     @SuppressWarnings("unchecked")
-    private class ConsumeCallback implements Callback<HeaderConsumerRecord<String, byte[], byte[]>> {
+    private class ConsumeCallback implements Callback<HeaderConsumerRecord<String, byte[]>> {
         @Override
-        public void onCompletion(Throwable error, HeaderConsumerRecord<String, byte[], byte[]> record) {
+        public void onCompletion(Throwable error, HeaderConsumerRecord<String, byte[]> record) {
             if (error != null) {
                 log.error("Unexpected in consumer callback for KafkaConfigBackingStore: ", error);
                 return;

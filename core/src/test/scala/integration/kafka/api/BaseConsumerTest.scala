@@ -89,7 +89,7 @@ abstract class BaseConsumerTest extends IntegrationTestHarness with Logging {
     val listener = new TestConsumerReassignmentListener()
     this.consumerConfig.setProperty(ConsumerConfig.SESSION_TIMEOUT_MS_CONFIG, "5000")
     this.consumerConfig.setProperty(ConsumerConfig.HEARTBEAT_INTERVAL_MS_CONFIG, "2000")
-    val consumer0 = new KafkaConsumer(this.consumerConfig, new ByteArrayDeserializer(), new ByteArrayDeserializer(), new ByteArrayDeserializer())
+    val consumer0 = new KafkaConsumer(this.consumerConfig, new ByteArrayDeserializer(), new ByteArrayDeserializer())
     consumers += consumer0
 
     consumer0.subscribe(List(topic).asJava, listener)
@@ -141,14 +141,14 @@ abstract class BaseConsumerTest extends IntegrationTestHarness with Logging {
     sendRecords(this.producers.head, numRecords, tp)
   }
 
-  protected def sendRecords(producer: KafkaProducer[Array[Byte], Array[Byte], Array[Byte]], numRecords: Int, tp: TopicPartition) {
+  protected def sendRecords(producer: KafkaProducer[Array[Byte], Array[Byte]], numRecords: Int, tp: TopicPartition) {
     (0 until numRecords).foreach { i =>
-      producer.send(new HeaderProducerRecord(tp.topic(), tp.partition(), i.toLong, s"key $i".getBytes,s"header $i".getBytes, s"value $i".getBytes))
+      producer.send(new HeaderProducerRecord(tp.topic(), tp.partition(), i.toLong, s"key $i".getBytes, s"value $i".getBytes))
     }
     producer.flush()
   }
 
-  protected def consumeAndVerifyRecords(consumer: Consumer[Array[Byte], Array[Byte], Array[Byte]],
+  protected def consumeAndVerifyRecords(consumer: Consumer[Array[Byte], Array[Byte]],
                                         numRecords: Int,
                                         startingOffset: Int,
                                         startingKeyAndValueIndex: Int = 0,
@@ -173,19 +173,17 @@ abstract class BaseConsumerTest extends IntegrationTestHarness with Logging {
       assertEquals(offset.toLong, record.offset)
       val keyAndValueIndex = startingKeyAndValueIndex + i
       assertEquals(s"key $keyAndValueIndex", new String(record.key))
-      assertEquals(s"header $keyAndValueIndex", new String(record.header))
       assertEquals(s"value $keyAndValueIndex", new String(record.value))
-      // this is true only because K, H and V are byte arrays
+      // this is true only because K and V are byte arrays
       assertEquals(s"key $keyAndValueIndex".length, record.serializedKeySize)
-      assertEquals(s"header $keyAndValueIndex".length, record.serializedHeaderSize)
       assertEquals(s"value $keyAndValueIndex".length, record.serializedValueSize)
     }
   }
 
-  protected def consumeRecords[K, H, V](consumer: Consumer[K, H, V],
+  protected def consumeRecords[K, V](consumer: Consumer[K, V],
                                      numRecords: Int,
-                                     maxPollRecords: Int = Int.MaxValue): ArrayList[HeaderConsumerRecord[K, H, V]] = {
-    val records = new ArrayList[HeaderConsumerRecord[K, H, V]]
+                                     maxPollRecords: Int = Int.MaxValue): ArrayList[HeaderConsumerRecord[K, V]] = {
+    val records = new ArrayList[HeaderConsumerRecord[K, V]]
     val maxIters = numRecords * 300
     var iters = 0
     while (records.size < numRecords) {
@@ -200,7 +198,7 @@ abstract class BaseConsumerTest extends IntegrationTestHarness with Logging {
     records
   }
 
-  protected def awaitCommitCallback[K, H, V](consumer: Consumer[K, H, V],
+  protected def awaitCommitCallback[K, V](consumer: Consumer[K, V],
                                           commitCallback: CountConsumerCommitCallback,
                                           count: Int = 1): Unit = {
     val started = System.currentTimeMillis()
@@ -221,7 +219,7 @@ abstract class BaseConsumerTest extends IntegrationTestHarness with Logging {
     }
   }
 
-  protected class ConsumerAssignmentPoller(consumer: Consumer[Array[Byte], Array[Byte], Array[Byte]],
+  protected class ConsumerAssignmentPoller(consumer: Consumer[Array[Byte], Array[Byte]],
                                            topicsToSubscribe: List[String]) extends ShutdownableThread("daemon-consumer-assignment", false)
   {
     @volatile private var partitionAssignment: Set[TopicPartition] = Set.empty[TopicPartition]

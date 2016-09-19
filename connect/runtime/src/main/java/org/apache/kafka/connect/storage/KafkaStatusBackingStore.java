@@ -99,7 +99,7 @@ public class KafkaStatusBackingStore implements StatusBackingStore {
     private final Map<String, CacheEntry<ConnectorStatus>> connectors;
 
     private String topic;
-    private KafkaBasedLog<String, byte[], byte[]> kafkaLog;
+    private KafkaBasedLog<String, byte[]> kafkaLog;
     private int generation;
 
     public KafkaStatusBackingStore(Time time, Converter converter) {
@@ -110,7 +110,7 @@ public class KafkaStatusBackingStore implements StatusBackingStore {
     }
 
     // visible for testing
-    KafkaStatusBackingStore(Time time, Converter converter, String topic, KafkaBasedLog<String, byte[], byte[]> kafkaLog) {
+    KafkaStatusBackingStore(Time time, Converter converter, String topic, KafkaBasedLog<String, byte[]> kafkaLog) {
         this(time, converter);
         this.kafkaLog = kafkaLog;
         this.topic = topic;
@@ -125,19 +125,17 @@ public class KafkaStatusBackingStore implements StatusBackingStore {
         Map<String, Object> producerProps = new HashMap<>();
         producerProps.putAll(config.originals());
         producerProps.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName());
-        producerProps.put(ProducerConfig.HEADER_SERIALIZER_CLASS_CONFIG, ByteArraySerializer.class.getName());
         producerProps.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, ByteArraySerializer.class.getName());
         producerProps.put(ProducerConfig.RETRIES_CONFIG, 0); // we handle retries in this class
 
         Map<String, Object> consumerProps = new HashMap<>();
         consumerProps.putAll(config.originals());
         consumerProps.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class.getName());
-        consumerProps.put(ConsumerConfig.HEADER_DESERIALIZER_CLASS_CONFIG, ByteArrayDeserializer.class.getName());
         consumerProps.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, ByteArrayDeserializer.class.getName());
 
-        Callback<HeaderConsumerRecord<String, byte[], byte[]>> readCallback = new Callback<HeaderConsumerRecord<String, byte[], byte[]>>() {
+        Callback<HeaderConsumerRecord<String, byte[]>> readCallback = new Callback<HeaderConsumerRecord<String, byte[]>>() {
             @Override
-            public void onCompletion(Throwable error, HeaderConsumerRecord<String, byte[], byte[]> record) {
+            public void onCompletion(Throwable error, HeaderConsumerRecord<String, byte[]> record) {
                 read(record);
             }
         };
@@ -414,7 +412,7 @@ public class KafkaStatusBackingStore implements StatusBackingStore {
     }
 
     // visible for testing
-    void read(HeaderConsumerRecord<String, byte[], byte[]> record) {
+    void read(HeaderConsumerRecord<String, byte[]> record) {
         String key = record.key();
         if (key.startsWith(CONNECTOR_STATUS_PREFIX)) {
             readConnectorStatus(key, record.value());

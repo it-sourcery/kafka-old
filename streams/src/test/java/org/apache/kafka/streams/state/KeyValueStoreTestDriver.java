@@ -196,12 +196,12 @@ public class KeyValueStoreTestDriver<K, V> {
 
     protected KeyValueStoreTestDriver(final StateSerdes<K, V> serdes) {
         ByteArraySerializer rawSerializer = new ByteArraySerializer();
-        Producer<byte[], Void, byte[]> producer = new MockProducer<>(true, rawSerializer, rawSerializer);
+        Producer<byte[], byte[]> producer = new MockProducer<>(true, rawSerializer, rawSerializer);
 
         this.recordCollector = new RecordCollector(producer, "KeyValueStoreTestDriver") {
             @SuppressWarnings("unchecked")
             @Override
-            public <K1, H1, V1> void send(HeaderProducerRecord<K1, H1, V1> record, Serializer<K1> keySerializer, Serializer<V1> valueSerializer) {
+            public <K1, V1> void send(HeaderProducerRecord<K1, V1> record, Serializer<K1> keySerializer, Serializer<V1> valueSerializer) {
                 // for byte arrays we need to wrap it for comparison
 
                 K key = serdes.keyFrom(keySerializer.serialize(record.topic(), record.key()));
@@ -210,7 +210,7 @@ public class KeyValueStoreTestDriver<K, V> {
                 recordFlushed(key, value);
             }
             @Override
-            public <K1, H1, V1> void send(HeaderProducerRecord<K1, H1, V1> record, Serializer<K1> keySerializer, Serializer<V1> valueSerializer,
+            public <K1, V1> void send(HeaderProducerRecord<K1, V1> record, Serializer<K1> keySerializer, Serializer<V1> valueSerializer,
                                       StreamPartitioner<K1, V1> partitioner) {
                 // ignore partitioner
                 send(record, keySerializer, valueSerializer);

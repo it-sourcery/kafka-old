@@ -442,7 +442,7 @@ object TestUtils extends Logging {
   /**
    * Create a (new) producer with a few pre-configured properties.
    */
-  def createNewProducer[K, H, V](brokerList: String,
+  def createNewProducer[K, V](brokerList: String,
                         acks: Int = -1,
                         maxBlockMs: Long = 60 * 1000L,
                         bufferSize: Long = 1024L * 1024L,
@@ -453,9 +453,8 @@ object TestUtils extends Logging {
                         trustStoreFile: Option[File] = None,
                         saslProperties: Option[Properties] = None,
                         keySerializer: Serializer[K] = new ByteArraySerializer,
-                        headerSerializer: Serializer[H] = new ByteArraySerializer,
                         valueSerializer: Serializer[V] = new ByteArraySerializer,
-                        props: Option[Properties] = None): KafkaProducer[K, H, V] = {
+                        props: Option[Properties] = None): KafkaProducer[K, V] = {
 
     val producerProps = props.getOrElse(new Properties)
     producerProps.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, brokerList)
@@ -485,7 +484,7 @@ object TestUtils extends Logging {
     if (!producerProps.containsKey(CommonClientConfigs.SECURITY_PROTOCOL_CONFIG))
       producerProps.putAll(producerSecurityConfigs(securityProtocol, trustStoreFile, saslProperties))
 
-    new KafkaProducer[K, H, V](producerProps, keySerializer, headerSerializer, valueSerializer)
+    new KafkaProducer[K, V](producerProps, keySerializer, valueSerializer)
   }
 
   private def usesSslTransportLayer(securityProtocol: SecurityProtocol): Boolean = securityProtocol match {
@@ -513,7 +512,7 @@ object TestUtils extends Logging {
                         securityProtocol: SecurityProtocol,
                         trustStoreFile: Option[File] = None,
                         saslProperties: Option[Properties] = None,
-                        props: Option[Properties] = None) : KafkaConsumer[Array[Byte],Array[Byte],Array[Byte]] = {
+                        props: Option[Properties] = None) : KafkaConsumer[Array[Byte],Array[Byte]] = {
     import org.apache.kafka.clients.consumer.ConsumerConfig
 
     val consumerProps = props.getOrElse(new Properties())
@@ -525,7 +524,6 @@ object TestUtils extends Logging {
       ConsumerConfig.RETRY_BACKOFF_MS_CONFIG -> "100",
       ConsumerConfig.RECONNECT_BACKOFF_MS_CONFIG -> "200",
       ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG -> "org.apache.kafka.common.serialization.ByteArrayDeserializer",
-      ConsumerConfig.HEADER_DESERIALIZER_CLASS_CONFIG -> "org.apache.kafka.common.serialization.ByteArrayDeserializer",
       ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG -> "org.apache.kafka.common.serialization.ByteArrayDeserializer",
       ConsumerConfig.PARTITION_ASSIGNMENT_STRATEGY_CONFIG -> partitionAssignmentStrategy,
       ConsumerConfig.SESSION_TIMEOUT_MS_CONFIG -> sessionTimeout.toString,
@@ -544,7 +542,7 @@ object TestUtils extends Logging {
     if(!consumerProps.containsKey(CommonClientConfigs.SECURITY_PROTOCOL_CONFIG))
       consumerProps.putAll(consumerSecurityConfigs(securityProtocol, trustStoreFile, saslProperties))
 
-    new KafkaConsumer[Array[Byte],Array[Byte],Array[Byte]](consumerProps)
+    new KafkaConsumer[Array[Byte],Array[Byte]](consumerProps)
   }
 
   /**
@@ -983,7 +981,7 @@ object TestUtils extends Logging {
    *                           If not specified, then all available messages will be consumed, and no exception is thrown.
    * @return the list of messages consumed.
    */
-  def getMessages(topicMessageStreams: Map[String, List[KafkaStream[String, String, String]]],
+  def getMessages(topicMessageStreams: Map[String, List[KafkaStream[String, String]]],
                      nMessagesPerThread: Int = -1): List[String] = {
 
     var messages: List[String] = Nil

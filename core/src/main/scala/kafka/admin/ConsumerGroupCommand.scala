@@ -295,7 +295,7 @@ object ConsumerGroupCommand {
     private val adminClient = createAdminClient()
 
     // `consumer` is only needed for `describe`, so we instantiate it lazily
-    private var consumer: KafkaConsumer[String, String, String] = null
+    private var consumer: KafkaConsumer[String, String] = null
 
     def list() {
       adminClient.listAllConsumerGroupsFlattened().foreach(x => println(x.groupId))
@@ -350,7 +350,7 @@ object ConsumerGroupCommand {
       consumer
     }
 
-    private def createNewConsumer(): KafkaConsumer[String, String, String] = {
+    private def createNewConsumer(): KafkaConsumer[String, String] = {
       val properties = new Properties()
       val deserializer = (new StringDeserializer).getClass.getName
       val brokerUrl = opts.options.valueOf(opts.bootstrapServerOpt)
@@ -359,7 +359,6 @@ object ConsumerGroupCommand {
       properties.put(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, "false")
       properties.put(ConsumerConfig.SESSION_TIMEOUT_MS_CONFIG, "30000")
       properties.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, deserializer)
-      properties.put(ConsumerConfig.HEADER_DESERIALIZER_CLASS_CONFIG, deserializer)
       properties.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, deserializer)
       if (opts.options.has(opts.commandConfigOpt)) properties.putAll(Utils.loadProps(opts.options.valueOf(opts.commandConfigOpt)))
 

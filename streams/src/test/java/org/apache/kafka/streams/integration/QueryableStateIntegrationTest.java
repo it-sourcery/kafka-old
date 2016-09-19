@@ -24,7 +24,6 @@ import org.apache.kafka.common.serialization.Serde;
 import org.apache.kafka.common.serialization.Serdes;
 import org.apache.kafka.common.serialization.StringDeserializer;
 import org.apache.kafka.common.serialization.StringSerializer;
-import org.apache.kafka.common.serialization.VoidSerializer;
 import org.apache.kafka.streams.KafkaStreams;
 import org.apache.kafka.streams.KeyValue;
 import org.apache.kafka.streams.StreamsConfig;
@@ -724,13 +723,13 @@ public class QueryableStateIntegrationTest {
             producerConfig.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
             producerConfig.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
 
-            final KafkaProducer<String, Void, String>
+            final KafkaProducer<String, String>
                 producer =
-                new KafkaProducer<>(producerConfig, new StringSerializer(), new VoidSerializer(), new StringSerializer());
+                new KafkaProducer<>(producerConfig, new StringSerializer(), new StringSerializer());
 
             while (getCurrIteration() < numIterations && !shutdown) {
                 for (int i = 0; i < inputValues.size(); i++) {
-                    producer.send(new HeaderProducerRecord<String, Void, String>(topic, inputValues.get(i)));
+                    producer.send(new HeaderProducerRecord<String, String>(topic, inputValues.get(i)));
                 }
                 incrementInteration();
             }

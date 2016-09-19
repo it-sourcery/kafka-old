@@ -40,11 +40,11 @@ import java.util.regex.Pattern;
  * where a driver thread waits for {@link #poll(long)} to be called by a background thread and then can safely perform
  * operations during a callback.
  */
-public class MockConsumer<K, H, V> implements Consumer<K, H, V> {
+public class MockConsumer<K, V> implements Consumer<K, V> {
 
     private final Map<String, List<PartitionInfo>> partitions;
     private final SubscriptionState subscriptions;
-    private Map<TopicPartition, List<HeaderConsumerRecord<K, H, V>>> records;
+    private Map<TopicPartition, List<HeaderConsumerRecord<K, V>>> records;
     private Set<TopicPartition> paused;
     private boolean closed;
     private final Map<TopicPartition, Long> beginningOffsets;
@@ -123,7 +123,7 @@ public class MockConsumer<K, H, V> implements Consumer<K, H, V> {
     }
 
     @Override
-    public HeaderConsumerRecords<K, H, V> poll(long timeout) {
+    public HeaderConsumerRecords<K, V> poll(long timeout) {
         ensureNotClosed();
 
         // Synchronize around the entire execution so new tasks to be triggered on subsequent poll calls can be added in
@@ -150,28 +150,28 @@ public class MockConsumer<K, H, V> implements Consumer<K, H, V> {
             updateFetchPosition(tp);
 
         // update the consumed offset
-        for (Map.Entry<TopicPartition, List<HeaderConsumerRecord<K, H, V>>> entry : this.records.entrySet()) {
+        for (Map.Entry<TopicPartition, List<HeaderConsumerRecord<K, V>>> entry : this.records.entrySet()) {
             if (!subscriptions.isPaused(entry.getKey())) {
-                List<HeaderConsumerRecord<K, H, V>> recs = entry.getValue();
+                List<HeaderConsumerRecord<K, V>> recs = entry.getValue();
                 if (!recs.isEmpty())
                     this.subscriptions.position(entry.getKey(), recs.get(recs.size() - 1).offset() + 1);
             }
         }
 
-        HeaderConsumerRecords<K, H, V> copy = new HeaderConsumerRecords<K, H, V>(this.records);
-        this.records = new HashMap<TopicPartition, List<HeaderConsumerRecord<K, H, V>>>();
+        HeaderConsumerRecords<K, V> copy = new HeaderConsumerRecords<K, V>(this.records);
+        this.records = new HashMap<TopicPartition, List<HeaderConsumerRecord<K, V>>>();
         return copy;
     }
 
-    public void addRecord(HeaderConsumerRecord<K, H, V> record) {
+    public void addRecord(HeaderConsumerRecord<K, V> record) {
         ensureNotClosed();
         TopicPartition tp = new TopicPartition(record.topic(), record.partition());
         Set<TopicPartition> currentAssigned = new HashSet<>(this.subscriptions.assignedPartitions());
         if (!currentAssigned.contains(tp))
             throw new IllegalStateException("Cannot add records for a partition that is not assigned to the consumer");
-        List<HeaderConsumerRecord<K, H, V>> recs = this.records.get(tp);
+        List<HeaderConsumerRecord<K, V>> recs = this.records.get(tp);
         if (recs == null) {
-            recs = new ArrayList<HeaderConsumerRecord<K, H, V>>();
+            recs = new ArrayList<HeaderConsumerRecord<K, V>>();
             this.records.put(tp, recs);
         }
         recs.add(record);

@@ -25,23 +25,21 @@ import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.Producer;
 import org.apache.kafka.common.serialization.ByteArrayDeserializer;
 import org.apache.kafka.common.serialization.ByteArraySerializer;
-import org.apache.kafka.common.serialization.VoidDeserializer;
-import org.apache.kafka.common.serialization.VoidSerializer;
 import org.apache.kafka.streams.KafkaClientSupplier;
 
 public class DefaultKafkaClientSupplier implements KafkaClientSupplier {
     @Override
-    public Producer<byte[], Void, byte[]> getProducer(Map<String, Object> config) {
-        return new KafkaProducer<>(config, new ByteArraySerializer(), new VoidSerializer(), new ByteArraySerializer());
+    public Producer<byte[], byte[]> getProducer(Map<String, Object> config) {
+        return new KafkaProducer<>(config, new ByteArraySerializer(), new ByteArraySerializer());
     }
 
     @Override
-    public Consumer<byte[], Void, byte[]> getConsumer(Map<String, Object> config) {
-        return new KafkaConsumer<>(config, new ByteArrayDeserializer(), new VoidDeserializer(), new ByteArrayDeserializer());
+    public Consumer<byte[], byte[]> getConsumer(Map<String, Object> config) {
+        return new KafkaConsumer<>(config, new ByteArrayDeserializer(), new ByteArrayDeserializer());
     }
 
     @Override
-    public Consumer<byte[], Void, byte[]> getRestoreConsumer(Map<String, Object> config) {
-        return new KafkaConsumer<>(config, new ByteArrayDeserializer(), new VoidDeserializer(), new ByteArrayDeserializer());
+    public Consumer<byte[], byte[]> getRestoreConsumer(Map<String, Object> config) {
+        return new KafkaConsumer<>(config, new ByteArrayDeserializer(), new ByteArrayDeserializer());
     }
 }

@@ -37,7 +37,7 @@ trait ConsumerConnector {
    *          The number of items in the list is #streams. Each stream supports
    *          an iterator over message/metadata pairs.
    */
-  def createMessageStreams(topicCountMap: Map[String,Int]): Map[String, List[KafkaStream[Array[Byte],Array[Byte],Array[Byte]]]]
+  def createMessageStreams(topicCountMap: Map[String,Int]): Map[String, List[KafkaStream[Array[Byte],Array[Byte]]]]
   
   /**
    *  Create a list of MessageStreams for each topic.
@@ -49,11 +49,10 @@ trait ConsumerConnector {
    *          The number of items in the list is #streams. Each stream supports
    *          an iterator over message/metadata pairs.
    */
-  def createMessageStreams[K,H,V](topicCountMap: Map[String,Int],
+  def createMessageStreams[K,V](topicCountMap: Map[String,Int],
                                 keyDecoder: Decoder[K],
-                                headerDecoder: Decoder[H],
                                 valueDecoder: Decoder[V])
-    : Map[String,List[KafkaStream[K,H,V]]]
+    : Map[String,List[KafkaStream[K,V]]]
   
   /**
    *  Create a list of message streams for all topics that match a given filter.
@@ -61,17 +60,15 @@ trait ConsumerConnector {
    *  @param topicFilter Either a Whitelist or Blacklist TopicFilter object.
    *  @param numStreams Number of streams to return
    *  @param keyDecoder Decoder to decode the key portion of the message
-   *  @param headerDecoder Decoder to decode the header portion of the message
    *  @param valueDecoder Decoder to decode the value portion of the message
    *  @return a list of KafkaStream each of which provides an
    *          iterator over message/metadata pairs over allowed topics.
    */
-  def createMessageStreamsByFilter[K,H,V](topicFilter: TopicFilter,
+  def createMessageStreamsByFilter[K,V](topicFilter: TopicFilter,
                                         numStreams: Int = 1,
                                         keyDecoder: Decoder[K] = new DefaultDecoder(),
-                                        headerDecoder: Decoder[H] = new DefaultDecoder(),
                                         valueDecoder: Decoder[V] = new DefaultDecoder())
-    : Seq[KafkaStream[K,H,V]]
+    : Seq[KafkaStream[K,V]]
 
   /**
    *  Commit the offsets of all broker partitions connected by this connector.

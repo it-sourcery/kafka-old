@@ -22,15 +22,14 @@ public class ErrorLoggingCallback implements Callback {
     private static final Logger log = LoggerFactory.getLogger(ErrorLoggingCallback.class);
     private String topic;
     private byte[] key;
-    private byte[] header;
     private byte[] value;
     private int valueLength;
     private boolean logAsString;
 
-    public ErrorLoggingCallback(String topic, byte[] key, byte[] header, byte[] value, boolean logAsString) {
+    public ErrorLoggingCallback(String topic, byte[] key, byte[] value, boolean logAsString) {
         this.topic = topic;
         this.key = key;
-        this.header = header;
+
         if (logAsString) {
             this.value = value;
         }
@@ -43,12 +42,10 @@ public class ErrorLoggingCallback implements Callback {
         if (e != null) {
             String keyString = (key == null) ? "null" :
                     logAsString ? new String(key) : key.length + " bytes";
-            String headerString = (header == null) ? "null" :
-                               logAsString ? new String(header) : header.length + " bytes";
             String valueString = (valueLength == -1) ? "null" :
                     logAsString ? new String(value) : valueLength + " bytes";
-            log.error("Error when sending message to topic {} with key: {}, header: {}, value: {} with error:",
-                    topic, keyString, headerString, valueString, e);
+            log.error("Error when sending message to topic {} with key: {}, value: {} with error:",
+                    topic, keyString, valueString, e);
         }
     }
 }

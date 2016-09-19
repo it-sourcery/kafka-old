@@ -167,7 +167,7 @@ class ConsumerBounceTest extends IntegrationTestHarness with Logging {
 
   private def sendRecords(numRecords: Int) {
     val futures = (0 until numRecords).map { i =>
-      this.producers.head.send(new HeaderProducerRecord(topic, part, i.toString.getBytes, i.toString.getBytes, i.toString.getBytes))
+      this.producers.head.send(new HeaderProducerRecord(topic, part, i.toString.getBytes, i.toString.getBytes))
     }
     futures.map(_.get)
   }

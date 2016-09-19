@@ -25,7 +25,7 @@ import java.util.Properties;
 import java.util.concurrent.ExecutionException;
 
 public class Producer extends Thread {
-    private final KafkaProducer<Integer, Object, String> producer;
+    private final KafkaProducer<Integer, String> producer;
     private final String topic;
     private final Boolean isAsync;
 

@@ -232,14 +232,14 @@ public class KStreamTestDriver {
         }
 
         @Override
-        public <K, Void, V> void send(HeaderProducerRecord<K, Void,  V> record, Serializer<K> keySerializer, Serializer<V> valueSerializer,
+        public <K, V> void send(HeaderProducerRecord<K, V> record, Serializer<K> keySerializer, Serializer<V> valueSerializer,
                                 StreamPartitioner<K, V> partitioner) {
             // The serialization is skipped.
             process(record.topic(), record.key(), record.value());
         }
 
         @Override
-        public <K, Void, V> void send(HeaderProducerRecord<K, Void, V> record, Serializer<K> keySerializer, Serializer<V> valueSerializer) {
+        public <K, V> void send(HeaderProducerRecord<K, V> record, Serializer<K> keySerializer, Serializer<V> valueSerializer) {
             // The serialization is skipped.
             process(record.topic(), record.key(), record.value());
         }

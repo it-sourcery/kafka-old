@@ -431,7 +431,7 @@ class DefaultMessageFormatter extends MessageFormatter {
       valueDeserializer = Some(Class.forName(props.getProperty("value.deserializer")).newInstance().asInstanceOf[Deserializer[_]])
   }
 
-  def writeTo(consumerRecord: HeaderConsumerRecord[Array[Byte], Array[Byte], Array[Byte]], output: PrintStream) {
+  def writeTo(consumerRecord: HeaderConsumerRecord[Array[Byte], Array[Byte]], output: PrintStream) {
 
     def write(deserializer: Option[Deserializer[_]], sourceBytes: Array[Byte], separator: Array[Byte]) {
       val nonNullBytes = Option(sourceBytes).getOrElse("null".getBytes)
@@ -459,7 +459,7 @@ class LoggingMessageFormatter extends MessageFormatter   {
   private val defaultWriter: DefaultMessageFormatter = new DefaultMessageFormatter
   val logger = Logger.getLogger(getClass().getName)
 
-  def writeTo(consumerRecord: HeaderConsumerRecord[Array[Byte], Array[Byte], Array[Byte]], output: PrintStream): Unit = {
+  def writeTo(consumerRecord: HeaderConsumerRecord[Array[Byte], Array[Byte]], output: PrintStream): Unit = {
     import consumerRecord._
     defaultWriter.writeTo(consumerRecord, output)
     if (logger.isInfoEnabled)
@@ -472,7 +472,7 @@ class LoggingMessageFormatter extends MessageFormatter   {
 class NoOpMessageFormatter extends MessageFormatter {
   override def init(props: Properties) {}
 
-  def writeTo(consumerRecord: HeaderConsumerRecord[Array[Byte], Array[Byte], Array[Byte]], output: PrintStream){}
+  def writeTo(consumerRecord: HeaderConsumerRecord[Array[Byte], Array[Byte]], output: PrintStream){}
 }
 
 class ChecksumMessageFormatter extends MessageFormatter {
@@ -486,11 +486,11 @@ class ChecksumMessageFormatter extends MessageFormatter {
       topicStr = ""
   }
 
-  def writeTo(consumerRecord: HeaderConsumerRecord[Array[Byte], Array[Byte],Array[Byte]], output: PrintStream) {
+  def writeTo(consumerRecord: HeaderConsumerRecord[Array[Byte], Array[Byte]], output: PrintStream) {
     import consumerRecord._
     val chksum =
       if (timestampType != TimestampType.NO_TIMESTAMP_TYPE)
-        new Message(value, header, key, timestamp, timestampType, NoCompressionCodec, 0, -1, Message.MagicValue_V2).checksum
+        new Message(value, key, timestamp, timestampType, NoCompressionCodec, 0, -1, Message.MagicValue_V1).checksum
       else
         new Message(value, key, Message.NoTimestamp, Message.MagicValue_V0).checksum
     output.println(topicStr + "checksum:" + chksum)

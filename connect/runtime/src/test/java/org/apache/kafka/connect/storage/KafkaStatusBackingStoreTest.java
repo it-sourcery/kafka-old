@@ -56,7 +56,7 @@ public class KafkaStatusBackingStoreTest extends EasyMockSupport {
 
     @Test
     public void putConnectorState() {
-        KafkaBasedLog<String, byte[], byte[]> kafkaBasedLog = mock(KafkaBasedLog.class);
+        KafkaBasedLog<String, byte[]> kafkaBasedLog = mock(KafkaBasedLog.class);
         Converter converter = mock(Converter.class);
         KafkaStatusBackingStore store = new KafkaStatusBackingStore(new MockTime(), converter, STATUS_TOPIC, kafkaBasedLog);
 
@@ -87,7 +87,7 @@ public class KafkaStatusBackingStoreTest extends EasyMockSupport {
 
     @Test
     public void putConnectorStateRetriableFailure() {
-        KafkaBasedLog<String, byte[], byte[]> kafkaBasedLog = mock(KafkaBasedLog.class);
+        KafkaBasedLog<String, byte[]> kafkaBasedLog = mock(KafkaBasedLog.class);
         Converter converter = mock(Converter.class);
         KafkaStatusBackingStore store = new KafkaStatusBackingStore(new MockTime(), converter, STATUS_TOPIC, kafkaBasedLog);
 
@@ -125,7 +125,7 @@ public class KafkaStatusBackingStoreTest extends EasyMockSupport {
 
     @Test
     public void putConnectorStateNonRetriableFailure() {
-        KafkaBasedLog<String, byte[], byte[]> kafkaBasedLog = mock(KafkaBasedLog.class);
+        KafkaBasedLog<String, byte[]> kafkaBasedLog = mock(KafkaBasedLog.class);
         Converter converter = mock(Converter.class);
         KafkaStatusBackingStore store = new KafkaStatusBackingStore(new MockTime(), converter, STATUS_TOPIC, kafkaBasedLog);
 
@@ -160,7 +160,7 @@ public class KafkaStatusBackingStoreTest extends EasyMockSupport {
         byte[] value = new byte[0];
         String otherWorkerId = "anotherhost:8083";
 
-        KafkaBasedLog<String, byte[], byte[]> kafkaBasedLog = mock(KafkaBasedLog.class);
+        KafkaBasedLog<String, byte[]> kafkaBasedLog = mock(KafkaBasedLog.class);
         Converter converter = mock(Converter.class);
         KafkaStatusBackingStore store = new KafkaStatusBackingStore(new MockTime(), converter, STATUS_TOPIC, kafkaBasedLog);
 
@@ -189,7 +189,7 @@ public class KafkaStatusBackingStoreTest extends EasyMockSupport {
     @Test
     public void putSafeWithNoPreviousValueIsPropagated() {
         final Converter converter = mock(Converter.class);
-        final KafkaBasedLog<String, byte[], byte[]> kafkaBasedLog = mock(KafkaBasedLog.class);
+        final KafkaBasedLog<String, byte[]> kafkaBasedLog = mock(KafkaBasedLog.class);
         final KafkaStatusBackingStore store = new KafkaStatusBackingStore(new MockTime(), converter, STATUS_TOPIC, kafkaBasedLog);
 
         final byte[] value = new byte[0];
@@ -217,7 +217,7 @@ public class KafkaStatusBackingStoreTest extends EasyMockSupport {
     public void putSafeOverridesValueSetBySameWorker() {
         final byte[] value = new byte[0];
 
-        KafkaBasedLog<String, byte[], byte[]> kafkaBasedLog = mock(KafkaBasedLog.class);
+        KafkaBasedLog<String, byte[]> kafkaBasedLog = mock(KafkaBasedLog.class);
         Converter converter = mock(Converter.class);
         final KafkaStatusBackingStore store = new KafkaStatusBackingStore(new MockTime(), converter, STATUS_TOPIC, kafkaBasedLog);
 
@@ -267,7 +267,7 @@ public class KafkaStatusBackingStoreTest extends EasyMockSupport {
         final byte[] value = new byte[0];
         String otherWorkerId = "anotherhost:8083";
 
-        KafkaBasedLog<String, byte[], byte[]> kafkaBasedLog = mock(KafkaBasedLog.class);
+        KafkaBasedLog<String, byte[]> kafkaBasedLog = mock(KafkaBasedLog.class);
         Converter converter = mock(Converter.class);
         final KafkaStatusBackingStore store = new KafkaStatusBackingStore(new MockTime(), converter, STATUS_TOPIC, kafkaBasedLog);
 
@@ -315,7 +315,7 @@ public class KafkaStatusBackingStoreTest extends EasyMockSupport {
     public void readConnectorState() {
         byte[] value = new byte[0];
 
-        KafkaBasedLog<String, byte[], byte[]> kafkaBasedLog = mock(KafkaBasedLog.class);
+        KafkaBasedLog<String, byte[]> kafkaBasedLog = mock(KafkaBasedLog.class);
         Converter converter = mock(Converter.class);
         KafkaStatusBackingStore store = new KafkaStatusBackingStore(new MockTime(), converter, STATUS_TOPIC, kafkaBasedLog);
 
@@ -339,7 +339,7 @@ public class KafkaStatusBackingStoreTest extends EasyMockSupport {
 
     @Test
     public void putTaskState() {
-        KafkaBasedLog<String, byte[], byte[]> kafkaBasedLog = mock(KafkaBasedLog.class);
+        KafkaBasedLog<String, byte[]> kafkaBasedLog = mock(KafkaBasedLog.class);
         Converter converter = mock(Converter.class);
         KafkaStatusBackingStore store = new KafkaStatusBackingStore(new MockTime(), converter, STATUS_TOPIC, kafkaBasedLog);
 
@@ -372,7 +372,7 @@ public class KafkaStatusBackingStoreTest extends EasyMockSupport {
     public void readTaskState() {
         byte[] value = new byte[0];
 
-        KafkaBasedLog<String, byte[], byte[]> kafkaBasedLog = mock(KafkaBasedLog.class);
+        KafkaBasedLog<String, byte[]> kafkaBasedLog = mock(KafkaBasedLog.class);
         Converter converter = mock(Converter.class);
         KafkaStatusBackingStore store = new KafkaStatusBackingStore(new MockTime(), converter, STATUS_TOPIC, kafkaBasedLog);
 
@@ -394,7 +394,7 @@ public class KafkaStatusBackingStoreTest extends EasyMockSupport {
         verifyAll();
     }
 
-    private static HeaderConsumerRecord<String, byte[], byte[]> consumerRecord(long offset, String key, byte[] value) {
+    private static HeaderConsumerRecord<String, byte[]> consumerRecord(long offset, String key, byte[] value) {
         return new HeaderConsumerRecord<>(STATUS_TOPIC, 0, offset, System.currentTimeMillis(),
                                           TimestampType.CREATE_TIME, 0L, 0, 0, key, value);
     }

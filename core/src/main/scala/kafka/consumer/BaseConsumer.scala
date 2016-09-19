@@ -62,7 +62,7 @@ class NewShinyConsumer(topic: Option[String], partitionId: Option[Int], offset: 
 
   import scala.collection.JavaConversions._
 
-  val consumer = new KafkaConsumer[Array[Byte], Array[Byte], Array[Byte]](consumerProps)
+  val consumer = new KafkaConsumer[Array[Byte], Array[Byte]](consumerProps)
   consumerInit()
   var recordIter = consumer.poll(0).iterator
 
@@ -130,8 +130,8 @@ class OldConsumer(topicFilter: TopicFilter, consumerProps: Properties) extends B
   import kafka.serializer.DefaultDecoder
 
   val consumerConnector = Consumer.create(new ConsumerConfig(consumerProps))
-  val stream: KafkaStream[Array[Byte], Array[Byte], Array[Byte]] =
-    consumerConnector.createMessageStreamsByFilter(topicFilter, 1, new DefaultDecoder(), new DefaultDecoder(), new DefaultDecoder()).head
+  val stream: KafkaStream[Array[Byte], Array[Byte]] =
+    consumerConnector.createMessageStreamsByFilter(topicFilter, 1, new DefaultDecoder(), new DefaultDecoder()).head
   val iter = stream.iterator
 
   override def receive(): BaseConsumerRecord = {
@@ -145,7 +145,7 @@ class OldConsumer(topicFilter: TopicFilter, consumerProps: Properties) extends B
                        messageAndMetadata.timestamp,
                        messageAndMetadata.timestampType,
                        messageAndMetadata.key,
-                       messageAndMetadata.header,
+                       messageAndMetadata.
                        messageAndMetadata.message)
   }
 

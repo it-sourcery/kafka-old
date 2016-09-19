@@ -43,8 +43,8 @@ public class MockProducerTest {
     @Test
     @SuppressWarnings("unchecked")
     public void testAutoCompleteMock() throws Exception {
-        MockProducer<byte[], byte[], byte[]> producer = new MockProducer<byte[], byte[], byte[]>(true, new MockSerializer(), new MockSerializer());
-        HeaderProducerRecord<byte[], byte[], byte[]> record = new HeaderProducerRecord<byte[], byte[], byte[]>(topic, "key".getBytes(), "value".getBytes());
+        MockProducer<byte[], byte[]> producer = new MockProducer<byte[], byte[]>(true, new MockSerializer(), new MockSerializer());
+        HeaderProducerRecord<byte[], byte[]> record = new HeaderProducerRecord<byte[], byte[]>(topic, "key".getBytes(), "value".getBytes());
         Future<RecordMetadata> metadata = producer.send(record);
         assertTrue("Send should be immediately complete", metadata.isDone());
         assertFalse("Send should be successful", isError(metadata));
@@ -60,8 +60,8 @@ public class MockProducerTest {
         PartitionInfo partitionInfo0 = new PartitionInfo(topic, 0, null, null, null);
         PartitionInfo partitionInfo1 = new PartitionInfo(topic, 1, null, null, null);
         Cluster cluster = new Cluster(new ArrayList<Node>(0), asList(partitionInfo0, partitionInfo1), Collections.<String>emptySet(), Collections.<String>emptySet());
-        MockProducer<String, String, String> producer = new MockProducer<String, String, String>(cluster, true, new DefaultPartitioner(), new StringSerializer(), new StringSerializer());
-        HeaderProducerRecord<String, String, String> record = new HeaderProducerRecord<String, String, String>(topic, "key", "value");
+        MockProducer<String, String> producer = new MockProducer<String, String>(cluster, true, new DefaultPartitioner(), new StringSerializer(), new StringSerializer());
+        HeaderProducerRecord<String, String> record = new HeaderProducerRecord<String, String>(topic, "key", "value");
         Future<RecordMetadata> metadata = producer.send(record);
         assertEquals("Partition should be correct", 1, metadata.get().partition());
         producer.clear();
@@ -70,9 +70,9 @@ public class MockProducerTest {
 
     @Test
     public void testManualCompletion() throws Exception {
-        MockProducer<byte[], byte[], byte[]> producer = new MockProducer<byte[], byte[], byte[]>(false, new MockSerializer(), new MockSerializer());
-        HeaderProducerRecord<byte[], byte[], byte[]> record1 = new HeaderProducerRecord<byte[], byte[], byte[]>(topic, "key1".getBytes(), "value1".getBytes());
-        HeaderProducerRecord<byte[], byte[], byte[]> record2 = new HeaderProducerRecord<byte[], byte[], byte[]>(topic, "key2".getBytes(), "value2".getBytes());
+        MockProducer<byte[], byte[]> producer = new MockProducer<byte[], byte[]>(false, new MockSerializer(), new MockSerializer());
+        HeaderProducerRecord<byte[], byte[]> record1 = new HeaderProducerRecord<byte[], byte[]>(topic, "key1".getBytes(), "value1".getBytes());
+        HeaderProducerRecord<byte[], byte[]> record2 = new HeaderProducerRecord<byte[], byte[]>(topic, "key2".getBytes(), "value2".getBytes());
         Future<RecordMetadata> md1 = producer.send(record1);
         assertFalse("Send shouldn't have completed", md1.isDone());
         Future<RecordMetadata> md2 = producer.send(record2);

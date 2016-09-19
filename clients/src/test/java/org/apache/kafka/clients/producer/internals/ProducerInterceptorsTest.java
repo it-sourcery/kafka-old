@@ -28,14 +28,14 @@ import static org.junit.Assert.assertEquals;
 
 public class ProducerInterceptorsTest {
     private final TopicPartition tp = new TopicPartition("test", 0);
-    private final HeaderProducerRecord<Integer, String, String> headerProducerRecord = new HeaderProducerRecord<>("test", 0, 1, "header","value");
+    private final HeaderProducerRecord<Integer, String> headerProducerRecord = new HeaderProducerRecord<>("test", 0, 1, "value");
     private int onAckCount = 0;
     private int onErrorAckCount = 0;
     private int onErrorAckWithTopicSetCount = 0;
     private int onErrorAckWithTopicPartitionSetCount = 0;
     private int onSendCount = 0;
 
-    private class AppendProducerInterceptor implements ProducerInterceptor<Integer, String, String> {
+    private class AppendProducerInterceptor implements ProducerInterceptor<Integer, String> {
         private String appendStr = "";
         private boolean throwExceptionOnSend = false;
         private boolean throwExceptionOnAck = false;
@@ -49,13 +49,13 @@ public class ProducerInterceptorsTest {
         }
 
         @Override
-        public HeaderProducerRecord<Integer, String, String> onSend(HeaderProducerRecord<Integer, String, String> record) {
+        public HeaderProducerRecord<Integer, String> onSend(HeaderProducerRecord<Integer, String> record) {
             onSendCount++;
             if (throwExceptionOnSend)
                 throw new KafkaException("Injected exception in AppendProducerInterceptor.onSend");
 
-            HeaderProducerRecord<Integer, String, String> newRecord = new HeaderProducerRecord<>(
-                    record.topic(), record.partition(), record.key(), record.header(), record.value().concat(appendStr));
+            HeaderProducerRecord<Integer, String> newRecord = new HeaderProducerRecord<>(
+                    record.topic(), record.partition(), record.key(), record.value().concat(appendStr));
             return newRecord;
         }
 
@@ -93,17 +93,17 @@ public class ProducerInterceptorsTest {
 
     @Test
     public void testOnSendChain() {
-        List<ProducerInterceptor<Integer, String, String>> interceptorList = new ArrayList<>();
+        List<ProducerInterceptor<Integer, String>> interceptorList = new ArrayList<>();
         // we are testing two different interceptors by configuring the same interceptor differently, which is not
         // how it would be done in KafkaProducer, but ok for testing interceptor callbacks
         AppendProducerInterceptor interceptor1 = new AppendProducerInterceptor("One");
         AppendProducerInterceptor interceptor2 = new AppendProducerInterceptor("Two");
         interceptorList.add(interceptor1);
         interceptorList.add(interceptor2);
-        ProducerInterceptors<Integer, String, String> interceptors = new ProducerInterceptors<>(interceptorList);
+        ProducerInterceptors<Integer, String> interceptors = new ProducerInterceptors<>(interceptorList);
 
         // verify that onSend() mutates the record as expected
-        HeaderProducerRecord<Integer, String, String> interceptedRecord = interceptors.onSend(headerProducerRecord);
+        HeaderProducerRecord<Integer, String> interceptedRecord = interceptors.onSend(headerProducerRecord);
         assertEquals(2, onSendCount);
         assertEquals(headerProducerRecord.topic(), interceptedRecord.topic());
         assertEquals(headerProducerRecord.partition(), interceptedRecord.partition());
@@ -111,19 +111,19 @@ public class ProducerInterceptorsTest {
         assertEquals(interceptedRecord.value(), headerProducerRecord.value().concat("One").concat("Two"));
 
         // onSend() mutates the same record the same way
-        HeaderProducerRecord<Integer, String, String> anotherRecord = interceptors.onSend(headerProducerRecord);
+        HeaderProducerRecord<Integer, String> anotherRecord = interceptors.onSend(headerProducerRecord);
         assertEquals(4, onSendCount);
         assertEquals(interceptedRecord, anotherRecord);
 
         // verify that if one of the interceptors throws an exception, other interceptors' callbacks are still called
         interceptor1.injectOnSendError(true);
-        HeaderProducerRecord<Integer, String, String> partInterceptRecord = interceptors.onSend(headerProducerRecord);
+        HeaderProducerRecord<Integer, String> partInterceptRecord = interceptors.onSend(headerProducerRecord);
         assertEquals(6, onSendCount);
         assertEquals(partInterceptRecord.value(), headerProducerRecord.value().concat("Two"));
 
         // verify the record remains valid if all onSend throws an exception
         interceptor2.injectOnSendError(true);
-        HeaderProducerRecord<Integer, String, String> noInterceptRecord = interceptors.onSend(headerProducerRecord);
+        HeaderProducerRecord<Integer, String> noInterceptRecord = interceptors.onSend(headerProducerRecord);
         assertEquals(headerProducerRecord, noInterceptRecord);
 
         interceptors.close();
@@ -131,17 +131,17 @@ public class ProducerInterceptorsTest {
 
     @Test
     public void testOnAcknowledgementChain() {
-        List<ProducerInterceptor<Integer, String, String>> interceptorList = new ArrayList<>();
+        List<ProducerInterceptor<Integer, String>> interceptorList = new ArrayList<>();
         // we are testing two different interceptors by configuring the same interceptor differently, which is not
         // how it would be done in KafkaProducer, but ok for testing interceptor callbacks
         AppendProducerInterceptor interceptor1 = new AppendProducerInterceptor("One");
         AppendProducerInterceptor interceptor2 = new AppendProducerInterceptor("Two");
         interceptorList.add(interceptor1);
         interceptorList.add(interceptor2);
-        ProducerInterceptors<Integer, String, String> interceptors = new ProducerInterceptors<>(interceptorList);
+        ProducerInterceptors<Integer, String> interceptors = new ProducerInterceptors<>(interceptorList);
 
         // verify onAck is called on all interceptors
-        RecordMetadata meta = new RecordMetadata(tp, 0, 0, 0, 0, 0, 0, 0);
+        RecordMetadata meta = new RecordMetadata(tp, 0, 0, 0, 0, 0, 0);
         interceptors.onAcknowledgement(meta, null);
         assertEquals(2, onAckCount);
 
@@ -159,10 +159,10 @@ public class ProducerInterceptorsTest {
 
     @Test
     public void testOnAcknowledgementWithErrorChain() {
-        List<ProducerInterceptor<Integer, String, String>> interceptorList = new ArrayList<>();
+        List<ProducerInterceptor<Integer, String>> interceptorList = new ArrayList<>();
         AppendProducerInterceptor interceptor1 = new AppendProducerInterceptor("One");
         interceptorList.add(interceptor1);
-        ProducerInterceptors<Integer, String, String> interceptors = new ProducerInterceptors<>(interceptorList);
+        ProducerInterceptors<Integer, String> interceptors = new ProducerInterceptors<>(interceptorList);
 
         // verify that metadata contains both topic and partition
         interceptors.onSendError(headerProducerRecord,
@@ -177,7 +177,7 @@ public class ProducerInterceptorsTest {
         assertEquals(2, onErrorAckWithTopicPartitionSetCount);
 
         // if producer record does not contain partition, interceptor should get partition == -1
-        HeaderProducerRecord<Integer, String, String> record2 = new HeaderProducerRecord<>("test2", null, 1, "header", "value");
+        HeaderProducerRecord<Integer, String> record2 = new HeaderProducerRecord<>("test2", null, 1, "value");
         interceptors.onSendError(record2, null, new KafkaException("Test"));
         assertEquals(3, onErrorAckCount);
         assertEquals(3, onErrorAckWithTopicSetCount);

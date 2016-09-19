@@ -55,8 +55,8 @@ public class StandbyTask extends AbstractTask {
                        String applicationId,
                        Collection<TopicPartition> partitions,
                        ProcessorTopology topology,
-                       Consumer<byte[], Void, byte[]> consumer,
-                       Consumer<byte[], Void, byte[]> restoreConsumer,
+                       Consumer<byte[], byte[]> consumer,
+                       Consumer<byte[], byte[]> restoreConsumer,
                        StreamsConfig config,
                        StreamsMetrics metrics, final StateDirectory stateDirectory) {
         super(id, applicationId, partitions, topology, consumer, restoreConsumer, true, stateDirectory, null);
@@ -85,7 +85,7 @@ public class StandbyTask extends AbstractTask {
      * Updates a state store using records from one change log partition
      * @return a list of records not consumed
      */
-    public List<HeaderConsumerRecord<byte[], Void, byte[]>> update(TopicPartition partition, List<HeaderConsumerRecord<byte[], Void, byte[]>> records) {
+    public List<HeaderConsumerRecord<byte[], byte[]>> update(TopicPartition partition, List<HeaderConsumerRecord<byte[], byte[]>> records) {
         log.debug("task [{}] updates for partition [{}]", id(), partition);
         return stateMgr.updateStandbyStates(partition, records);
     }

@@ -55,12 +55,12 @@ public class StateStoreTestUtils {
         }
 
         @Override
-        public <K, H, V> void send(final HeaderProducerRecord<K, H, V> record, final Serializer<K> keySerializer, final Serializer<V> valueSerializer) {
+        public <K, V> void send(final HeaderProducerRecord<K, V> record, final Serializer<K> keySerializer, final Serializer<V> valueSerializer) {
             // no-op
         }
 
         @Override
-        public <K, H, V> void send(final HeaderProducerRecord<K, H, V> record, final Serializer<K> keySerializer, final Serializer<V> valueSerializer, final StreamPartitioner<K, V> partitioner) {
+        public <K, V> void send(final HeaderProducerRecord<K, V> record, final Serializer<K> keySerializer, final Serializer<V> valueSerializer, final StreamPartitioner<K, V> partitioner) {
             // no-op
         }
 

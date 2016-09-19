@@ -210,7 +210,6 @@ object MirrorMaker extends Logging with KafkaMetricsGroup {
       maybeSetDefaultProperty(producerProps, ProducerConfig.MAX_IN_FLIGHT_REQUESTS_PER_CONNECTION, "1")
       // Always set producer key and value serializer to ByteArraySerializer.
       producerProps.setProperty(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, "org.apache.kafka.common.serialization.ByteArraySerializer")
-      producerProps.setProperty(ProducerConfig.HEADER_SERIALIZER_CLASS_CONFIG, "org.apache.kafka.common.serialization.ByteArraySerializer")
       producerProps.setProperty(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, "org.apache.kafka.common.serialization.ByteArraySerializer")
       producer = new MirrorMakerProducer(producerProps)
 
@@ -334,13 +333,12 @@ object MirrorMaker extends Logging with KafkaMetricsGroup {
     maybeSetDefaultProperty(consumerConfigProps, "enable.auto.commit", "false")
     // Hardcode the deserializer to ByteArrayDeserializer
     consumerConfigProps.setProperty("key.deserializer", classOf[ByteArrayDeserializer].getName)
-    consumerConfigProps.setProperty("header.deserializer", classOf[ByteArrayDeserializer].getName)
     consumerConfigProps.setProperty("value.deserializer", classOf[ByteArrayDeserializer].getName)
     // The default client id is group id, we manually set client id to groupId-index to avoid metric collision
     val groupIdString = consumerConfigProps.getProperty("group.id")
     val consumers = (0 until numStreams) map { i =>
       consumerConfigProps.setProperty("client.id", groupIdString + "-" + i.toString)
-      new KafkaConsumer[Array[Byte],  Array[Byte], Array[Byte]](consumerConfigProps)
+      new KafkaConsumer[Array[Byte], Array[Byte]](consumerConfigProps)
     }
     whitelist.getOrElse(throw new IllegalArgumentException("White list cannot be empty for new consumer"))
     consumers.map(consumer => new MirrorMakerNewConsumer(consumer, customRebalanceListener, whitelist))
@@ -491,7 +489,7 @@ object MirrorMaker extends Logging with KafkaMetricsGroup {
 
   private class MirrorMakerOldConsumer(connector: ZookeeperConsumerConnector,
                                        filterSpec: TopicFilter) extends MirrorMakerBaseConsumer {
-    private var iter: ConsumerIterator[Array[Byte], Array[Byte], Array[Byte]] = null
+    private var iter: ConsumerIterator[Array[Byte], Array[Byte]] = null
 
     override def init() {
       // Creating one stream per each connector instance
@@ -511,7 +509,6 @@ object MirrorMaker extends Logging with KafkaMetricsGroup {
                          messageAndMetadata.timestamp,
                          messageAndMetadata.timestampType,
                          messageAndMetadata.key,
-                         messageAndMetadata.header,
                          messageAndMetadata.message)
     }
 
@@ -528,7 +525,7 @@ object MirrorMaker extends Logging with KafkaMetricsGroup {
     }
   }
 
-  private class MirrorMakerNewConsumer(consumer: Consumer[Array[Byte], Array[Byte], Array[Byte]],
+  private class MirrorMakerNewConsumer(consumer: Consumer[Array[Byte], Array[Byte]],
                                        customRebalanceListener: Option[org.apache.kafka.clients.consumer.ConsumerRebalanceListener],
                                        whitelistOpt: Option[String])
     extends MirrorMakerBaseConsumer {
@@ -579,7 +576,6 @@ object MirrorMaker extends Logging with KafkaMetricsGroup {
                          record.timestamp,
                          record.timestampType,
                          record.key,
-                         record.header,
                          record.value)
     }
 
@@ -633,14 +629,14 @@ object MirrorMaker extends Logging with KafkaMetricsGroup {
 
     val sync = producerProps.getProperty("producer.type", "async").equals("sync")
 
-    val producer = new KafkaProducer[Array[Byte], Array[Byte], Array[Byte]](producerProps)
+    val producer = new KafkaProducer[Array[Byte], Array[Byte]](producerProps)
 
-    def send(record: HeaderProducerRecord[Array[Byte], Array[Byte], Array[Byte]]) {
+    def send(record: HeaderProducerRecord[Array[Byte], Array[Byte]]) {
       if (sync) {
         this.producer.send(record).get()
       } else {
           this.producer.send(record,
-            new MirrorMakerProducerCallback(record.topic(), record.key(), record.header(), record.value()))
+            new MirrorMakerProducerCallback(record.topic(), record.key(), record.value()))
       }
     }
 
@@ -657,8 +653,8 @@ object MirrorMaker extends Logging with KafkaMetricsGroup {
     }
   }
 
-  private class MirrorMakerProducerCallback (topic: String, key: Array[Byte], header: Array[Byte], value: Array[Byte])
-    extends ErrorLoggingCallback(topic, key, header, value, false) {
+  private class MirrorMakerProducerCallback (topic: String, key: Array[Byte], value: Array[Byte])
+    extends ErrorLoggingCallback(topic, key, value, false) {
 
     override def onCompletion(metadata: RecordMetadata, exception: Exception) {
       if (exception != null) {
@@ -680,13 +676,13 @@ object MirrorMaker extends Logging with KafkaMetricsGroup {
    * If message.handler.args is specified. A constructor that takes in a String as argument must exist.
    */
   trait MirrorMakerMessageHandler {
-    def handle(record: BaseConsumerRecord): util.List[HeaderProducerRecord[Array[Byte], Array[Byte], Array[Byte]]]
+    def handle(record: BaseConsumerRecord): util.List[HeaderProducerRecord[Array[Byte], Array[Byte]]]
   }
 
   private[tools] object defaultMirrorMakerMessageHandler extends MirrorMakerMessageHandler {
-    override def handle(record: BaseConsumerRecord): util.List[HeaderProducerRecord[Array[Byte], Array[Byte], Array[Byte]]] = {
+    override def handle(record: BaseConsumerRecord): util.List[HeaderProducerRecord[Array[Byte], Array[Byte]]] = {
       val timestamp: java.lang.Long = if (record.timestamp == Record.NO_TIMESTAMP) null else record.timestamp
-      Collections.singletonList(new HeaderProducerRecord[Array[Byte], Array[Byte], Array[Byte]](record.topic, null, timestamp, record.key, record.header, record.value))
+      Collections.singletonList(new HeaderProducerRecord[Array[Byte], Array[Byte], Array[Byte]](record.topic, null, timestamp, record.key, record.h record.value))
     }
   }
 

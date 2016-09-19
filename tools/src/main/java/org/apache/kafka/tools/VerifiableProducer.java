@@ -58,7 +58,7 @@ import net.sourceforge.argparse4j.inf.Namespace;
 public class VerifiableProducer {
 
     String topic;
-    private Producer<String, String, String> producer;
+    private Producer<String, String> producer;
     // If maxMessages < 0, produce until the process is killed externally
     private long maxMessages = -1;
 
@@ -195,8 +195,6 @@ public class VerifiableProducer {
             producerProps.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, res.getString("brokerList"));
             producerProps.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG,
                               "org.apache.kafka.common.serialization.StringSerializer");
-            producerProps.put(ProducerConfig.HEADER_SERIALIZER_CLASS_CONFIG,
-                              "org.apache.kafka.common.serialization.StringSerializer");
             producerProps.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG,
                               "org.apache.kafka.common.serialization.StringSerializer");
             producerProps.put(ProducerConfig.ACKS_CONFIG, Integer.toString(res.getInt("acks")));
@@ -224,16 +222,16 @@ public class VerifiableProducer {
         return producer;
     }
 
-    /** Produce a message with given key, header and value. */
-    public void send(String key, String header, String value) {
-        HeaderProducerRecord<String, String, String> record = new HeaderProducerRecord<String, String, String>(topic, key, header, value);
+    /** Produce a message with given key and value. */
+    public void send(String key, String value) {
+        HeaderProducerRecord<String, String> record = new HeaderProducerRecord<String, String>(topic, key, value);
         numSent++;
         try {
-            producer.send(record, new PrintInfoCallback(key, header, value));
+            producer.send(record, new PrintInfoCallback(key, value));
         } catch (Exception e) {
 
             synchronized (System.out) {
-                System.out.println(errorString(e, key, header, value, System.currentTimeMillis()));
+                System.out.println(errorString(e, key, value, System.currentTimeMillis()));
             }
         }
     }
@@ -262,7 +260,7 @@ public class VerifiableProducer {
      * Return JSON string encapsulating basic information about the exception, as well
      * as the key and value which triggered the exception.
      */
-    String errorString(Exception e, String key, String header, String value, Long nowMs) {
+    String errorString(Exception e, String key, String value, Long nowMs) {
         assert e != null : "Expected non-null exception.";
 
         Map<String, Object> errorData = new HashMap<>();
@@ -273,13 +271,12 @@ public class VerifiableProducer {
         errorData.put("message", e.getMessage());
         errorData.put("topic", this.topic);
         errorData.put("key", key);
-        errorData.put("header", header);
         errorData.put("value", value);
 
         return toJsonString(errorData);
     }
 
-    String successString(RecordMetadata recordMetadata, String key, String header, String value, Long nowMs) {
+    String successString(RecordMetadata recordMetadata, String key, String value, Long nowMs) {
         assert recordMetadata != null : "Expected non-null recordMetadata object.";
 
         Map<String, Object> successData = new HashMap<>();
@@ -290,7 +287,6 @@ public class VerifiableProducer {
         successData.put("partition", recordMetadata.partition());
         successData.put("offset", recordMetadata.offset());
         successData.put("key", key);
-        successData.put("header", header);
         successData.put("value", value);
 
         return toJsonString(successData);
@@ -311,12 +307,10 @@ public class VerifiableProducer {
     private class PrintInfoCallback implements Callback {
 
         private String key;
-        private String header;
         private String value;
 
-        PrintInfoCallback(String key, String header, String value) {
+        PrintInfoCallback(String key, String value) {
             this.key = key;
-            this.header = header;
             this.value = value;
         }
 
@@ -324,9 +318,9 @@ public class VerifiableProducer {
             synchronized (System.out) {
                 if (e == null) {
                     VerifiableProducer.this.numAcked++;
-                    System.out.println(successString(recordMetadata, this.key, this.header, this.value, System.currentTimeMillis()));
+                    System.out.println(successString(recordMetadata, this.key, this.value, System.currentTimeMillis()));
                 } else {
-                    System.out.println(errorString(e, this.key, this.header, this.value, System.currentTimeMillis()));
+                    System.out.println(errorString(e, this.key, this.value, System.currentTimeMillis()));
                 }
             }
         }
@@ -370,7 +364,7 @@ public class VerifiableProducer {
             }
             long sendStartMs = System.currentTimeMillis();
 
-            producer.send(null, null, producer.getValue(i));
+            producer.send(null, producer.getValue(i));
 
             if (throttler.shouldThrottle(i, sendStartMs)) {
                 throttler.throttle();

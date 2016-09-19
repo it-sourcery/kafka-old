@@ -39,5 +39,5 @@ public interface TimestampExtractor {
      * @param record  a data record
      * @return        the timestamp of the record
      */
-    long extract(HeaderConsumerRecord<Object, ?, Object> record);
+    long extract(HeaderConsumerRecord<Object, Object> record);
 }

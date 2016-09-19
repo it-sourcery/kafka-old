@@ -47,21 +47,21 @@ public class RecordCollector {
 
     private static final Logger log = LoggerFactory.getLogger(RecordCollector.class);
 
-    private final Producer<byte[], Void, byte[]> producer;
+    private final Producer<byte[], byte[]> producer;
     private final Map<TopicPartition, Long> offsets;
     private String streamTaskId = null;
 
-    public RecordCollector(Producer<byte[], Void, byte[]> producer, String streamTaskId) {
+    public RecordCollector(Producer<byte[], byte[]> producer, String streamTaskId) {
         this.producer = producer;
         this.offsets = new HashMap<>();
         this.streamTaskId = streamTaskId;
     }
 
-    public <K, H, V> void send(HeaderProducerRecord<K, H, V> record, Serializer<K> keySerializer, Serializer<V> valueSerializer) {
+    public <K, V> void send(HeaderProducerRecord<K, V> record, Serializer<K> keySerializer, Serializer<V> valueSerializer) {
         send(record, keySerializer, valueSerializer, null);
     }
 
-    public <K, H, V> void send(HeaderProducerRecord<K, H, V> record, Serializer<K> keySerializer, Serializer<V> valueSerializer,
+    public <K, V> void send(HeaderProducerRecord<K, V> record, Serializer<K> keySerializer, Serializer<V> valueSerializer,
                             StreamPartitioner<K, V> partitioner) {
         byte[] keyBytes = keySerializer.serialize(record.topic(), record.key());
         byte[] valBytes = valueSerializer.serialize(record.topic(), record.value());
@@ -72,8 +72,8 @@ public class RecordCollector {
                 partition = partitioner.partition(record.key(), record.value(), partitions.size());
         }
 
-        HeaderProducerRecord<byte[], Void, byte[]> serializedRecord =
-                new HeaderProducerRecord<>(record.topic(), partition, record.timestamp(), keyBytes, null, valBytes);
+        HeaderProducerRecord<byte[], byte[]> serializedRecord =
+                new HeaderProducerRecord<>(record.topic(), partition, record.timestamp(), keyBytes, valBytes);
         final String topic = serializedRecord.topic();
 
         this.producer.send(serializedRecord, new Callback() {
