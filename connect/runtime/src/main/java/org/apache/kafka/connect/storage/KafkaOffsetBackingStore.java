@@ -18,7 +18,7 @@
 package org.apache.kafka.connect.storage;
 
 import org.apache.kafka.clients.consumer.ConsumerConfig;
-import org.apache.kafka.clients.consumer.ConsumerRecord;
+import org.apache.kafka.clients.consumer.HeaderConsumerRecord;
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.clients.producer.RecordMetadata;
 import org.apache.kafka.common.config.ConfigException;
@@ -127,9 +127,9 @@ public class KafkaOffsetBackingStore implements OffsetBackingStore {
         return producerCallback;
     }
 
-    private final Callback<ConsumerRecord<byte[], byte[]>> consumedCallback = new Callback<ConsumerRecord<byte[], byte[]>>() {
+    private final Callback<HeaderConsumerRecord<byte[], byte[]>> consumedCallback = new Callback<HeaderConsumerRecord<byte[], byte[]>>() {
         @Override
-        public void onCompletion(Throwable error, ConsumerRecord<byte[], byte[]> record) {
+        public void onCompletion(Throwable error, HeaderConsumerRecord<byte[], byte[]> record) {
             ByteBuffer key = record.key() != null ? ByteBuffer.wrap(record.key()) : null;
             ByteBuffer value = record.value() != null ? ByteBuffer.wrap(record.value()) : null;
             data.put(key, value);
@@ -137,7 +137,7 @@ public class KafkaOffsetBackingStore implements OffsetBackingStore {
     };
 
     private KafkaBasedLog<byte[], byte[]> createKafkaBasedLog(String topic, Map<String, Object> producerProps,
-                                                              Map<String, Object> consumerProps, Callback<ConsumerRecord<byte[], byte[]>> consumedCallback) {
+                                                              Map<String, Object> consumerProps, Callback<HeaderConsumerRecord<byte[], byte[]>> consumedCallback) {
         return new KafkaBasedLog<>(topic, producerProps, consumerProps, consumedCallback, new SystemTime());
     }
 

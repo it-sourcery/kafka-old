@@ -16,9 +16,9 @@
  */
 package org.apache.kafka.test;
 
+import org.apache.kafka.clients.producer.HeaderProducerRecord;
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.clients.producer.ProducerInterceptor;
-import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.clients.producer.RecordMetadata;
 import org.apache.kafka.common.config.ConfigException;
 
@@ -56,9 +56,9 @@ public class MockProducerInterceptor implements ProducerInterceptor<String, Stri
     }
 
     @Override
-    public ProducerRecord<String, String> onSend(ProducerRecord<String, String> record) {
+    public HeaderProducerRecord<String, String> onSend(HeaderProducerRecord<String, String> record) {
         ONSEND_COUNT.incrementAndGet();
-        ProducerRecord<String, String> newRecord = new ProducerRecord<>(
+        HeaderProducerRecord<String, String> newRecord = new HeaderProducerRecord<>(
                 record.topic(), record.partition(), record.key(), record.value().concat(appendStr));
         return newRecord;
     }

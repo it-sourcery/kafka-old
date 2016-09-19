@@ -192,8 +192,8 @@ import java.util.regex.Pattern;
  *     KafkaConsumer&lt;String, String&gt; consumer = new KafkaConsumer&lt;&gt;(props);
  *     consumer.subscribe(Arrays.asList(&quot;foo&quot;, &quot;bar&quot;));
  *     while (true) {
- *         ConsumerRecords&lt;String, String&gt; records = consumer.poll(100);
- *         for (ConsumerRecord&lt;String, String&gt; record : records)
+ *         HeaderConsumerRecords&lt;String, String&gt; records = consumer.poll(100);
+ *         for (HeaderConsumerRecord&lt;String, String&gt; record : records)
  *             System.out.printf(&quot;offset = %d, key = %s, value = %s%n&quot;, record.offset(), record.key(), record.value());
  *     }
  * </pre>
@@ -239,10 +239,10 @@ import java.util.regex.Pattern;
  *     KafkaConsumer&lt;String, String&gt; consumer = new KafkaConsumer&lt;&gt;(props);
  *     consumer.subscribe(Arrays.asList(&quot;foo&quot;, &quot;bar&quot;));
  *     final int minBatchSize = 200;
- *     List&lt;ConsumerRecord&lt;String, String&gt;&gt; buffer = new ArrayList&lt;&gt;();
+ *     List&lt;HeaderConsumerRecord&lt;String, String&gt;&gt; buffer = new ArrayList&lt;&gt;();
  *     while (true) {
- *         ConsumerRecords&lt;String, String&gt; records = consumer.poll(100);
- *         for (ConsumerRecord&lt;String, String&gt; record : records) {
+ *         HeaderConsumerRecords&lt;String, String&gt; records = consumer.poll(100);
+ *         for (HeaderConsumerRecord&lt;String, String&gt; record : records) {
  *             buffer.add(record);
  *         }
  *         if (buffer.size() &gt;= minBatchSize) {
@@ -260,10 +260,10 @@ import java.util.regex.Pattern;
  * <pre>
  *     try {
  *         while(running) {
- *             ConsumerRecords&lt;String, String&gt; records = consumer.poll(Long.MAX_VALUE);
+ *             HeaderConsumerRecords&lt;String, String&gt; records = consumer.poll(Long.MAX_VALUE);
  *             for (TopicPartition partition : records.partitions()) {
- *                 List&lt;ConsumerRecord&lt;String, String&gt;&gt; partitionRecords = records.records(partition);
- *                 for (ConsumerRecord&lt;String, String&gt; record : partitionRecords) {
+ *                 List&lt;HeaderConsumerRecord&lt;String, String&gt;&gt; partitionRecords = records.records(partition);
+ *                 for (HeaderConsumerRecord&lt;String, String&gt; record : partitionRecords) {
  *                     System.out.println(record.offset() + &quot;: &quot; + record.value());
  *                 }
  *                 long lastOffset = partitionRecords.get(partitionRecords.size() - 1).offset();
@@ -339,7 +339,7 @@ import java.util.regex.Pattern;
  *
  * <ul>
  * <li>Configure <code>enable.auto.commit=false</code>
- * <li>Use the offset provided with each {@link ConsumerRecord} to save your position.
+ * <li>Use the offset provided with each {@link HeaderConsumerRecord} to save your position.
  * <li>On restart restore the position of the consumer using {@link #seek(TopicPartition, long)}.
  * </ul>
  *
@@ -418,7 +418,7 @@ import java.util.regex.Pattern;
  *         try {
  *             consumer.subscribe(Arrays.asList("topic"));
  *             while (!closed.get()) {
- *                 ConsumerRecords records = consumer.poll(10000);
+ *                 HeaderConsumerRecords records = consumer.poll(10000);
  *                 // Handle new records
  *             }
  *         } catch (WakeupException e) {
@@ -468,7 +468,7 @@ import java.util.regex.Pattern;
  * <h4>2. Decouple Consumption and Processing</h4>
  *
  * Another alternative is to have one or more consumer threads that do all data consumption and hands off
- * {@link ConsumerRecords} instances to a blocking queue consumed by a pool of processor threads that actually handle
+ * {@link HeaderConsumerRecords} instances to a blocking queue consumed by a pool of processor threads that actually handle
  * the record processing.
  *
  * This option likewise has pros and cons:
@@ -487,7 +487,7 @@ import java.util.regex.Pattern;
  * commit.
  *
  */
-public class KafkaConsumer<K, V> implements Consumer<K, V> {
+public class KafkaConsumer<K, H, V> implements Consumer<K, H, V> {
 
     private static final Logger log = LoggerFactory.getLogger(KafkaConsumer.class);
     private static final long NO_CURRENT_THREAD = -1L;
@@ -497,9 +497,10 @@ public class KafkaConsumer<K, V> implements Consumer<K, V> {
     private final String clientId;
     private final ConsumerCoordinator coordinator;
     private final Deserializer<K> keyDeserializer;
+    private final Deserializer<H> headerDeserializer;
     private final Deserializer<V> valueDeserializer;
-    private final Fetcher<K, V> fetcher;
-    private final ConsumerInterceptors<K, V> interceptors;
+    private final Fetcher<K, H, V> fetcher;
+    private final ConsumerInterceptors<K, H, V> interceptors;
 
     private final Time time;
     private final ConsumerNetworkClient client;
@@ -527,7 +528,7 @@ public class KafkaConsumer<K, V> implements Consumer<K, V> {
      * @param configs The consumer configs
      */
     public KafkaConsumer(Map<String, Object> configs) {
-        this(configs, null, null);
+        this(configs, null, null, null);
     }
 
     /**
@@ -543,9 +544,11 @@ public class KafkaConsumer<K, V> implements Consumer<K, V> {
      */
     public KafkaConsumer(Map<String, Object> configs,
                          Deserializer<K> keyDeserializer,
+                         Deserializer<H> headerDeserializer,
                          Deserializer<V> valueDeserializer) {
-        this(new ConsumerConfig(ConsumerConfig.addDeserializerToConfig(configs, keyDeserializer, valueDeserializer)),
+        this(new ConsumerConfig(ConsumerConfig.addDeserializerToConfig(configs, keyDeserializer, headerDeserializer, valueDeserializer)),
             keyDeserializer,
+            headerDeserializer,
             valueDeserializer);
     }
 
@@ -557,7 +560,7 @@ public class KafkaConsumer<K, V> implements Consumer<K, V> {
      * @param properties The consumer configuration properties
      */
     public KafkaConsumer(Properties properties) {
-        this(properties, null, null);
+        this(properties, null, null, null);
     }
 
     /**
@@ -574,15 +577,18 @@ public class KafkaConsumer<K, V> implements Consumer<K, V> {
      */
     public KafkaConsumer(Properties properties,
                          Deserializer<K> keyDeserializer,
+                         Deserializer<H> headerDeserializer,
                          Deserializer<V> valueDeserializer) {
-        this(new ConsumerConfig(ConsumerConfig.addDeserializerToConfig(properties, keyDeserializer, valueDeserializer)),
+        this(new ConsumerConfig(ConsumerConfig.addDeserializerToConfig(properties, keyDeserializer, headerDeserializer, valueDeserializer)),
              keyDeserializer,
+             headerDeserializer,
              valueDeserializer);
     }
 
     @SuppressWarnings("unchecked")
     private KafkaConsumer(ConsumerConfig config,
                           Deserializer<K> keyDeserializer,
+                          Deserializer<H> headerDeserializer,
                           Deserializer<V> valueDeserializer) {
         try {
             log.debug("Starting the Kafka consumer");
@@ -631,7 +637,7 @@ public class KafkaConsumer<K, V> implements Consumer<K, V> {
             // load interceptors and make sure they get clientId
             Map<String, Object> userProvidedConfigs = config.originals();
             userProvidedConfigs.put(ConsumerConfig.CLIENT_ID_CONFIG, clientId);
-            List<ConsumerInterceptor<K, V>> interceptorList = (List) (new ConsumerConfig(userProvidedConfigs)).getConfiguredInstances(ConsumerConfig.INTERCEPTOR_CLASSES_CONFIG,
+            List<ConsumerInterceptor<K, H, V>> interceptorList = (List) (new ConsumerConfig(userProvidedConfigs)).getConfiguredInstances(ConsumerConfig.INTERCEPTOR_CLASSES_CONFIG,
                     ConsumerInterceptor.class);
             this.interceptors = interceptorList.isEmpty() ? null : new ConsumerInterceptors<>(interceptorList);
             this.coordinator = new ConsumerCoordinator(this.client,
@@ -659,6 +665,16 @@ public class KafkaConsumer<K, V> implements Consumer<K, V> {
                 config.ignore(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG);
                 this.keyDeserializer = keyDeserializer;
             }
+
+            if (headerDeserializer == null) {
+                this.headerDeserializer = config.getConfiguredInstance(ConsumerConfig.HEADER_DESERIALIZER_CLASS_CONFIG,
+                                                                    Deserializer.class);
+                this.headerDeserializer.configure(config.originals(), true);
+            } else {
+                config.ignore(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG);
+                this.headerDeserializer = headerDeserializer;
+            }
+
             if (valueDeserializer == null) {
                 this.valueDeserializer = config.getConfiguredInstance(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG,
                         Deserializer.class);
@@ -674,6 +690,7 @@ public class KafkaConsumer<K, V> implements Consumer<K, V> {
                     config.getInt(ConsumerConfig.MAX_POLL_RECORDS_CONFIG),
                     config.getBoolean(ConsumerConfig.CHECK_CRCS_CONFIG),
                     this.keyDeserializer,
+                    this.headerDeserializer,
                     this.valueDeserializer,
                     this.metadata,
                     this.subscriptions,
@@ -699,9 +716,10 @@ public class KafkaConsumer<K, V> implements Consumer<K, V> {
     KafkaConsumer(String clientId,
                   ConsumerCoordinator coordinator,
                   Deserializer<K> keyDeserializer,
+                  Deserializer<H> headerDeserializer,
                   Deserializer<V> valueDeserializer,
-                  Fetcher<K, V> fetcher,
-                  ConsumerInterceptors<K, V> interceptors,
+                  Fetcher<K, H, V> fetcher,
+                  ConsumerInterceptors<K, H, V> interceptors,
                   Time time,
                   ConsumerNetworkClient client,
                   Metrics metrics,
@@ -712,6 +730,7 @@ public class KafkaConsumer<K, V> implements Consumer<K, V> {
         this.clientId = clientId;
         this.coordinator = coordinator;
         this.keyDeserializer = keyDeserializer;
+        this.headerDeserializer = headerDeserializer;
         this.valueDeserializer = valueDeserializer;
         this.fetcher = fetcher;
         this.interceptors = interceptors;
@@ -952,7 +971,7 @@ public class KafkaConsumer<K, V> implements Consumer<K, V> {
      *             session timeout, errors deserializing key/value pairs, or any new error cases in future versions)
      */
     @Override
-    public ConsumerRecords<K, V> poll(long timeout) {
+    public HeaderConsumerRecords<K, H, V> poll(long timeout) {
         acquire();
         try {
             if (timeout < 0)
@@ -962,7 +981,7 @@ public class KafkaConsumer<K, V> implements Consumer<K, V> {
             long start = time.milliseconds();
             long remaining = timeout;
             do {
-                Map<TopicPartition, List<ConsumerRecord<K, V>>> records = pollOnce(remaining);
+                Map<TopicPartition, List<HeaderConsumerRecord<K, H, V>>> records = pollOnce(remaining);
                 if (!records.isEmpty()) {
                     // before returning the fetched records, we can send off the next round of fetches
                     // and avoid block waiting for their responses to enable pipelining while the user
@@ -974,16 +993,16 @@ public class KafkaConsumer<K, V> implements Consumer<K, V> {
                     client.pollNoWakeup();
 
                     if (this.interceptors == null)
-                        return new ConsumerRecords<>(records);
+                        return new HeaderConsumerRecords<>(records);
                     else
-                        return this.interceptors.onConsume(new ConsumerRecords<>(records));
+                        return this.interceptors.onConsume(new HeaderConsumerRecords<>(records));
                 }
 
                 long elapsed = time.milliseconds() - start;
                 remaining = timeout - elapsed;
             } while (remaining > 0);
 
-            return ConsumerRecords.empty();
+            return HeaderConsumerRecords.empty();
         } finally {
             release();
         }
@@ -995,7 +1014,7 @@ public class KafkaConsumer<K, V> implements Consumer<K, V> {
      * @param timeout The maximum time to block in the underlying call to {@link ConsumerNetworkClient#poll(long)}.
      * @return The fetched records (may be empty)
      */
-    private Map<TopicPartition, List<ConsumerRecord<K, V>>> pollOnce(long timeout) {
+    private Map<TopicPartition, List<HeaderConsumerRecord<K, H, V>>> pollOnce(long timeout) {
         coordinator.poll(time.milliseconds());
 
         // fetch positions if we have partitions we're subscribed to that we
@@ -1004,7 +1023,7 @@ public class KafkaConsumer<K, V> implements Consumer<K, V> {
             updateFetchPositions(this.subscriptions.missingFetchPositions());
 
         // if data is available already, return it immediately
-        Map<TopicPartition, List<ConsumerRecord<K, V>>> records = fetcher.fetchedRecords();
+        Map<TopicPartition, List<HeaderConsumerRecord<K, H, V>>> records = fetcher.fetchedRecords();
         if (!records.isEmpty())
             return records;
 

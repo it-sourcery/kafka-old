@@ -17,7 +17,7 @@
 
 package org.apache.kafka.streams.processor;
 
-import org.apache.kafka.clients.consumer.ConsumerRecord;
+import org.apache.kafka.clients.consumer.HeaderConsumerRecord;
 
 /**
  * Retrieves current wall clock timestamps as {@link System#currentTimeMillis()}.
@@ -36,7 +36,7 @@ public class WallclockTimestampExtractor implements TimestampExtractor {
      * @return        the current wall clock time, expressed in milliseconds since midnight, January 1, 1970 UTC
      */
     @Override
-    public long extract(ConsumerRecord<Object, Object> record) {
+    public long extract(HeaderConsumerRecord<Object, Object> record) {
         return System.currentTimeMillis();
     }
 }

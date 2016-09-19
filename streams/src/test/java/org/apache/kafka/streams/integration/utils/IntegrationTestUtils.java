@@ -18,12 +18,12 @@
 package org.apache.kafka.streams.integration.utils;
 
 import kafka.utils.Time;
-import org.apache.kafka.clients.consumer.ConsumerRecord;
-import org.apache.kafka.clients.consumer.ConsumerRecords;
+import org.apache.kafka.clients.consumer.HeaderConsumerRecord;
+import org.apache.kafka.clients.consumer.HeaderConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.Producer;
-import org.apache.kafka.clients.producer.ProducerRecord;
+import org.apache.kafka.clients.producer.HeaderProducerRecord;
 import org.apache.kafka.clients.producer.RecordMetadata;
 import org.apache.kafka.common.utils.Utils;
 import org.apache.kafka.streams.KeyValue;
@@ -97,8 +97,8 @@ public class IntegrationTestUtils {
         final List<KeyValue<K, V>> consumedValues = new ArrayList<>();
         while (totalPollTimeMs < maxTotalPollTimeMs && continueConsuming(consumedValues.size(), maxMessages)) {
             totalPollTimeMs += pollIntervalMs;
-            final ConsumerRecords<K, V> records = consumer.poll(pollIntervalMs);
-            for (final ConsumerRecord<K, V> record : records) {
+            final HeaderConsumerRecords<K, V> records = consumer.poll(pollIntervalMs);
+            for (final HeaderConsumerRecord<K, V> record : records) {
                 consumedValues.add(new KeyValue<>(record.key(), record.value()));
             }
         }
@@ -155,7 +155,7 @@ public class IntegrationTestUtils {
         final Producer<K, V> producer = new KafkaProducer<>(producerConfig);
         for (final KeyValue<K, V> record : records) {
             final Future<RecordMetadata> f = producer.send(
-                new ProducerRecord<>(topic, null, timestamp, record.key, record.value));
+                new HeaderProducerRecord<>(topic, null, timestamp, record.key, record.value));
             f.get();
         }
         producer.flush();

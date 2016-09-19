@@ -22,8 +22,7 @@ import java.util.concurrent.ExecutionException
 
 import kafka.log.LogConfig
 import kafka.utils.TestUtils
-
-import org.apache.kafka.clients.producer.{KafkaProducer, ProducerConfig, ProducerRecord}
+import org.apache.kafka.clients.producer.{HeaderProducerRecord, KafkaProducer, ProducerConfig, ProducerRecord}
 import org.apache.kafka.common.config.ConfigException
 import org.apache.kafka.common.errors.{InvalidTimestampException, SerializationException}
 import org.apache.kafka.common.record.TimestampType
@@ -63,7 +62,7 @@ class PlaintextProducerSendTest extends BaseProducerSendTest {
     // send a record with a wrong type should receive a serialization exception
     try {
       val producer = createProducerWithWrongSerializer(brokerList)
-      val record5 = new ProducerRecord[Array[Byte], Array[Byte]](topic, new Integer(0), "key".getBytes, "value".getBytes)
+      val record5 = new HeaderProducerRecord[Array[Byte], Array[Byte]](topic, new Integer(0), "key".getBytes, "value".getBytes)
       producer.send(record5)
       fail("Should have gotten a SerializationException")
     } catch {
@@ -96,7 +95,7 @@ class PlaintextProducerSendTest extends BaseProducerSendTest {
 
     try {
       // Send a message to auto-create the topic
-      val record = new ProducerRecord[Array[Byte], Array[Byte]](topic, null, "key".getBytes, "value".getBytes)
+      val record = new HeaderProducerRecord[Array[Byte], Array[Byte]](topic, null, "key".getBytes, "value".getBytes)
       assertEquals("Should have offset 0", 0L, producer.send(record).get.offset)
 
       // double check that the topic is created with leader elected
@@ -115,7 +114,7 @@ class PlaintextProducerSendTest extends BaseProducerSendTest {
 
     val producer = createProducer(brokerList = brokerList)
     try {
-      producer.send(new ProducerRecord(topic, 0, System.currentTimeMillis() - 1001, "key".getBytes, "value".getBytes)).get()
+      producer.send(new HeaderProducerRecord(topic, 0, System.currentTimeMillis() - 1001, "key".getBytes, "value".getBytes)).get()
       fail("Should throw CorruptedRecordException")
     } catch {
       case e: ExecutionException => assertTrue(e.getCause.isInstanceOf[InvalidTimestampException])
@@ -128,7 +127,7 @@ class PlaintextProducerSendTest extends BaseProducerSendTest {
     producerProps.setProperty(ProducerConfig.COMPRESSION_TYPE_CONFIG, "gzip")
     val compressedProducer = createProducer(brokerList = brokerList, props = Some(producerProps))
     try {
-      compressedProducer.send(new ProducerRecord(topic, 0, System.currentTimeMillis() - 1001, "key".getBytes, "value".getBytes)).get()
+      compressedProducer.send(new HeaderProducerRecord(topic, 0, System.currentTimeMillis() - 1001, "key".getBytes, "value".getBytes)).get()
       fail("Should throw CorruptedRecordException")
     } catch {
       case e: ExecutionException => assertTrue(e.getCause.isInstanceOf[InvalidTimestampException])

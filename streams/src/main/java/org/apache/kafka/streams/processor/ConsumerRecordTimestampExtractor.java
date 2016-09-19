@@ -17,7 +17,7 @@
 
 package org.apache.kafka.streams.processor;
 
-import org.apache.kafka.clients.consumer.ConsumerRecord;
+import org.apache.kafka.clients.consumer.HeaderConsumerRecord;
 
 /**
  * Retrieves built-in timestamps from Kafka messages (introduced in KIP-32: Add timestamps to Kafka message).
@@ -34,7 +34,7 @@ import org.apache.kafka.clients.consumer.ConsumerRecord;
  */
 public class ConsumerRecordTimestampExtractor implements TimestampExtractor {
     @Override
-    public long extract(ConsumerRecord<Object, Object> record) {
+    public long extract(HeaderConsumerRecord<Object, Object> record) {
         return record.timestamp();
     }
 }

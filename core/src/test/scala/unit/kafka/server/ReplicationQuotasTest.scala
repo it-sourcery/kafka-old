@@ -29,9 +29,10 @@ import kafka.server._
 import kafka.utils.TestUtils
 import kafka.utils.TestUtils._
 import kafka.zk.ZooKeeperTestHarness
-import org.apache.kafka.clients.producer.{KafkaProducer, ProducerRecord}
+import org.apache.kafka.clients.producer.{HeaderProducerRecord, KafkaProducer, ProducerRecord}
 import org.junit.Assert._
 import org.junit.{After, Before, Test}
+
 import scala.collection.JavaConverters._
 
 /**
@@ -117,7 +118,7 @@ class ReplicationQuotasTest extends ZooKeeperTestHarness {
     producer = TestUtils.createNewProducer(TestUtils.getBrokerListStrFromServers(brokers), retries = 5, acks = 0)
     (0 until msgCount).foreach { x =>
       (0 to 7).foreach { partition =>
-        producer.send(new ProducerRecord(topic, partition, null, msg)).get
+        producer.send(new HeaderProducerRecord(topic, partition, null, msg)).get
       }
     }
 
@@ -224,7 +225,7 @@ class ReplicationQuotasTest extends ZooKeeperTestHarness {
 
   def addData(msgCount: Int, msg: Array[Byte]): Boolean = {
     producer = TestUtils.createNewProducer(TestUtils.getBrokerListStrFromServers(brokers), retries = 5, acks = 0)
-    (0 until msgCount).foreach { x => producer.send(new ProducerRecord(topic, msg)).get }
+    (0 until msgCount).foreach { x => producer.send(new HeaderProducerRecord(topic, msg)).get }
     waitForOffsetsToMatch(msgCount, 0, 100)
   }
 

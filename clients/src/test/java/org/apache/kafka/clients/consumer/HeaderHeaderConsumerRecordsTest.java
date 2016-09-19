@@ -29,26 +29,29 @@ import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.common.record.TimestampType;
 import org.junit.Test;
 
-public class ConsumerRecordsTest {
+public class HeaderHeaderConsumerRecordsTest
+{
 
     @Test
     public void iterator() throws Exception {
 
-        Map<TopicPartition, List<ConsumerRecord<Integer, String>>> records = new LinkedHashMap<>();
+        Map<TopicPartition, List<HeaderConsumerRecord<Integer, String, String>>> records = new LinkedHashMap<>();
 
         String topic = "topic";
-        records.put(new TopicPartition(topic, 0), new ArrayList<ConsumerRecord<Integer, String>>());
-        ConsumerRecord<Integer, String> record1 = new ConsumerRecord<>(topic, 1, 0, 0L, TimestampType.CREATE_TIME, 0L, 0, 0, 1, "value1");
-        ConsumerRecord<Integer, String> record2 = new ConsumerRecord<>(topic, 1, 1, 0L, TimestampType.CREATE_TIME, 0L, 0, 0, 2, "value2");
+        records.put(new TopicPartition(topic, 0), new ArrayList<HeaderConsumerRecord<Integer, String, String>>());
+        HeaderConsumerRecord<Integer, String, String>
+           record1 = new HeaderConsumerRecord<>(topic, 1, 0, 0L, TimestampType.CREATE_TIME, 0L, 0, 0, 1, "value1");
+        HeaderConsumerRecord<Integer, String, String>
+           record2 = new HeaderConsumerRecord<>(topic, 1, 1, 0L, TimestampType.CREATE_TIME, 0L, 0, 0, 2, "value2");
         records.put(new TopicPartition(topic, 1), Arrays.asList(record1, record2));
-        records.put(new TopicPartition(topic, 2), new ArrayList<ConsumerRecord<Integer, String>>());
+        records.put(new TopicPartition(topic, 2), new ArrayList<HeaderConsumerRecord<Integer, String, String>>());
 
-        ConsumerRecords<Integer, String> consumerRecords = new ConsumerRecords<>(records);
-        Iterator<ConsumerRecord<Integer, String>> iter = consumerRecords.iterator();
+        HeaderConsumerRecords<Integer, String, String> headerConsumerRecords = new HeaderConsumerRecords<>(records);
+        Iterator<HeaderConsumerRecord<Integer, String, String>> iter = headerConsumerRecords.iterator();
 
         int c = 0;
         for (; iter.hasNext(); c++) {
-            ConsumerRecord<Integer, String> record = iter.next();
+            HeaderConsumerRecord<Integer, String, String> record = iter.next();
             assertEquals(1, record.partition());
             assertEquals(topic, record.topic());
             assertEquals(c, record.offset());

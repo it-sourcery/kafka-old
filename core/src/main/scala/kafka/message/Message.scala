@@ -42,16 +42,23 @@ object Message {
   // Only message format version 1 has the timestamp field.
   val TimestampOffset = AttributesOffset + AttributesLength
   val TimestampLength = 8
+
   val KeySizeOffset_V0 = AttributesOffset + AttributesLength
-  val KeySizeOffset_V1 = TimestampOffset + TimestampLength
+  val KeySizeOffset_V1_V2 = TimestampOffset + TimestampLength
+
   val KeySizeLength = 4
   val KeyOffset_V0 = KeySizeOffset_V0 + KeySizeLength
-  val KeyOffset_V1 = KeySizeOffset_V1 + KeySizeLength
+  val KeyOffset_V1_V2 = KeySizeOffset_V1_V2 + KeySizeLength
+
+  val HeaderSizeLength = 4
+
   val ValueSizeLength = 4
 
   private val MessageHeaderSizeMap = Map (
     (0: Byte) -> (CrcLength + MagicLength + AttributesLength + KeySizeLength + ValueSizeLength),
-    (1: Byte) -> (CrcLength + MagicLength + AttributesLength + TimestampLength + KeySizeLength + ValueSizeLength))
+    (1: Byte) -> (CrcLength + MagicLength + AttributesLength + TimestampLength + KeySizeLength + ValueSizeLength),
+    (2: Byte) -> (CrcLength + MagicLength + AttributesLength + TimestampLength + KeySizeLength + HeaderSizeLength + ValueSizeLength)
+  )
 
   /**
    * The amount of overhead bytes in a message
@@ -67,7 +74,8 @@ object Message {
    */
   val MagicValue_V0: Byte = 0
   val MagicValue_V1: Byte = 1
-  val CurrentMagicValue: Byte = 1
+  val MagicValue_V2: Byte = 2
+  val CurrentMagicValue: Byte = 2
 
   /**
    * Specifies the mask for the compression code. 3 bits to hold the compression codec.
@@ -118,6 +126,8 @@ object Message {
  * 4. (Optional) 8 byte timestamp only if "magic" identifier is greater than 0
  * 5. 4 byte key length, containing length K
  * 6. K byte key
+ * 5. 4 byte header length, containing length H
+ * 6. H byte header
  * 7. 4 byte payload length, containing length V
  * 8. V byte payload
  *
@@ -137,6 +147,7 @@ class Message(val buffer: ByteBuffer,
   /**
    * A constructor to create a Message
    * @param bytes The payload of the message
+   * @param header The header of the message (null, if none)
    * @param key The key of the message (null, if none)
    * @param timestamp The timestamp of the message.
    * @param timestampType The timestamp type of the message.
@@ -145,11 +156,12 @@ class Message(val buffer: ByteBuffer,
    * @param payloadSize The size of the payload to use
    * @param magicValue the magic value to use
    */
-  def this(bytes: Array[Byte], 
+  def this(bytes: Array[Byte],
+           header: Array[Byte],
            key: Array[Byte],
            timestamp: Long,
            timestampType: TimestampType,
-           codec: CompressionCodec, 
+           codec: CompressionCodec,
            payloadOffset: Int, 
            payloadSize: Int,
            magicValue: Byte) = {
@@ -159,8 +171,10 @@ class Message(val buffer: ByteBuffer,
                              (if (magicValue == Message.MagicValue_V0) 0
                               else Message.TimestampLength) +
                              Message.KeySizeLength + 
-                             (if(key == null) 0 else key.length) + 
-                             Message.ValueSizeLength + 
+                             (if(key == null) 0 else key.length) +
+                             Message.HeaderSizeLength +
+                             (if(header == null) 0 else header.length) +
+                             Message.ValueSizeLength +
                              (if(bytes == null) 0 
                               else if(payloadSize >= 0) payloadSize 
                               else bytes.length - payloadOffset)))
@@ -182,6 +196,16 @@ class Message(val buffer: ByteBuffer,
       buffer.putInt(key.length)
       buffer.put(key, 0, key.length)
     }
+    if (magic > MagicValue_V1) {
+      if (header == null) {
+        buffer.putInt(-1)
+      } else {
+        buffer.putInt(header.length)
+        buffer.put(header, 0, header.length)
+      }
+    }
+
+
     val size = if(bytes == null) -1
                else if(payloadSize >= 0) payloadSize 
                else bytes.length - payloadOffset
@@ -193,9 +217,12 @@ class Message(val buffer: ByteBuffer,
     // now compute the checksum and fill it in
     Utils.writeUnsignedInt(buffer, CrcOffset, computeChecksum)
   }
-  
+
+  def this(bytes: Array[Byte], header: Array[Byte], key: Array[Byte], timestamp: Long, codec: CompressionCodec, magicValue: Byte) =
+    this(bytes = bytes, header = header, key = key, timestamp = timestamp, timestampType = TimestampType.CREATE_TIME, codec = codec, payloadOffset = 0, payloadSize = -1, magicValue = magicValue)
+
   def this(bytes: Array[Byte], key: Array[Byte], timestamp: Long, codec: CompressionCodec, magicValue: Byte) =
-    this(bytes = bytes, key = key, timestamp = timestamp, timestampType = TimestampType.CREATE_TIME, codec = codec, payloadOffset = 0, payloadSize = -1, magicValue = magicValue)
+    this(bytes = bytes, header = null, key = key, timestamp = timestamp, timestampType = TimestampType.CREATE_TIME, codec = codec, payloadOffset = 0, payloadSize = -1, magicValue = magicValue)
   
   def this(bytes: Array[Byte], timestamp: Long, codec: CompressionCodec, magicValue: Byte) =
     this(bytes = bytes, key = null, timestamp = timestamp, codec = codec, magicValue = magicValue)
@@ -243,7 +270,7 @@ class Message(val buffer: ByteBuffer,
    */
   private def keySizeOffset = {
     if (magic == MagicValue_V0) KeySizeOffset_V0
-    else KeySizeOffset_V1
+    else KeySizeOffset_V1_V2
   }
 
   /**
@@ -255,13 +282,32 @@ class Message(val buffer: ByteBuffer,
    * Does the message have a key?
    */
   def hasKey: Boolean = keySize >= 0
-  
+
+
+  /**
+    * The position where the header size is stored.
+    */
+  private def headerSizeOffset = {
+    KeyOffset_V1_V2 + max(0, keySize)
+  }
+
+  /**
+    * The length of the key in bytes
+    */
+  def headerSize: Int = buffer.getInt(headerSizeOffset)
+
+  /**
+    * Does the message have a key?
+    */
+  def hasHeader: Boolean = headerSize >= 0
+
   /**
    * The position where the payload size is stored
    */
   private def payloadSizeOffset = {
     if (magic == MagicValue_V0) KeyOffset_V0 + max(0, keySize)
-    else KeyOffset_V1 + max(0, keySize)
+    else if(magic == MagicValue_V1) KeyOffset_V1_V2 + max(0, keySize)
+    else headerSize + max(0, headerSize)
   }
   
   /**
@@ -321,7 +367,18 @@ class Message(val buffer: ByteBuffer,
    * A ByteBuffer containing the content of the message
    */
   def payload: ByteBuffer = sliceDelimited(payloadSizeOffset)
-  
+
+  /**
+    * A ByteBuffer containing the message header
+    */
+  def header: ByteBuffer = {
+    if (magic == MagicValue_V2) {
+      sliceDelimited(headerSizeOffset)
+    } else {
+      null
+    }
+  }
+
   /**
    * A ByteBuffer containing the message key
    */
@@ -365,7 +422,7 @@ class Message(val buffer: ByteBuffer,
       byteBuffer.put(Message.MagicValue_V0)
       byteBuffer.put(TimestampType.CREATE_TIME.updateAttributes(attributes))
       // Down-conversion, skip the timestamp field
-      byteBuffer.put(buffer.array(), buffer.arrayOffset() + Message.KeySizeOffset_V1, size - Message.KeySizeOffset_V1)
+      byteBuffer.put(buffer.array(), buffer.arrayOffset() + Message.KeySizeOffset_V1_V2, size - Message.KeySizeOffset_V1_V2)
     }
     // update crc value
     val newMessage = new Message(byteBuffer)
@@ -394,7 +451,7 @@ class Message(val buffer: ByteBuffer,
    * Validate the timestamp and "magic" value
    */
   private def validateTimestampAndMagicValue(timestamp: Long, magic: Byte) {
-    if (magic != MagicValue_V0 && magic != MagicValue_V1)
+    if (magic != MagicValue_V0 && magic != MagicValue_V1 && magic != MagicValue_V2)
       throw new IllegalArgumentException(s"Invalid magic value $magic")
     if (timestamp < 0 && timestamp != NoTimestamp)
       throw new IllegalArgumentException(s"Invalid message timestamp $timestamp")
@@ -405,8 +462,10 @@ class Message(val buffer: ByteBuffer,
   override def toString: String = {
     if (magic == MagicValue_V0)
       s"Message(magic = $magic, attributes = $attributes, crc = $checksum, key = $key, payload = $payload)"
-    else
+    else if (magic == MagicValue_V1)
       s"Message(magic = $magic, attributes = $attributes, $timestampType = $timestamp, crc = $checksum, key = $key, payload = $payload)"
+    else
+      s"Message(magic = $magic, attributes = $attributes, $timestampType = $timestamp, crc = $checksum, key = $key, header = $header, payload = $payload)"
   }
 
   override def equals(any: Any): Boolean = {

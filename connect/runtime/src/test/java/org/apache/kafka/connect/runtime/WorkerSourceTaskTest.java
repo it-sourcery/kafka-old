@@ -18,7 +18,7 @@
 package org.apache.kafka.connect.runtime;
 
 import org.apache.kafka.clients.producer.KafkaProducer;
-import org.apache.kafka.clients.producer.ProducerRecord;
+import org.apache.kafka.clients.producer.HeaderProducerRecord;
 import org.apache.kafka.clients.producer.RecordMetadata;
 import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.common.utils.SystemTime;
@@ -396,7 +396,7 @@ public class WorkerSourceTaskTest extends ThreadedTest {
         // Can just use the same record for key and value
         records.add(new SourceRecord(PARTITION, OFFSET, "topic", null, KEY_SCHEMA, KEY, RECORD_SCHEMA, RECORD));
 
-        Capture<ProducerRecord<byte[], byte[]>> sent = expectSendRecordAnyTimes();
+        Capture<HeaderProducerRecord<byte[], byte[]>> sent = expectSendRecordAnyTimes();
 
         PowerMock.replayAll();
 
@@ -418,7 +418,7 @@ public class WorkerSourceTaskTest extends ThreadedTest {
                 new SourceRecord(PARTITION, OFFSET, "topic", null, KEY_SCHEMA, KEY, RECORD_SCHEMA, RECORD, timestamp)
         );
 
-        Capture<ProducerRecord<byte[], byte[]>> sent = expectSendRecordAnyTimes();
+        Capture<HeaderProducerRecord<byte[], byte[]>> sent = expectSendRecordAnyTimes();
 
         PowerMock.replayAll();
 
@@ -568,31 +568,31 @@ public class WorkerSourceTaskTest extends ThreadedTest {
         PowerMock.expectLastCall();
 
         EasyMock.expect(
-                producer.send(EasyMock.anyObject(ProducerRecord.class),
+                producer.send(EasyMock.anyObject(HeaderProducerRecord.class),
                         EasyMock.anyObject(org.apache.kafka.clients.producer.Callback.class)))
                 .andThrow(error);
     }
 
-    private Capture<ProducerRecord<byte[], byte[]>> expectSendRecordAnyTimes() throws InterruptedException {
+    private Capture<HeaderProducerRecord<byte[], byte[]>> expectSendRecordAnyTimes() throws InterruptedException {
         return expectSendRecordTaskCommitRecordSucceed(true, false);
     }
 
-    private Capture<ProducerRecord<byte[], byte[]>> expectSendRecordOnce(boolean isRetry) throws InterruptedException {
+    private Capture<HeaderProducerRecord<byte[], byte[]>> expectSendRecordOnce(boolean isRetry) throws InterruptedException {
         return expectSendRecordTaskCommitRecordSucceed(false, isRetry);
     }
 
-    private Capture<ProducerRecord<byte[], byte[]>> expectSendRecordTaskCommitRecordSucceed(boolean anyTimes, boolean isRetry) throws InterruptedException {
+    private Capture<HeaderProducerRecord<byte[], byte[]>> expectSendRecordTaskCommitRecordSucceed(boolean anyTimes, boolean isRetry) throws InterruptedException {
         return expectSendRecord(anyTimes, isRetry, true);
     }
 
-    private Capture<ProducerRecord<byte[], byte[]>> expectSendRecordTaskCommitRecordFail(boolean anyTimes, boolean isRetry) throws InterruptedException {
+    private Capture<HeaderProducerRecord<byte[], byte[]>> expectSendRecordTaskCommitRecordFail(boolean anyTimes, boolean isRetry) throws InterruptedException {
         return expectSendRecord(anyTimes, isRetry, false);
     }
 
-    private Capture<ProducerRecord<byte[], byte[]>> expectSendRecord(boolean anyTimes, boolean isRetry, boolean succeed) throws InterruptedException {
+    private Capture<HeaderProducerRecord<byte[], byte[]>> expectSendRecord(boolean anyTimes, boolean isRetry, boolean succeed) throws InterruptedException {
         expectConvertKeyValue(anyTimes);
 
-        Capture<ProducerRecord<byte[], byte[]>> sent = EasyMock.newCapture();
+        Capture<HeaderProducerRecord<byte[], byte[]>> sent = EasyMock.newCapture();
 
         // 1. Offset data is passed to the offset storage.
         if (!isRetry) {

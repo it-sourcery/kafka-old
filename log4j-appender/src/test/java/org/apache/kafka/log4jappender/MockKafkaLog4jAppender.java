@@ -18,7 +18,7 @@ package org.apache.kafka.log4jappender;
 
 import org.apache.kafka.clients.producer.MockProducer;
 import org.apache.kafka.clients.producer.Producer;
-import org.apache.kafka.clients.producer.ProducerRecord;
+import org.apache.kafka.clients.producer.HeaderProducerRecord;
 import org.apache.kafka.test.MockSerializer;
 import org.apache.log4j.spi.LoggingEvent;
 
@@ -41,7 +41,7 @@ public class MockKafkaLog4jAppender extends KafkaLog4jAppender {
         super.append(event);
     }
 
-    protected java.util.List<ProducerRecord<byte[], byte[]>> getHistory() {
+    protected java.util.List<HeaderProducerRecord<byte[], byte[]>> getHistory() {
         return mockProducer.history();
     }
 }

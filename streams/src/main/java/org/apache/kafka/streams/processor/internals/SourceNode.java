@@ -21,22 +21,28 @@ import org.apache.kafka.common.serialization.Deserializer;
 import org.apache.kafka.streams.kstream.internals.ChangedDeserializer;
 import org.apache.kafka.streams.processor.ProcessorContext;
 
-public class SourceNode<K, V> extends ProcessorNode<K, V> {
+public class SourceNode<K, H, V> extends ProcessorNode<K, H, V> {
 
     private Deserializer<K> keyDeserializer;
+    private Deserializer<H> headerDeserializer;
     private Deserializer<V> valDeserializer;
     private ProcessorContext context;
     private String[] topics;
 
-    public SourceNode(String name, String[] topics, Deserializer<K> keyDeserializer, Deserializer<V> valDeserializer) {
+    public SourceNode(String name, String[] topics, Deserializer<K> keyDeserializer, Deserializer<H> headerDeserializer, Deserializer<V> valDeserializer) {
         super(name);
         this.topics = topics;
         this.keyDeserializer = keyDeserializer;
+        this.headerDeserializer = headerDeserializer;
         this.valDeserializer = valDeserializer;
     }
 
     public K deserializeKey(String topic, byte[] data) {
         return keyDeserializer.deserialize(topic, data);
+    }
+
+    public H deserializeHeader(String topic, byte[] data) {
+        return headerDeserializer.deserialize(topic, data);
     }
 
     public V deserializeValue(String topic, byte[] data) {
@@ -62,8 +68,8 @@ public class SourceNode<K, V> extends ProcessorNode<K, V> {
 
 
     @Override
-    public void process(final K key, final V value) {
-        context.forward(key, value);
+    public void process(final K key, final H header, final V value) {
+        context.forward(key, header, value);
     }
 
     @Override

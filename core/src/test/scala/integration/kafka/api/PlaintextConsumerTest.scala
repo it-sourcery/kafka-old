@@ -15,17 +15,15 @@ package kafka.api
 
 import java.util
 import java.util.Properties
-
 import java.util.regex.Pattern
 
 import kafka.log.LogConfig
 import kafka.server.KafkaConfig
 import kafka.utils.TestUtils
 import org.apache.kafka.clients.consumer._
-import org.apache.kafka.clients.producer.KafkaProducer
-import org.apache.kafka.common.serialization.{StringDeserializer, StringSerializer, ByteArraySerializer}
-import org.apache.kafka.test.{MockProducerInterceptor, MockConsumerInterceptor}
-import org.apache.kafka.clients.producer.{ProducerConfig, ProducerRecord}
+import org.apache.kafka.clients.producer.{HeaderProducerRecord, KafkaProducer, ProducerConfig, ProducerRecord}
+import org.apache.kafka.common.serialization.{ByteArraySerializer, StringDeserializer, StringSerializer}
+import org.apache.kafka.test.{MockConsumerInterceptor, MockProducerInterceptor}
 import org.apache.kafka.common.TopicPartition
 import org.apache.kafka.common.errors.{InvalidTopicException, RecordTooLargeException}
 import org.apache.kafka.common.record.{CompressionType, TimestampType}
@@ -463,7 +461,7 @@ class PlaintextConsumerTest extends BaseConsumerTest {
     val producer = TestUtils.createNewProducer(brokerList, securityProtocol = securityProtocol, trustStoreFile = trustStoreFile,
         saslProperties = saslProperties, retries = 0, lingerMs = Long.MaxValue, props = Some(producerProps))
     (0 until numRecords).foreach { i =>
-      producer.send(new ProducerRecord(tp.topic, tp.partition, i.toLong, s"key $i".getBytes, s"value $i".getBytes))
+      producer.send(new HeaderProducerRecord(tp.topic, tp.partition, i.toLong, s"key $i".getBytes, s"value $i".getBytes))
     }
     producer.close()
   }
@@ -546,7 +544,7 @@ class PlaintextConsumerTest extends BaseConsumerTest {
     consumers += consumer0
 
     // produce a record that is larger than the configured fetch size
-    val record = new ProducerRecord[Array[Byte], Array[Byte]](tp.topic(), tp.partition(), "key".getBytes, new Array[Byte](maxFetchBytes + 1))
+    val record = new HeaderProducerRecord[Array[Byte], Array[Byte]](tp.topic(), tp.partition(), "key".getBytes, new Array[Byte](maxFetchBytes + 1))
     this.producers.head.send(record)
 
     // consuming a too-large record should fail
@@ -685,7 +683,7 @@ class PlaintextConsumerTest extends BaseConsumerTest {
     // produce records
     val numRecords = 10
     (0 until numRecords).map { i =>
-      testProducer.send(new ProducerRecord(tp.topic(), tp.partition(), s"key $i", s"value $i"))
+      testProducer.send(new HeaderProducerRecord(tp.topic(), tp.partition(), s"key $i", s"value $i"))
     }.foreach(_.get)
     assertEquals(numRecords, MockProducerInterceptor.ONSEND_COUNT.intValue())
     assertEquals(numRecords, MockProducerInterceptor.ON_SUCCESS_COUNT.intValue())
@@ -744,7 +742,7 @@ class PlaintextConsumerTest extends BaseConsumerTest {
     val numRecords = 100
     val testProducer = new KafkaProducer[String, String](this.producerConfig, new StringSerializer, new StringSerializer)
     (0 until numRecords).map { i =>
-      testProducer.send(new ProducerRecord(tp.topic(), tp.partition(), s"key $i", s"value $i"))
+      testProducer.send(new HeaderProducerRecord(tp.topic(), tp.partition(), s"key $i", s"value $i"))
     }.foreach(_.get)
 
     // create consumer with interceptor
@@ -797,7 +795,7 @@ class PlaintextConsumerTest extends BaseConsumerTest {
     producers += testProducer
 
     // producing records should succeed
-    testProducer.send(new ProducerRecord(tp.topic(), tp.partition(), s"key".getBytes, s"value will not be modified".getBytes))
+    testProducer.send(new HeaderProducerRecord(tp.topic(), tp.partition(), s"key".getBytes, s"value will not be modified".getBytes))
 
     // create consumer with interceptor that has different key and value types from the consumer
     this.consumerConfig.setProperty(ConsumerConfig.INTERCEPTOR_CLASSES_CONFIG, "org.apache.kafka.test.MockConsumerInterceptor")

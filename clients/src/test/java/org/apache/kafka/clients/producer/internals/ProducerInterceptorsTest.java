@@ -13,8 +13,8 @@
 package org.apache.kafka.clients.producer.internals;
 
 
+import org.apache.kafka.clients.producer.HeaderProducerRecord;
 import org.apache.kafka.clients.producer.ProducerInterceptor;
-import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.clients.producer.RecordMetadata;
 import org.apache.kafka.common.KafkaException;
 import org.apache.kafka.common.TopicPartition;
@@ -28,7 +28,7 @@ import static org.junit.Assert.assertEquals;
 
 public class ProducerInterceptorsTest {
     private final TopicPartition tp = new TopicPartition("test", 0);
-    private final ProducerRecord<Integer, String> producerRecord = new ProducerRecord<>("test", 0, 1, "value");
+    private final HeaderProducerRecord<Integer, String> headerProducerRecord = new HeaderProducerRecord<>("test", 0, 1, "value");
     private int onAckCount = 0;
     private int onErrorAckCount = 0;
     private int onErrorAckWithTopicSetCount = 0;
@@ -49,12 +49,12 @@ public class ProducerInterceptorsTest {
         }
 
         @Override
-        public ProducerRecord<Integer, String> onSend(ProducerRecord<Integer, String> record) {
+        public HeaderProducerRecord<Integer, String> onSend(HeaderProducerRecord<Integer, String> record) {
             onSendCount++;
             if (throwExceptionOnSend)
                 throw new KafkaException("Injected exception in AppendProducerInterceptor.onSend");
 
-            ProducerRecord<Integer, String> newRecord = new ProducerRecord<>(
+            HeaderProducerRecord<Integer, String> newRecord = new HeaderProducerRecord<>(
                     record.topic(), record.partition(), record.key(), record.value().concat(appendStr));
             return newRecord;
         }
@@ -103,28 +103,28 @@ public class ProducerInterceptorsTest {
         ProducerInterceptors<Integer, String> interceptors = new ProducerInterceptors<>(interceptorList);
 
         // verify that onSend() mutates the record as expected
-        ProducerRecord<Integer, String> interceptedRecord = interceptors.onSend(producerRecord);
+        HeaderProducerRecord<Integer, String> interceptedRecord = interceptors.onSend(headerProducerRecord);
         assertEquals(2, onSendCount);
-        assertEquals(producerRecord.topic(), interceptedRecord.topic());
-        assertEquals(producerRecord.partition(), interceptedRecord.partition());
-        assertEquals(producerRecord.key(), interceptedRecord.key());
-        assertEquals(interceptedRecord.value(), producerRecord.value().concat("One").concat("Two"));
+        assertEquals(headerProducerRecord.topic(), interceptedRecord.topic());
+        assertEquals(headerProducerRecord.partition(), interceptedRecord.partition());
+        assertEquals(headerProducerRecord.key(), interceptedRecord.key());
+        assertEquals(interceptedRecord.value(), headerProducerRecord.value().concat("One").concat("Two"));
 
         // onSend() mutates the same record the same way
-        ProducerRecord<Integer, String> anotherRecord = interceptors.onSend(producerRecord);
+        HeaderProducerRecord<Integer, String> anotherRecord = interceptors.onSend(headerProducerRecord);
         assertEquals(4, onSendCount);
         assertEquals(interceptedRecord, anotherRecord);
 
         // verify that if one of the interceptors throws an exception, other interceptors' callbacks are still called
         interceptor1.injectOnSendError(true);
-        ProducerRecord<Integer, String> partInterceptRecord = interceptors.onSend(producerRecord);
+        HeaderProducerRecord<Integer, String> partInterceptRecord = interceptors.onSend(headerProducerRecord);
         assertEquals(6, onSendCount);
-        assertEquals(partInterceptRecord.value(), producerRecord.value().concat("Two"));
+        assertEquals(partInterceptRecord.value(), headerProducerRecord.value().concat("Two"));
 
         // verify the record remains valid if all onSend throws an exception
         interceptor2.injectOnSendError(true);
-        ProducerRecord<Integer, String> noInterceptRecord = interceptors.onSend(producerRecord);
-        assertEquals(producerRecord, noInterceptRecord);
+        HeaderProducerRecord<Integer, String> noInterceptRecord = interceptors.onSend(headerProducerRecord);
+        assertEquals(headerProducerRecord, noInterceptRecord);
 
         interceptors.close();
     }
@@ -165,19 +165,19 @@ public class ProducerInterceptorsTest {
         ProducerInterceptors<Integer, String> interceptors = new ProducerInterceptors<>(interceptorList);
 
         // verify that metadata contains both topic and partition
-        interceptors.onSendError(producerRecord,
-                                 new TopicPartition(producerRecord.topic(), producerRecord.partition()),
+        interceptors.onSendError(headerProducerRecord,
+                                 new TopicPartition(headerProducerRecord.topic(), headerProducerRecord.partition()),
                                  new KafkaException("Test"));
         assertEquals(1, onErrorAckCount);
         assertEquals(1, onErrorAckWithTopicPartitionSetCount);
 
         // verify that metadata contains both topic and partition (because record already contains partition)
-        interceptors.onSendError(producerRecord, null, new KafkaException("Test"));
+        interceptors.onSendError(headerProducerRecord, null, new KafkaException("Test"));
         assertEquals(2, onErrorAckCount);
         assertEquals(2, onErrorAckWithTopicPartitionSetCount);
 
         // if producer record does not contain partition, interceptor should get partition == -1
-        ProducerRecord<Integer, String> record2 = new ProducerRecord<>("test2", null, 1, "value");
+        HeaderProducerRecord<Integer, String> record2 = new HeaderProducerRecord<>("test2", null, 1, "value");
         interceptors.onSendError(record2, null, new KafkaException("Test"));
         assertEquals(3, onErrorAckCount);
         assertEquals(3, onErrorAckWithTopicSetCount);
@@ -185,7 +185,7 @@ public class ProducerInterceptorsTest {
 
         // if producer record does not contain partition, but topic/partition is passed to
         // onSendError, then interceptor should get valid partition
-        int reassignedPartition = producerRecord.partition() + 1;
+        int reassignedPartition = headerProducerRecord.partition() + 1;
         interceptors.onSendError(record2,
                                  new TopicPartition(record2.topic(), reassignedPartition),
                                  new KafkaException("Test"));

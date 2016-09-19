@@ -41,7 +41,12 @@ public class SinkRecord extends ConnectRecord {
 
     public SinkRecord(String topic, int partition, Schema keySchema, Object key, Schema valueSchema, Object value, long kafkaOffset,
                       Long timestamp, TimestampType timestampType) {
-        super(topic, partition, keySchema, key, valueSchema, value, timestamp);
+        this(topic, partition, keySchema, key, null, null, valueSchema, value, kafkaOffset, timestamp, timestampType);
+    }
+
+    public SinkRecord(String topic, int partition, Schema keySchema, Object key, Schema headerSchema, Object header, Schema valueSchema, Object value, long kafkaOffset,
+                      Long timestamp, TimestampType timestampType) {
+        super(topic, partition, keySchema, key, headerSchema, header, valueSchema, value, timestamp);
         this.kafkaOffset = kafkaOffset;
         this.timestampType = timestampType;
     }

@@ -23,7 +23,7 @@ import java.util.Properties
 import kafka.consumer._
 import kafka.utils.{ToolsUtils, CommandLineUtils, Logging, ZkUtils}
 import kafka.api.OffsetRequest
-import org.apache.kafka.clients.producer.{ProducerRecord, KafkaProducer, ProducerConfig}
+import org.apache.kafka.clients.producer.{HeaderProducerRecord, KafkaProducer, ProducerConfig}
 
 object ReplayLogProducer extends Logging {
 
@@ -139,7 +139,7 @@ object ReplayLogProducer extends Logging {
             stream
         for (messageAndMetadata <- iter) {
           try {
-            val response = producer.send(new ProducerRecord[Array[Byte],Array[Byte]](config.outputTopic, null,
+            val response = producer.send(new HeaderProducerRecord[Array[Byte],Array[Byte]](config.outputTopic, null,
                                             messageAndMetadata.timestamp, messageAndMetadata.key(), messageAndMetadata.message()))
             if(config.isSync) {
               response.get()

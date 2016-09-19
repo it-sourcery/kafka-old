@@ -17,8 +17,8 @@
 
 package org.apache.kafka.streams.processor.internals;
 
-import org.apache.kafka.clients.consumer.ConsumerRecord;
-import org.apache.kafka.clients.consumer.ConsumerRecords;
+import org.apache.kafka.clients.consumer.HeaderConsumerRecord;
+import org.apache.kafka.clients.consumer.HeaderConsumerRecords;
 import org.apache.kafka.clients.consumer.MockConsumer;
 import org.apache.kafka.clients.consumer.OffsetResetStrategy;
 import org.apache.kafka.common.Node;
@@ -68,7 +68,7 @@ public class ProcessorStateManagerTest {
         private long endOffset = 0L;
         private long currentOffset = 0L;
 
-        private ArrayList<ConsumerRecord<byte[], byte[]>> recordBuffer = new ArrayList<>();
+        private ArrayList<HeaderConsumerRecord<byte[], byte[]>> recordBuffer = new ArrayList<>();
 
         MockRestoreConsumer() {
             super(OffsetResetStrategy.EARLIEST);
@@ -87,12 +87,12 @@ public class ProcessorStateManagerTest {
         }
 
         // buffer a record (we cannot use addRecord because we need to add records before assigning a partition)
-        public void bufferRecord(ConsumerRecord<Integer, Integer> record) {
+        public void bufferRecord(HeaderConsumerRecord<Integer, Integer> record) {
             recordBuffer.add(
-                new ConsumerRecord<>(record.topic(), record.partition(), record.offset(), 0L,
-                    TimestampType.CREATE_TIME, 0L, 0, 0,
-                    serializer.serialize(record.topic(), record.key()),
-                    serializer.serialize(record.topic(), record.value())));
+                new HeaderConsumerRecord<>(record.topic(), record.partition(), record.offset(), 0L,
+                                           TimestampType.CREATE_TIME, 0L, 0, 0,
+                                           serializer.serialize(record.topic(), record.key()),
+                                           serializer.serialize(record.topic(), record.value())));
             endOffset = record.offset();
 
             super.updateEndOffsets(Collections.singletonMap(assignedPartition, endOffset));
@@ -118,18 +118,18 @@ public class ProcessorStateManagerTest {
         }
 
         @Override
-        public ConsumerRecords<byte[], byte[]> poll(long timeout) {
+        public HeaderConsumerRecords<byte[], byte[]> poll(long timeout) {
             // add buffered records to MockConsumer
-            for (ConsumerRecord<byte[], byte[]> record : recordBuffer) {
+            for (HeaderConsumerRecord<byte[], byte[]> record : recordBuffer) {
                 super.addRecord(record);
             }
             recordBuffer.clear();
 
-            ConsumerRecords<byte[], byte[]> records = super.poll(timeout);
+            HeaderConsumerRecords<byte[], byte[]> records = super.poll(timeout);
 
             // set the current offset
-            Iterable<ConsumerRecord<byte[], byte[]>> partitionRecords = records.records(assignedPartition);
-            for (ConsumerRecord<byte[], byte[]> record : partitionRecords) {
+            Iterable<HeaderConsumerRecord<byte[], byte[]>> partitionRecords = records.records(assignedPartition);
+            for (HeaderConsumerRecord<byte[], byte[]> record : partitionRecords) {
                 currentOffset = record.offset();
             }
 
@@ -249,7 +249,7 @@ public class ProcessorStateManagerTest {
                 int key = i * 10;
                 expectedKeys.add(key);
                 restoreConsumer.bufferRecord(
-                        new ConsumerRecord<>(persistentStoreTopicName, 2, 0L, offset, TimestampType.CREATE_TIME, 0L, 0, 0, key, 0)
+                        new HeaderConsumerRecord<>(persistentStoreTopicName, 2, 0L, offset, TimestampType.CREATE_TIME, 0L, 0, 0, key, 0)
                 );
             }
 
@@ -298,7 +298,7 @@ public class ProcessorStateManagerTest {
                 int key = i;
                 expectedKeys.add(i);
                 restoreConsumer.bufferRecord(
-                        new ConsumerRecord<>(nonPersistentStoreTopicName, 2, 0L, offset, TimestampType.CREATE_TIME, 0L, 0, 0, key, 0)
+                        new HeaderConsumerRecord<>(nonPersistentStoreTopicName, 2, 0L, offset, TimestampType.CREATE_TIME, 0L, 0, 0, key, 0)
                 );
             }
 

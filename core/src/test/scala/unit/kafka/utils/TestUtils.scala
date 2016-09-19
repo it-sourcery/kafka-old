@@ -25,10 +25,12 @@ import java.util.{Properties, Random}
 import java.security.cert.X509Certificate
 import javax.net.ssl.X509TrustManager
 import charset.Charset
+
 import kafka.security.auth.{Acl, Authorizer, Resource}
 import org.apache.kafka.common.protocol.SecurityProtocol
 import org.apache.kafka.common.utils.Utils._
 import org.apache.kafka.test.TestSslUtils
+
 import scala.collection.mutable.{ArrayBuffer, ListBuffer}
 import kafka.server._
 import kafka.producer._
@@ -42,7 +44,7 @@ import kafka.admin.AdminUtils
 import kafka.log._
 import kafka.utils.ZkUtils._
 import org.junit.Assert._
-import org.apache.kafka.clients.producer.{KafkaProducer, ProducerConfig, ProducerRecord}
+import org.apache.kafka.clients.producer.{HeaderProducerRecord, KafkaProducer, ProducerConfig, ProducerRecord}
 import org.apache.kafka.clients.consumer.{KafkaConsumer, RangeAssignor}
 import org.apache.kafka.clients.CommonClientConfigs
 import org.apache.kafka.common.network.Mode
@@ -950,7 +952,7 @@ object TestUtils extends Logging {
     })
     
     val futures = values.map { value =>
-      producer.send(new ProducerRecord(topic, value))
+      producer.send(new HeaderProducerRecord(topic, value))
     }
     futures.foreach(_.get)
     producer.close()
@@ -966,7 +968,7 @@ object TestUtils extends Logging {
       retries = 5,
       requestTimeoutMs = 2000
     )
-    producer.send(new ProducerRecord(topic, topic.getBytes, message.getBytes)).get
+    producer.send(new HeaderProducerRecord(topic, topic.getBytes, message.getBytes)).get
     producer.close()
   }
 

@@ -15,7 +15,7 @@ package org.apache.kafka.clients.consumer.internals;
 
 import org.apache.kafka.clients.ClientResponse;
 import org.apache.kafka.clients.Metadata;
-import org.apache.kafka.clients.consumer.ConsumerRecord;
+import org.apache.kafka.clients.consumer.HeaderConsumerRecord;
 import org.apache.kafka.clients.consumer.NoOffsetForPartitionException;
 import org.apache.kafka.clients.consumer.OffsetOutOfRangeException;
 import org.apache.kafka.clients.consumer.OffsetResetStrategy;
@@ -72,7 +72,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 /**
  * This class manage the fetching process with the brokers.
  */
-public class Fetcher<K, V> {
+public class Fetcher<K, H, V> {
 
     private static final Logger log = LoggerFactory.getLogger(Fetcher.class);
 
@@ -90,9 +90,10 @@ public class Fetcher<K, V> {
     private final ConcurrentLinkedQueue<CompletedFetch> completedFetches;
     private final AtomicInteger numInFlightFetches = new AtomicInteger(0);
     private final Deserializer<K> keyDeserializer;
+    private final Deserializer<H> headerDeserializer;
     private final Deserializer<V> valueDeserializer;
 
-    private PartitionRecords<K, V> nextInLineRecords = null;
+    private PartitionRecords<K, H, V> nextInLineRecords = null;
 
     public Fetcher(ConsumerNetworkClient client,
                    int minBytes,
@@ -101,6 +102,7 @@ public class Fetcher<K, V> {
                    int maxPollRecords,
                    boolean checkCrcs,
                    Deserializer<K> keyDeserializer,
+                   Deserializer<H> headerDeserializer,
                    Deserializer<V> valueDeserializer,
                    Metadata metadata,
                    SubscriptionState subscriptions,
@@ -118,6 +120,7 @@ public class Fetcher<K, V> {
         this.maxPollRecords = maxPollRecords;
         this.checkCrcs = checkCrcs;
         this.keyDeserializer = keyDeserializer;
+        this.headerDeserializer = headerDeserializer;
         this.valueDeserializer = valueDeserializer;
         this.completedFetches = new ConcurrentLinkedQueue<>();
         this.sensors = new FetchManagerMetrics(metrics, metricGrpPrefix);
@@ -389,8 +392,8 @@ public class Fetcher<K, V> {
      * @throws OffsetOutOfRangeException If there is OffsetOutOfRange error in fetchResponse and
      *         the defaultResetPolicy is NONE
      */
-    public Map<TopicPartition, List<ConsumerRecord<K, V>>> fetchedRecords() {
-        Map<TopicPartition, List<ConsumerRecord<K, V>>> drained = new HashMap<>();
+    public Map<TopicPartition, List<HeaderConsumerRecord<K, H, V>>> fetchedRecords() {
+        Map<TopicPartition, List<HeaderConsumerRecord<K, H, V>>> drained = new HashMap<>();
         int recordsRemaining = maxPollRecords;
 
         while (recordsRemaining > 0) {
@@ -408,8 +411,8 @@ public class Fetcher<K, V> {
         return drained;
     }
 
-    private int append(Map<TopicPartition, List<ConsumerRecord<K, V>>> drained,
-                       PartitionRecords<K, V> partitionRecords,
+    private int append(Map<TopicPartition, List<HeaderConsumerRecord<K, H, V>>> drained,
+                       PartitionRecords<K, H, V> partitionRecords,
                        int maxRecords) {
         if (partitionRecords.isEmpty())
             return 0;
@@ -425,13 +428,13 @@ public class Fetcher<K, V> {
                 log.debug("Not returning fetched records for assigned partition {} since it is no longer fetchable", partitionRecords.partition);
             } else if (partitionRecords.fetchOffset == position) {
                 // we are ensured to have at least one record since we already checked for emptiness
-                List<ConsumerRecord<K, V>> partRecords = partitionRecords.take(maxRecords);
+                List<HeaderConsumerRecord<K, H, V>> partRecords = partitionRecords.take(maxRecords);
                 long nextOffset = partRecords.get(partRecords.size() - 1).offset() + 1;
 
                 log.trace("Returning fetched records at offset {} for assigned partition {} and update " +
                         "position to {}", position, partitionRecords.partition, nextOffset);
 
-                List<ConsumerRecord<K, V>> records = drained.get(partitionRecords.partition);
+                List<HeaderConsumerRecord<K, H, V>> records = drained.get(partitionRecords.partition);
                 if (records == null) {
                     records = partRecords;
                     drained.put(partitionRecords.partition, records);
@@ -564,13 +567,13 @@ public class Fetcher<K, V> {
     /**
      * The callback for fetch completion
      */
-    private PartitionRecords<K, V> parseFetchedData(CompletedFetch completedFetch) {
+    private PartitionRecords<K, H, V> parseFetchedData(CompletedFetch completedFetch) {
         TopicPartition tp = completedFetch.partition;
         FetchResponse.PartitionData partition = completedFetch.partitionData;
         long fetchOffset = completedFetch.fetchedOffset;
         int bytes = 0;
         int recordsCount = 0;
-        PartitionRecords<K, V> parsedRecords = null;
+        PartitionRecords<K, H, V> parsedRecords = null;
 
         try {
             if (!subscriptions.isFetchable(tp)) {
@@ -589,7 +592,7 @@ public class Fetcher<K, V> {
 
                 ByteBuffer buffer = partition.recordSet;
                 MemoryRecords records = MemoryRecords.readableRecords(buffer);
-                List<ConsumerRecord<K, V>> parsed = new ArrayList<>();
+                List<HeaderConsumerRecord<K, H, V>> parsed = new ArrayList<>();
                 boolean skippedRecords = false;
                 for (LogEntry logEntry : records) {
                     // Skip the messages earlier than current position.
@@ -607,7 +610,7 @@ public class Fetcher<K, V> {
                 if (!parsed.isEmpty()) {
                     log.trace("Adding fetched record for partition {} with offset {} to buffered record list", tp, position);
                     parsedRecords = new PartitionRecords<>(fetchOffset, tp, parsed);
-                    ConsumerRecord<K, V> record = parsed.get(parsed.size() - 1);
+                    HeaderConsumerRecord<K, H, V> record = parsed.get(parsed.size() - 1);
                     this.sensors.recordsFetchLag.record(partition.highWatermark - record.offset());
                 } else if (buffer.limit() > 0 && !skippedRecords) {
                     // we did not read a single message from a non-empty buffer
@@ -654,7 +657,7 @@ public class Fetcher<K, V> {
     /**
      * Parse the record entry, deserializing the key / value fields if necessary
      */
-    private ConsumerRecord<K, V> parseRecord(TopicPartition partition, LogEntry logEntry) {
+    private HeaderConsumerRecord<K, H, V> parseRecord(TopicPartition partition, LogEntry logEntry) {
         Record record = logEntry.record();
 
         if (this.checkCrcs) {
@@ -673,27 +676,33 @@ public class Fetcher<K, V> {
             ByteBuffer keyBytes = record.key();
             byte[] keyByteArray = keyBytes == null ? null : Utils.toArray(keyBytes);
             K key = keyBytes == null ? null : this.keyDeserializer.deserialize(partition.topic(), keyByteArray);
+
+            ByteBuffer headerBytes = record.key();
+            byte[] headerByteArray = headerBytes == null ? null : Utils.toArray(headerBytes);
+            H header = headerBytes == null ? null : this.headerDeserializer.deserialize(partition.topic(), headerByteArray);
+
             ByteBuffer valueBytes = record.value();
             byte[] valueByteArray = valueBytes == null ? null : Utils.toArray(valueBytes);
             V value = valueBytes == null ? null : this.valueDeserializer.deserialize(partition.topic(), valueByteArray);
 
-            return new ConsumerRecord<>(partition.topic(), partition.partition(), offset,
-                                        timestamp, timestampType, record.checksum(),
-                                        keyByteArray == null ? ConsumerRecord.NULL_SIZE : keyByteArray.length,
-                                        valueByteArray == null ? ConsumerRecord.NULL_SIZE : valueByteArray.length,
-                                        key, value);
+            return new HeaderConsumerRecord<>(partition.topic(), partition.partition(), offset,
+                                              timestamp, timestampType, record.checksum(),
+                                              keyByteArray == null ? HeaderConsumerRecord.NULL_SIZE : keyByteArray.length,
+                                              headerByteArray == null ? HeaderConsumerRecord.NULL_SIZE : headerByteArray.length,
+                                              valueByteArray == null ? HeaderConsumerRecord.NULL_SIZE : valueByteArray.length,
+                                              key, header, value);
         } catch (RuntimeException e) {
             throw new SerializationException("Error deserializing key/value for partition " + partition +
                     " at offset " + logEntry.offset(), e);
         }
     }
 
-    private static class PartitionRecords<K, V> {
+    private static class PartitionRecords<K, H, V> {
         private long fetchOffset;
         private TopicPartition partition;
-        private List<ConsumerRecord<K, V>> records;
+        private List<HeaderConsumerRecord<K, H, V>> records;
 
-        public PartitionRecords(long fetchOffset, TopicPartition partition, List<ConsumerRecord<K, V>> records) {
+        public PartitionRecords(long fetchOffset, TopicPartition partition, List<HeaderConsumerRecord<K, H, V>> records) {
             this.fetchOffset = fetchOffset;
             this.partition = partition;
             this.records = records;
@@ -707,18 +716,18 @@ public class Fetcher<K, V> {
             this.records = null;
         }
 
-        private List<ConsumerRecord<K, V>> take(int n) {
+        private List<HeaderConsumerRecord<K, H, V>> take(int n) {
             if (records == null)
                 return new ArrayList<>();
 
             if (n >= records.size()) {
-                List<ConsumerRecord<K, V>> res = this.records;
+                List<HeaderConsumerRecord<K, H, V>> res = this.records;
                 this.records = null;
                 return res;
             }
 
-            List<ConsumerRecord<K, V>> res = new ArrayList<>(n);
-            Iterator<ConsumerRecord<K, V>> iterator = records.iterator();
+            List<HeaderConsumerRecord<K, H, V>> res = new ArrayList<>(n);
+            Iterator<HeaderConsumerRecord<K, H, V>> iterator = records.iterator();
             for (int i = 0; i < n; i++) {
                 res.add(iterator.next());
                 iterator.remove();

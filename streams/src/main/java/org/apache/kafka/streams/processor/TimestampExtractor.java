@@ -17,11 +17,11 @@
 
 package org.apache.kafka.streams.processor;
 
-import org.apache.kafka.clients.consumer.ConsumerRecord;
+import org.apache.kafka.clients.consumer.HeaderConsumerRecord;
 import org.apache.kafka.streams.kstream.KTable;
 
 /**
- * An interface that allows the Kafka Streams framework to extract a timestamp from an instance of {@link ConsumerRecord}.
+ * An interface that allows the Kafka Streams framework to extract a timestamp from an instance of {@link HeaderConsumerRecord}.
  * The extracted timestamp is defined as milliseconds.
  */
 public interface TimestampExtractor {
@@ -39,5 +39,5 @@ public interface TimestampExtractor {
      * @param record  a data record
      * @return        the timestamp of the record
      */
-    long extract(ConsumerRecord<Object, Object> record);
+    long extract(HeaderConsumerRecord<Object, Object> record);
 }

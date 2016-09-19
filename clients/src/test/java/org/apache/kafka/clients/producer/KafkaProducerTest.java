@@ -150,7 +150,7 @@ public class KafkaProducerTest {
         MemberModifier.field(KafkaProducer.class, "metadata").set(producer, metadata);
 
         String topic = "topic";
-        ProducerRecord<String, String> record = new ProducerRecord<>(topic, "value");
+        HeaderProducerRecord<String, String> record = new HeaderProducerRecord<>(topic, "value");
         Collection<Node> nodes = Collections.singletonList(new Node(0, "host1", 1000));
         final Cluster emptyCluster = new Cluster(nodes,
                 Collections.<PartitionInfo>emptySet(),

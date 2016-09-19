@@ -17,30 +17,30 @@
 
 package org.apache.kafka.connect.util;
 
-import org.apache.kafka.clients.producer.ProducerRecord;
+import org.apache.kafka.clients.producer.HeaderProducerRecord;
 import org.easymock.EasyMock;
 import org.easymock.IArgumentMatcher;
 
 import java.util.Arrays;
 
 public class ByteArrayProducerRecordEquals implements IArgumentMatcher {
-    private ProducerRecord<byte[], byte[]> record;
+    private HeaderProducerRecord<byte[], byte[]> record;
 
-    public static ProducerRecord<byte[], byte[]> eqProducerRecord(ProducerRecord<byte[], byte[]> in) {
+    public static HeaderProducerRecord<byte[], byte[]> eqProducerRecord(HeaderProducerRecord<byte[], byte[]> in) {
         EasyMock.reportMatcher(new ByteArrayProducerRecordEquals(in));
         return null;
     }
 
-    public ByteArrayProducerRecordEquals(ProducerRecord<byte[], byte[]> record) {
+    public ByteArrayProducerRecordEquals(HeaderProducerRecord<byte[], byte[]> record) {
         this.record = record;
     }
 
     @Override
     @SuppressWarnings("unchecked")
     public boolean matches(Object argument) {
-        if (!(argument instanceof ProducerRecord))
+        if (!(argument instanceof HeaderProducerRecord))
             return false;
-        ProducerRecord<byte[], byte[]> other = (ProducerRecord<byte[], byte[]>) argument;
+        HeaderProducerRecord<byte[], byte[]> other = (HeaderProducerRecord<byte[], byte[]>) argument;
         return record.topic().equals(other.topic()) &&
                 record.partition() != null ? record.partition().equals(other.partition()) : other.partition() == null &&
                 record.key() != null ? Arrays.equals(record.key(), other.key()) : other.key() == null &&
