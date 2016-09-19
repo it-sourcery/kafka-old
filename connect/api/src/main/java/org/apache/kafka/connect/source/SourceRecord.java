@@ -64,15 +64,23 @@ public class SourceRecord extends ConnectRecord {
     public SourceRecord(Map<String, ?> sourcePartition, Map<String, ?> sourceOffset,
                         String topic, Integer partition,
                         Schema keySchema, Object key, Schema valueSchema, Object value) {
-        this(sourcePartition, sourceOffset, topic, partition, keySchema, key, valueSchema, value, null);
+        this(sourcePartition, sourceOffset, topic, partition, keySchema, key, null, null, valueSchema, value);
     }
 
     public SourceRecord(Map<String, ?> sourcePartition, Map<String, ?> sourceOffset,
                         String topic, Integer partition,
+                        Schema keySchema, Object key, Schema headerSchema, Object header, Schema valueSchema, Object value) {
+        this(sourcePartition, sourceOffset, topic, partition, keySchema, key, headerSchema, header, valueSchema, value, null);
+    }
+
+
+    public SourceRecord(Map<String, ?> sourcePartition, Map<String, ?> sourceOffset,
+                        String topic, Integer partition,
                         Schema keySchema, Object key,
+                        Schema headerSchema, Object header,
                         Schema valueSchema, Object value,
                         Long timestamp) {
-        super(topic, partition, keySchema, key, valueSchema, value, timestamp);
+        super(topic, partition, keySchema, key, headerSchema, header, valueSchema, value, timestamp);
         this.sourcePartition = sourcePartition;
         this.sourceOffset = sourceOffset;
     }

@@ -66,10 +66,11 @@ object EndToEndLatency {
     consumerProps.put(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, "false")
     consumerProps.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "latest")
     consumerProps.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, "org.apache.kafka.common.serialization.ByteArrayDeserializer")
+    consumerProps.put(ConsumerConfig.HEADER_DESERIALIZER_CLASS_CONFIG, "org.apache.kafka.common.serialization.ByteArrayDeserializer")
     consumerProps.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, "org.apache.kafka.common.serialization.ByteArrayDeserializer")
     consumerProps.put(ConsumerConfig.FETCH_MAX_WAIT_MS_CONFIG, "0") //ensure we have no temporal batching
 
-    val consumer = new KafkaConsumer[Array[Byte], Array[Byte]](consumerProps)
+    val consumer = new KafkaConsumer[Array[Byte], Array[Byte], Array[Byte]](consumerProps)
     consumer.subscribe(List(topic))
 
     val producerProps = loadProps
@@ -78,8 +79,9 @@ object EndToEndLatency {
     producerProps.put(ProducerConfig.MAX_BLOCK_MS_CONFIG, Long.MaxValue.toString)
     producerProps.put(ProducerConfig.ACKS_CONFIG, producerAcks.toString)
     producerProps.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, "org.apache.kafka.common.serialization.ByteArraySerializer")
+    producerProps.put(ProducerConfig.HEADER_SERIALIZER_CLASS_CONFIG, "org.apache.kafka.common.serialization.ByteArraySerializer")
     producerProps.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, "org.apache.kafka.common.serialization.ByteArraySerializer")
-    val producer = new KafkaProducer[Array[Byte], Array[Byte]](producerProps)
+    val producer = new KafkaProducer[Array[Byte], Array[Byte], Array[Byte]](producerProps)
 
     def finalise() {
       consumer.commitSync()
@@ -101,7 +103,7 @@ object EndToEndLatency {
       val begin = System.nanoTime
 
       //Send message (of random bytes) synchronously then immediately poll for it
-      producer.send(new HeaderProducerRecord[Array[Byte], Array[Byte]](topic, message)).get()
+      producer.send(new HeaderProducerRecord[Array[Byte], Array[Byte], Array[Byte]](topic, message)).get()
       val recordIter = consumer.poll(timeout).iterator
 
       val elapsed = System.nanoTime - begin

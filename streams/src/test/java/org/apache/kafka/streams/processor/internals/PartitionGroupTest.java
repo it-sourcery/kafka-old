@@ -59,18 +59,18 @@ public class PartitionGroupTest {
         assertEquals(0, group.numBuffered());
 
         // add three 3 records with timestamp 1, 3, 5 to partition-1
-        List<HeaderConsumerRecord<byte[], byte[]>> list1 = Arrays.asList(
-            new HeaderConsumerRecord<>("topic", 1, 1L, recordKey, recordValue),
-            new HeaderConsumerRecord<>("topic", 1, 3L, recordKey, recordValue),
-            new HeaderConsumerRecord<>("topic", 1, 5L, recordKey, recordValue));
+        List<HeaderConsumerRecord<byte[], Void, byte[]>> list1 = Arrays.asList(
+            new HeaderConsumerRecord<byte[], Void, byte[]>("topic", 1, 1L, recordKey, recordValue),
+            new HeaderConsumerRecord<byte[], Void, byte[]>("topic", 1, 3L, recordKey, recordValue),
+            new HeaderConsumerRecord<byte[], Void, byte[]>("topic", 1, 5L, recordKey, recordValue));
 
         group.addRawRecords(partition1, list1);
 
         // add three 3 records with timestamp 2, 4, 6 to partition-2
-        List<HeaderConsumerRecord<byte[], byte[]>> list2 = Arrays.asList(
-            new HeaderConsumerRecord<>("topic", 2, 2L, recordKey, recordValue),
-            new HeaderConsumerRecord<>("topic", 2, 4L, recordKey, recordValue),
-            new HeaderConsumerRecord<>("topic", 2, 6L, recordKey, recordValue));
+        List<HeaderConsumerRecord<byte[], Void, byte[]>> list2 = Arrays.asList(
+            new HeaderConsumerRecord<byte[], Void, byte[]>("topic", 2, 2L, recordKey, recordValue),
+            new HeaderConsumerRecord<byte[], Void, byte[]>("topic", 2, 4L, recordKey, recordValue),
+            new HeaderConsumerRecord<byte[], Void, byte[]>("topic", 2, 6L, recordKey, recordValue));
 
         group.addRawRecords(partition2, list2);
 
@@ -101,9 +101,9 @@ public class PartitionGroupTest {
         assertEquals(3L, group.timestamp());
 
         // add three 3 records with timestamp 2, 4, 6 to partition-1 again
-        List<HeaderConsumerRecord<byte[], byte[]>> list3 = Arrays.asList(
-            new HeaderConsumerRecord<>("topic", 1, 2L, recordKey, recordValue),
-            new HeaderConsumerRecord<>("topic", 1, 4L, recordKey, recordValue));
+        List<HeaderConsumerRecord<byte[], Void, byte[]>> list3 = Arrays.asList(
+            new HeaderConsumerRecord<byte[], Void, byte[]>("topic", 1, 2L, recordKey, recordValue),
+            new HeaderConsumerRecord<byte[], Void, byte[]>("topic", 1, 4L, recordKey, recordValue));
 
         group.addRawRecords(partition1, list3);
 

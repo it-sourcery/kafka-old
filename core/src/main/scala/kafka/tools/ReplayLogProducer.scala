@@ -124,9 +124,9 @@ object ReplayLogProducer extends Logging {
     producerProps.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, "org.apache.kafka.common.serialization.ByteArraySerializer")
   }
 
-  class ZKConsumerThread(config: Config, stream: KafkaStream[Array[Byte], Array[Byte]]) extends Thread with Logging {
+  class ZKConsumerThread(config: Config, stream: KafkaStream[Array[Byte], Array[Byte],Array[Byte]]) extends Thread with Logging {
     val shutdownLatch = new CountDownLatch(1)
-    val producer = new KafkaProducer[Array[Byte],Array[Byte]](config.producerProps)
+    val producer = new KafkaProducer[Array[Byte],Array[Byte],Array[Byte]](config.producerProps)
 
     override def run() {
       info("Starting consumer thread..")
@@ -139,8 +139,8 @@ object ReplayLogProducer extends Logging {
             stream
         for (messageAndMetadata <- iter) {
           try {
-            val response = producer.send(new HeaderProducerRecord[Array[Byte],Array[Byte]](config.outputTopic, null,
-                                            messageAndMetadata.timestamp, messageAndMetadata.key(), messageAndMetadata.message()))
+            val response = producer.send(new HeaderProducerRecord[Array[Byte],Array[Byte],Array[Byte]](config.outputTopic, null,
+                                            messageAndMetadata.timestamp, messageAndMetadata.key(), messageAndMetadata.header(), messageAndMetadata.message()))
             if(config.isSync) {
               response.get()
             }

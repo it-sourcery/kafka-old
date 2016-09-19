@@ -200,11 +200,11 @@ class DeleteConsumerGroupTest extends KafkaServerTestHarness {
     zkUtils.pathExists(dir.consumerOffsetDir) && zkUtils.pathExists(dir.consumerOwnerDir)
   }
 
-  private def produceEvents(producer: KafkaProducer[Array[Byte], Array[Byte]], topic: String, messages: List[String]) {
+  private def produceEvents(producer: KafkaProducer[Array[Byte], Array[Byte], Array[Byte]], topic: String, messages: List[String]) {
     messages.foreach(message => producer.send(new HeaderProducerRecord(topic, message.getBytes)))
   }
 
-  private def consumeEvents(messageStream: KafkaStream[Array[Byte], Array[Byte]], n: Int) {
+  private def consumeEvents(messageStream: KafkaStream[Array[Byte], Array[Byte], Array[Byte]], n: Int) {
     val iter = messageStream.iterator
     (0 until n).foreach(_ => iter.next)
   }

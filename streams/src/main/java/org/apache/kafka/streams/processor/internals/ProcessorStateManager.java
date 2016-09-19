@@ -56,7 +56,7 @@ public class ProcessorStateManager {
     private final File baseDir;
     private final Map<String, StateStore> stores;
     private final Set<String> loggingEnabled;
-    private final Consumer<byte[], byte[]> restoreConsumer;
+    private final Consumer<byte[], Void,  byte[]> restoreConsumer;
     private final Map<TopicPartition, Long> restoredOffsets;
     private final Map<TopicPartition, Long> checkpointedOffsets;
     private final Map<TopicPartition, Long> offsetLimits;
@@ -70,7 +70,7 @@ public class ProcessorStateManager {
     /**
      * @throws IOException if any error happens while creating or locking the state directory
      */
-    public ProcessorStateManager(String applicationId, TaskId taskId, Collection<TopicPartition> sources, Consumer<byte[], byte[]> restoreConsumer, boolean isStandby,
+    public ProcessorStateManager(String applicationId, TaskId taskId, Collection<TopicPartition> sources, Consumer<byte[], Void,  byte[]> restoreConsumer, boolean isStandby,
                                  StateDirectory stateDirectory, final Map<String, String> sourceStoreToSourceTopic,
                                  final Map<StateStore, ProcessorNode> stateStoreProcessorNodeMap) throws IOException {
         this.applicationId = applicationId;
@@ -208,7 +208,7 @@ public class ProcessorStateManager {
             long limit = offsetLimit(storePartition);
             while (true) {
                 long offset = 0L;
-                for (HeaderConsumerRecord<byte[], byte[]> record : restoreConsumer.poll(100).records(storePartition)) {
+                for (HeaderConsumerRecord<byte[], Void,  byte[]> record : restoreConsumer.poll(100).records(storePartition)) {
                     offset = record.offset();
                     if (offset >= limit) break;
                     stateRestoreCallback.restore(record.key(), record.value());
@@ -251,9 +251,9 @@ public class ProcessorStateManager {
         return partitionsAndOffsets;
     }
 
-    public List<HeaderConsumerRecord<byte[], byte[]>> updateStandbyStates(TopicPartition storePartition, List<HeaderConsumerRecord<byte[], byte[]>> records) {
+    public List<HeaderConsumerRecord<byte[], Void,  byte[]>> updateStandbyStates(TopicPartition storePartition, List<HeaderConsumerRecord<byte[], Void, byte[]>> records) {
         long limit = offsetLimit(storePartition);
-        List<HeaderConsumerRecord<byte[], byte[]>> remainingRecords = null;
+        List<HeaderConsumerRecord<byte[], Void,  byte[]>> remainingRecords = null;
 
         // restore states from changelog records
 
@@ -261,7 +261,7 @@ public class ProcessorStateManager {
 
         long lastOffset = -1L;
         int count = 0;
-        for (HeaderConsumerRecord<byte[], byte[]> record : records) {
+        for (HeaderConsumerRecord<byte[], Void,  byte[]> record : records) {
             if (record.offset() < limit) {
                 restoreCallback.restore(record.key(), record.value());
                 lastOffset = record.offset();

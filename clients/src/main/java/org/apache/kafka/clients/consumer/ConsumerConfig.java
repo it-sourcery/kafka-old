@@ -18,6 +18,7 @@ import org.apache.kafka.common.config.ConfigDef;
 import org.apache.kafka.common.config.ConfigDef.Importance;
 import org.apache.kafka.common.config.ConfigDef.Type;
 import org.apache.kafka.common.serialization.Deserializer;
+import org.apache.kafka.common.serialization.VoidDeserializer;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -322,6 +323,7 @@ public class ConsumerConfig extends AbstractConfig {
                                         KEY_DESERIALIZER_CLASS_DOC)
                                 .define(HEADER_DESERIALIZER_CLASS_CONFIG,
                                         Type.CLASS,
+                                        VoidDeserializer.class.getName(),
                                         Importance.HIGH,
                                         HEADER_DESERIALIZER_CLASS_DOC)
                                 .define(VALUE_DESERIALIZER_CLASS_CONFIG,

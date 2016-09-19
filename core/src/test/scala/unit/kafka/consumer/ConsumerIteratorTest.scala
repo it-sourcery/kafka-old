@@ -72,9 +72,10 @@ class ConsumerIteratorTest extends KafkaServerTestHarness {
     assertEquals(1, queue.size)
     queue.put(ZookeeperConsumerConnector.shutdownCommand)
 
-    val iter = new ConsumerIterator[String, String](queue, 
+    val iter = new ConsumerIterator[String, String, String](queue,
                                                     consumerConfig.consumerTimeoutMs,
-                                                    new StringDecoder(), 
+                                                    new StringDecoder(),
+                                                    new StringDecoder(),
                                                     new StringDecoder(),
                                                     clientId = "")
     val receivedMessages = (0 until 5).map(i => iter.next.message).toList
@@ -95,8 +96,9 @@ class ConsumerIteratorTest extends KafkaServerTestHarness {
     topicInfos.head.enqueue(messageSet)
     assertEquals(1, queue.size)
 
-    val iter = new ConsumerIterator[String, String](queue,
+    val iter = new ConsumerIterator[String, String, String](queue,
       ConsumerConfig.ConsumerTimeoutMs,
+      new FailDecoder(),
       new FailDecoder(),
       new FailDecoder(),
       clientId = "")

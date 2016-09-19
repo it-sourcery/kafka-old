@@ -253,7 +253,7 @@ object TestLogCleaning {
     producerProps.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, "org.apache.kafka.common.serialization.ByteArraySerializer")
     producerProps.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, "org.apache.kafka.common.serialization.ByteArraySerializer")
     producerProps.setProperty(ProducerConfig.COMPRESSION_TYPE_CONFIG, compressionType)
-    val producer = new KafkaProducer[Array[Byte],Array[Byte]](producerProps)
+    val producer = new KafkaProducer[Array[Byte],Array[Byte],Array[Byte]](producerProps)
     val rand = new Random(1)
     val keyCount = (messages / dups).toInt
     val producedFile = File.createTempFile("kafka-log-cleaner-produced-", ".txt")
@@ -265,9 +265,9 @@ object TestLogCleaning {
       val delete = i % 100 < percentDeletes
       val msg = 
         if(delete)
-          new HeaderProducerRecord[Array[Byte],Array[Byte]](topic, key.toString.getBytes(), null)
+          new HeaderProducerRecord[Array[Byte],Array[Byte],Array[Byte]](topic, key.toString.getBytes(), null)
         else
-          new HeaderProducerRecord[Array[Byte],Array[Byte]](topic, key.toString.getBytes(), i.toString.getBytes())
+          new HeaderProducerRecord[Array[Byte],Array[Byte],Array[Byte]](topic, key.toString.getBytes(), i.toString.getBytes())
       producer.send(msg)
       producedWriter.write(TestRecord(topic, key, i, delete).toString)
       producedWriter.newLine()
@@ -288,7 +288,7 @@ object TestLogCleaning {
   
   def consumeMessages(zkUrl: String, topics: Array[String]): File = {
     val connector = makeConsumer(zkUrl, topics)
-    val streams = connector.createMessageStreams(topics.map(topic => (topic, 1)).toMap, new StringDecoder, new StringDecoder)
+    val streams = connector.createMessageStreams(topics.map(topic => (topic, 1)).toMap, new StringDecoder, new StringDecoder, new StringDecoder)
     val consumedFile = File.createTempFile("kafka-log-cleaner-consumed-", ".txt")
     println("Logging consumed messages to " + consumedFile.getAbsolutePath)
     val consumedWriter = new BufferedWriter(new FileWriter(consumedFile))

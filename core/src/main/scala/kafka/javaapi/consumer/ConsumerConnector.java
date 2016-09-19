@@ -32,15 +32,16 @@ public interface ConsumerConnector {
      *
      *  @param topicCountMap  a map of (topic, #streams) pair
      *  @param keyDecoder a decoder that decodes the message key
+     *  @param headerDecoder a decoder that decodes the message header
      *  @param valueDecoder a decoder that decodes the message itself
      *  @return a map of (topic, list of  KafkaStream) pairs.
      *          The number of items in the list is #streams. Each stream supports
      *          an iterator over message/metadata pairs.
      */
-    public <K, V> Map<String, List<KafkaStream<K, V>>>
-        createMessageStreams(Map<String, Integer> topicCountMap, Decoder<K> keyDecoder, Decoder<V> valueDecoder);
+    public <K, H, V> Map<String, List<KafkaStream<K, H, V>>>
+        createMessageStreams(Map<String, Integer> topicCountMap, Decoder<K> keyDecoder, Decoder<H> headerDecoder, Decoder<V> valueDecoder);
 
-    public Map<String, List<KafkaStream<byte[], byte[]>>> createMessageStreams(Map<String, Integer> topicCountMap);
+    public Map<String, List<KafkaStream<byte[], byte[], byte[]>>> createMessageStreams(Map<String, Integer> topicCountMap);
 
     /**
      *  Create a list of MessageAndTopicStreams containing messages of type T.
@@ -49,16 +50,17 @@ public interface ConsumerConnector {
      *                    subscribe to (encapsulates a whitelist or a blacklist).
      *  @param numStreams the number of message streams to return.
      *  @param keyDecoder a decoder that decodes the message key
+     *  @param headerDecoder a decoder that decodes the message header
      *  @param valueDecoder a decoder that decodes the message itself
      *  @return a list of KafkaStream. Each stream supports an
      *          iterator over its MessageAndMetadata elements.
      */
-    public <K, V> List<KafkaStream<K, V>>
-        createMessageStreamsByFilter(TopicFilter topicFilter, int numStreams, Decoder<K> keyDecoder, Decoder<V> valueDecoder);
+    public <K, H, V> List<KafkaStream<K, H, V>>
+        createMessageStreamsByFilter(TopicFilter topicFilter, int numStreams, Decoder<K> keyDecoder, Decoder<H> headerDecoder, Decoder<V> valueDecoder);
 
-    public List<KafkaStream<byte[], byte[]>> createMessageStreamsByFilter(TopicFilter topicFilter, int numStreams);
+    public List<KafkaStream<byte[], byte[], byte[]>> createMessageStreamsByFilter(TopicFilter topicFilter, int numStreams);
 
-    public List<KafkaStream<byte[], byte[]>> createMessageStreamsByFilter(TopicFilter topicFilter);
+    public List<KafkaStream<byte[], byte[], byte[]>> createMessageStreamsByFilter(TopicFilter topicFilter);
 
     /**
      *  Commit the offsets of all broker partitions connected by this connector.

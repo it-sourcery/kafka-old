@@ -212,7 +212,7 @@ public class ProcessorTopologyTest {
 
 
     protected void assertNextOutputRecord(String topic, String key, String value) {
-        HeaderProducerRecord<String, String> record = driver.readOutput(topic, STRING_DESERIALIZER, STRING_DESERIALIZER);
+        HeaderProducerRecord<String, Void, String> record = driver.readOutput(topic, STRING_DESERIALIZER, STRING_DESERIALIZER);
         assertEquals(topic, record.topic());
         assertEquals(key, record.key());
         assertEquals(value, record.value());
@@ -220,7 +220,7 @@ public class ProcessorTopologyTest {
     }
 
     protected void assertNextOutputRecord(String topic, String key, String value, Integer partition) {
-        HeaderProducerRecord<String, String> record = driver.readOutput(topic, STRING_DESERIALIZER, STRING_DESERIALIZER);
+        HeaderProducerRecord<String, Void, String> record = driver.readOutput(topic, STRING_DESERIALIZER, STRING_DESERIALIZER);
         assertEquals(topic, record.topic());
         assertEquals(key, record.key());
         assertEquals(value, record.value());
@@ -403,7 +403,7 @@ public class ProcessorTopologyTest {
 
     public static class CustomTimestampExtractor implements TimestampExtractor {
         @Override
-        public long extract(HeaderConsumerRecord<Object, Object> record) {
+        public long extract(HeaderConsumerRecord<Object, ?, Object> record) {
             return timestamp;
         }
     }

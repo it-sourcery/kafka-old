@@ -42,8 +42,8 @@ trait IntegrationTestHarness extends KafkaServerTestHarness {
   lazy val consumerConfig = new Properties
   lazy val serverConfig = new Properties
 
-  val consumers = Buffer[KafkaConsumer[Array[Byte], Array[Byte]]]()
-  val producers = Buffer[KafkaProducer[Array[Byte], Array[Byte]]]()
+  val consumers = Buffer[KafkaConsumer[Array[Byte], Array[Byte], Array[Byte]]]()
+  val producers = Buffer[KafkaProducer[Array[Byte], Array[Byte], Array[Byte]]]()
 
   override def generateConfigs() = {
     val cfgs = TestUtils.createBrokerConfigs(serverCount, zkConnect, interBrokerSecurityProtocol = Some(securityProtocol),

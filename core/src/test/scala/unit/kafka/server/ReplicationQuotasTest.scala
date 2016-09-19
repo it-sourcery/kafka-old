@@ -51,7 +51,7 @@ class ReplicationQuotasTest extends ZooKeeperTestHarness {
   val msg100KB = new Array[Byte](100000)
   var brokers: Seq[KafkaServer] = null
   val topic = "topic1"
-  var producer: KafkaProducer[Array[Byte], Array[Byte]] = null
+  var producer: KafkaProducer[Array[Byte], Array[Byte], Array[Byte]] = null
 
   @Before
   override def setUp() {
@@ -118,7 +118,7 @@ class ReplicationQuotasTest extends ZooKeeperTestHarness {
     producer = TestUtils.createNewProducer(TestUtils.getBrokerListStrFromServers(brokers), retries = 5, acks = 0)
     (0 until msgCount).foreach { x =>
       (0 to 7).foreach { partition =>
-        producer.send(new HeaderProducerRecord(topic, partition, null, msg)).get
+        producer.send(new HeaderProducerRecord(topic, partition, null, null, msg)).get
       }
     }
 

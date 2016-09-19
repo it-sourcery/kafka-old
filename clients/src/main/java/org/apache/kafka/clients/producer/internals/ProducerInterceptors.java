@@ -32,11 +32,11 @@ import java.util.List;
  * A container that holds the list {@link org.apache.kafka.clients.producer.ProducerInterceptor}
  * and wraps calls to the chain of custom interceptors.
  */
-public class ProducerInterceptors<K, V> implements Closeable {
+public class ProducerInterceptors<K, H, V> implements Closeable {
     private static final Logger log = LoggerFactory.getLogger(ProducerInterceptors.class);
-    private final List<ProducerInterceptor<K, V>> interceptors;
+    private final List<ProducerInterceptor<K, H, V>> interceptors;
 
-    public ProducerInterceptors(List<ProducerInterceptor<K, V>> interceptors) {
+    public ProducerInterceptors(List<ProducerInterceptor<K, H, V>> interceptors) {
         this.interceptors = interceptors;
     }
 
@@ -54,9 +54,9 @@ public class ProducerInterceptors<K, V> implements Closeable {
      * @param record the record from client
      * @return producer record to send to topic/partition
      */
-    public HeaderProducerRecord<K, V> onSend(HeaderProducerRecord<K, V> record) {
-        HeaderProducerRecord<K, V> interceptRecord = record;
-        for (ProducerInterceptor<K, V> interceptor : this.interceptors) {
+    public HeaderProducerRecord<K, H, V> onSend(HeaderProducerRecord<K, H, V> record) {
+        HeaderProducerRecord<K, H, V> interceptRecord = record;
+        for (ProducerInterceptor<K, H, V> interceptor : this.interceptors) {
             try {
                 interceptRecord = interceptor.onSend(interceptRecord);
             } catch (Exception e) {
@@ -83,7 +83,7 @@ public class ProducerInterceptors<K, V> implements Closeable {
      * @param exception The exception thrown during processing of this record. Null if no error occurred.
      */
     public void onAcknowledgement(RecordMetadata metadata, Exception exception) {
-        for (ProducerInterceptor<K, V> interceptor : this.interceptors) {
+        for (ProducerInterceptor<K, H, V> interceptor : this.interceptors) {
             try {
                 interceptor.onAcknowledgement(metadata, exception);
             } catch (Exception e) {
@@ -103,8 +103,8 @@ public class ProducerInterceptors<K, V> implements Closeable {
      *        after partition gets assigned; the topic part of interceptTopicPartition is the same as in record.
      * @param exception The exception thrown during processing of this record.
      */
-    public void onSendError(HeaderProducerRecord<K, V> record, TopicPartition interceptTopicPartition, Exception exception) {
-        for (ProducerInterceptor<K, V> interceptor : this.interceptors) {
+    public void onSendError(HeaderProducerRecord<K, H, V> record, TopicPartition interceptTopicPartition, Exception exception) {
+        for (ProducerInterceptor<K, H, V> interceptor : this.interceptors) {
             try {
                 if (record == null && interceptTopicPartition == null) {
                     interceptor.onAcknowledgement(null, exception);
@@ -113,7 +113,7 @@ public class ProducerInterceptors<K, V> implements Closeable {
                         interceptTopicPartition = new TopicPartition(record.topic(),
                                                                      record.partition() == null ? RecordMetadata.UNKNOWN_PARTITION : record.partition());
                     }
-                    interceptor.onAcknowledgement(new RecordMetadata(interceptTopicPartition, -1, -1, Record.NO_TIMESTAMP, -1, -1, -1),
+                    interceptor.onAcknowledgement(new RecordMetadata(interceptTopicPartition, -1, -1, Record.NO_TIMESTAMP, -1, -1, -1, -1),
                                                   exception);
                 }
             } catch (Exception e) {
@@ -128,7 +128,7 @@ public class ProducerInterceptors<K, V> implements Closeable {
      */
     @Override
     public void close() {
-        for (ProducerInterceptor<K, V> interceptor : this.interceptors) {
+        for (ProducerInterceptor<K, H, V> interceptor : this.interceptors) {
             try {
                 interceptor.close();
             } catch (Exception e) {

@@ -26,7 +26,7 @@ import java.util.Collections;
 import java.util.Properties;
 
 public class Consumer extends ShutdownableThread {
-    private final KafkaConsumer<Integer, String> consumer;
+    private final KafkaConsumer<Integer, Object, String> consumer;
     private final String topic;
 
     public Consumer(String topic) {
@@ -47,8 +47,8 @@ public class Consumer extends ShutdownableThread {
     @Override
     public void doWork() {
         consumer.subscribe(Collections.singletonList(this.topic));
-        HeaderConsumerRecords<Integer, String> records = consumer.poll(1000);
-        for (HeaderConsumerRecord<Integer, String> record : records) {
+        HeaderConsumerRecords<Integer, Object, String> records = consumer.poll(1000);
+        for (HeaderConsumerRecord<Integer, Object, String> record : records) {
             System.out.println("Received message: (" + record.key() + ", " + record.value() + ") at offset " + record.offset());
         }
     }

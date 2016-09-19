@@ -28,14 +28,14 @@ public interface KafkaClientSupplier {
      * @param config producer config which supplied by {@link StreamsConfig} given to {@link KafkaStreams}
      * @return an instance of kafka Producer
      */
-    Producer<byte[], byte[]> getProducer(Map<String, Object> config);
+    Producer<byte[], Void, byte[]> getProducer(Map<String, Object> config);
 
     /**
      * Creates an instance of Consumer which is used to consume records of source topics.
      * @param config consumer config which supplied by {@link StreamsConfig} given to {@link KafkaStreams}
      * @return an instance of kafka Consumer
      */
-    Consumer<byte[], byte[]> getConsumer(Map<String, Object> config);
+    Consumer<byte[], Void, byte[]> getConsumer(Map<String, Object> config);
 
     /**
      * Creates an instance of Consumer which is used to consume records of internal topics.
@@ -43,5 +43,5 @@ public interface KafkaClientSupplier {
      * {@link KafkaStreams}
      * @return an instance of kafka Consumer
      */
-    Consumer<byte[], byte[]> getRestoreConsumer(Map<String, Object> config);
+    Consumer<byte[], Void, byte[]> getRestoreConsumer(Map<String, Object> config);
 }

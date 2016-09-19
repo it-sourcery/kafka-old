@@ -25,11 +25,11 @@ import org.apache.log4j.spi.LoggingEvent;
 import java.util.Properties;
 
 public class MockKafkaLog4jAppender extends KafkaLog4jAppender {
-    private MockProducer<byte[], byte[]> mockProducer =
-            new MockProducer<byte[], byte[]>(false, new MockSerializer(), new MockSerializer());
+    private MockProducer<byte[], byte[], byte[]> mockProducer =
+            new MockProducer<byte[], byte[], byte[]>(false, new MockSerializer(), new MockSerializer());
 
     @Override
-    protected Producer<byte[], byte[]> getKafkaProducer(Properties props) {
+    protected Producer<byte[], byte[], byte[]> getKafkaProducer(Properties props) {
         return mockProducer;
     }
 
@@ -41,7 +41,7 @@ public class MockKafkaLog4jAppender extends KafkaLog4jAppender {
         super.append(event);
     }
 
-    protected java.util.List<HeaderProducerRecord<byte[], byte[]>> getHistory() {
+    protected java.util.List<HeaderProducerRecord<byte[], byte[], byte[]>> getHistory() {
         return mockProducer.history();
     }
 }

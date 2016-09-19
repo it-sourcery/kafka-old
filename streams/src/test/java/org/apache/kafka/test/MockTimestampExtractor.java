@@ -24,7 +24,7 @@ import org.apache.kafka.streams.processor.TimestampExtractor;
 public class MockTimestampExtractor implements TimestampExtractor {
 
     @Override
-    public long extract(HeaderConsumerRecord<Object, Object> record) {
+    public long extract(HeaderConsumerRecord<Object, ?, Object> record) {
         return record.offset();
     }
 }

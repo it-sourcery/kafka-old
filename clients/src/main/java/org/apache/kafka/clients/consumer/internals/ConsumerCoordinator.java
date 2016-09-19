@@ -71,7 +71,7 @@ public final class ConsumerCoordinator extends AbstractCoordinator {
     private final OffsetCommitCallback defaultOffsetCommitCallback;
     private final boolean autoCommitEnabled;
     private final int autoCommitIntervalMs;
-    private final ConsumerInterceptors<?, ?> interceptors;
+    private final ConsumerInterceptors<?, ?, ?> interceptors;
     private final boolean excludeInternalTopics;
 
     // this collection must be thread-safe because it is modified from the response handler
@@ -102,7 +102,7 @@ public final class ConsumerCoordinator extends AbstractCoordinator {
                                OffsetCommitCallback defaultOffsetCommitCallback,
                                boolean autoCommitEnabled,
                                int autoCommitIntervalMs,
-                               ConsumerInterceptors<?, ?> interceptors,
+                               ConsumerInterceptors<?, ?, ?> interceptors,
                                boolean excludeInternalTopics) {
         super(client,
                 groupId,

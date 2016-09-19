@@ -136,12 +136,12 @@ public class ProcessorTopologyTestDriver {
     private final TaskId id;
     private final ProcessorTopology topology;
     private final StreamTask task;
-    private final MockConsumer<byte[], byte[]> consumer;
-    private final MockProducer<byte[], byte[]> producer;
-    private final MockConsumer<byte[], byte[]> restoreStateConsumer;
+    private final MockConsumer<byte[], Void, byte[]> consumer;
+    private final MockProducer<byte[], Void, byte[]> producer;
+    private final MockConsumer<byte[], Void, byte[]> restoreStateConsumer;
     private final Map<String, TopicPartition> partitionsByTopic = new HashMap<>();
     private final Map<TopicPartition, AtomicLong> offsetsByTopicPartition = new HashMap<>();
-    private final Map<String, Queue<HeaderProducerRecord<byte[], byte[]>>> outputRecordsByTopic = new HashMap<>();
+    private final Map<String, Queue<HeaderProducerRecord<byte[], Void, byte[]>>> outputRecordsByTopic = new HashMap<>();
 
     /**
      * Create a new test driver instance.
@@ -155,7 +155,7 @@ public class ProcessorTopologyTestDriver {
 
         // Set up the consumer and producer ...
         consumer = new MockConsumer<>(OffsetResetStrategy.EARLIEST);
-        producer = new MockProducer<byte[], byte[]>(true, bytesSerializer, bytesSerializer) {
+        producer = new MockProducer<byte[], Void,byte[]>(true, bytesSerializer, bytesSerializer) {
             @Override
             public List<PartitionInfo> partitionsFor(String topic) {
                 return Collections.emptyList();
@@ -206,15 +206,15 @@ public class ProcessorTopologyTestDriver {
         }
         // Add the record ...
         long offset = offsetsByTopicPartition.get(tp).incrementAndGet();
-        task.addRecords(tp, records(new HeaderConsumerRecord<byte[], byte[]>(tp.topic(), tp.partition(), offset, 0L, TimestampType.CREATE_TIME, 0L, 0, 0, key, value)));
+        task.addRecords(tp, records(new HeaderConsumerRecord<byte[], Void, byte[]>(tp.topic(), tp.partition(), offset, 0L, TimestampType.CREATE_TIME, 0L, 0, 0, key, value)));
         producer.clear();
         // Process the record ...
         task.process();
         ((InternalProcessorContext) task.context()).setRecordContext(new ProcessorRecordContext(0L, offset, tp.partition(), topicName));
         task.commit();
         // Capture all the records sent to the producer ...
-        for (HeaderProducerRecord<byte[], byte[]> record : producer.history()) {
-            Queue<HeaderProducerRecord<byte[], byte[]>> outputRecords = outputRecordsByTopic.get(record.topic());
+        for (HeaderProducerRecord<byte[], Void,byte[]> record : producer.history()) {
+            Queue<HeaderProducerRecord<byte[], Void,byte[]>> outputRecords = outputRecordsByTopic.get(record.topic());
             if (outputRecords == null) {
                 outputRecords = new LinkedList<>();
                 outputRecordsByTopic.put(record.topic(), outputRecords);
@@ -243,8 +243,8 @@ public class ProcessorTopologyTestDriver {
      * @param topic the name of the topic
      * @return the next record on that topic, or null if there is no record available
      */
-    public HeaderProducerRecord<byte[], byte[]> readOutput(String topic) {
-        Queue<HeaderProducerRecord<byte[], byte[]>> outputRecords = outputRecordsByTopic.get(topic);
+    public HeaderProducerRecord<byte[], Void,byte[]> readOutput(String topic) {
+        Queue<HeaderProducerRecord<byte[], Void,byte[]>> outputRecords = outputRecordsByTopic.get(topic);
         if (outputRecords == null) return null;
         return outputRecords.poll();
     }
@@ -258,15 +258,15 @@ public class ProcessorTopologyTestDriver {
      * @param valueDeserializer the deserializer for the value type
      * @return the next record on that topic, or null if there is no record available
      */
-    public <K, V> HeaderProducerRecord<K, V> readOutput(String topic, Deserializer<K> keyDeserializer, Deserializer<V> valueDeserializer) {
-        HeaderProducerRecord<byte[], byte[]> record = readOutput(topic);
+    public <K, V> HeaderProducerRecord<K, Void, V> readOutput(String topic, Deserializer<K> keyDeserializer, Deserializer<V> valueDeserializer) {
+        HeaderProducerRecord<byte[], Void,byte[]> record = readOutput(topic);
         if (record == null) return null;
         K key = keyDeserializer.deserialize(record.topic(), record.key());
         V value = valueDeserializer.deserialize(record.topic(), record.value());
-        return new HeaderProducerRecord<K, V>(record.topic(), record.partition(), key, value);
+        return new HeaderProducerRecord<K, Void, V>(record.topic(), record.partition(), key, null, value);
     }
 
-    private Iterable<HeaderConsumerRecord<byte[], byte[]>> records(HeaderConsumerRecord<byte[], byte[]> record) {
+    private Iterable<HeaderConsumerRecord<byte[], Void,byte[]>> records(HeaderConsumerRecord<byte[], Void,byte[]> record) {
         return Collections.singleton(record);
     }
 
@@ -320,8 +320,8 @@ public class ProcessorTopologyTestDriver {
      * @param storeNames the names of the stores that this
      * @return the mock consumer; never null
      */
-    protected MockConsumer<byte[], byte[]> createRestoreConsumer(TaskId id, String... storeNames) {
-        MockConsumer<byte[], byte[]> consumer = new MockConsumer<byte[], byte[]>(OffsetResetStrategy.LATEST) {
+    protected MockConsumer<byte[], Void,byte[]> createRestoreConsumer(TaskId id, String... storeNames) {
+        MockConsumer<byte[], Void,byte[]> consumer = new MockConsumer<byte[], Void,byte[]>(OffsetResetStrategy.LATEST) {
             @Override
             public synchronized void seekToEnd(Collection<TopicPartition> partitions) {
                 // do nothing ...

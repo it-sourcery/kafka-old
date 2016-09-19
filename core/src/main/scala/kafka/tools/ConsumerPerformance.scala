@@ -59,7 +59,7 @@ object ConsumerPerformance {
 
     var startMs, endMs = 0L
     if (config.useNewConsumer) {
-      val consumer = new KafkaConsumer[Array[Byte], Array[Byte]](config.props)
+      val consumer = new KafkaConsumer[Array[Byte], Array[Byte], Array[Byte]](config.props)
       consumer.subscribe(List(config.topic))
       startMs = System.currentTimeMillis
       consume(consumer, List(config.topic), config.numMessages, 1000, config, totalMessagesRead, totalBytesRead)
@@ -96,7 +96,7 @@ object ConsumerPerformance {
     }
   }
 
-  def consume(consumer: KafkaConsumer[Array[Byte], Array[Byte]], topics: List[String], count: Long, timeout: Long, config: ConsumerPerfConfig, totalMessagesRead: AtomicLong, totalBytesRead: AtomicLong) {
+  def consume(consumer: KafkaConsumer[Array[Byte], Array[Byte], Array[Byte]], topics: List[String], count: Long, timeout: Long, config: ConsumerPerfConfig, totalMessagesRead: AtomicLong, totalBytesRead: AtomicLong) {
     var bytesRead = 0L
     var messagesRead = 0L
     var lastBytesRead = 0L
@@ -136,6 +136,8 @@ object ConsumerPerformance {
         messagesRead += 1
         if (record.key != null)
           bytesRead += record.key.size
+        if (record.header != null)
+          bytesRead += record.header.size
         if (record.value != null)
           bytesRead += record.value.size
 
@@ -227,6 +229,7 @@ object ConsumerPerformance {
       props.put(ConsumerConfig.MAX_PARTITION_FETCH_BYTES_CONFIG, options.valueOf(fetchSizeOpt).toString)
       props.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, if (options.has(resetBeginningOffsetOpt)) "latest" else "earliest")
       props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, classOf[ByteArrayDeserializer])
+      props.put(ConsumerConfig.HEADER_DESERIALIZER_CLASS_DOC, classOf[ByteArrayDeserializer])
       props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, classOf[ByteArrayDeserializer])
       props.put(ConsumerConfig.CHECK_CRCS_CONFIG, "false")
     } else {
@@ -250,7 +253,7 @@ object ConsumerPerformance {
     val hideHeader = options.has(hideHeaderOpt)
   }
 
-  class ConsumerPerfThread(threadId: Int, name: String, stream: KafkaStream[Array[Byte], Array[Byte]],
+  class ConsumerPerfThread(threadId: Int, name: String, stream: KafkaStream[Array[Byte], Array[Byte], Array[Byte]],
     config: ConsumerPerfConfig, totalMessagesRead: AtomicLong, totalBytesRead: AtomicLong, consumerTimeout: AtomicBoolean)
     extends Thread(name) {
 

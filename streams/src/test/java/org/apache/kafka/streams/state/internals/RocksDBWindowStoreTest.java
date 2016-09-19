@@ -23,6 +23,7 @@ import org.apache.kafka.clients.producer.Producer;
 import org.apache.kafka.common.serialization.Serde;
 import org.apache.kafka.common.serialization.Serdes;
 import org.apache.kafka.common.serialization.Serializer;
+import org.apache.kafka.common.serialization.VoidSerializer;
 import org.apache.kafka.common.utils.Utils;
 import org.apache.kafka.streams.KeyValue;
 import org.apache.kafka.streams.processor.ProcessorContext;
@@ -76,10 +77,10 @@ public class RocksDBWindowStoreTest {
     @Test
     public void shouldOnlyIterateOpenSegments() throws Exception {
         final File baseDir = TestUtils.tempDirectory();
-        Producer<byte[], byte[]> producer = new MockProducer<>(true, byteArraySerde.serializer(), byteArraySerde.serializer());
+        Producer<byte[], Void, byte[]>producer = new MockProducer<>(true, byteArraySerde.serializer(), byteArraySerde.serializer());
         RecordCollector recordCollector = new RecordCollector(producer, "RocksDBWindowStoreTest-ShouldOnlyIterateOpenSegments") {
             @Override
-            public <K1, V1> void send(HeaderProducerRecord<K1, V1> record, Serializer<K1> keySerializer, Serializer<V1> valueSerializer) {
+            public <K1, Void, V1> void send(HeaderProducerRecord<K1, Void, V1> record, Serializer<K1> keySerializer, Serializer<V1> valueSerializer) {
             }
         };
 
@@ -123,10 +124,10 @@ public class RocksDBWindowStoreTest {
         File baseDir = Files.createTempDirectory("test").toFile();
         try {
             final List<KeyValue<byte[], byte[]>> changeLog = new ArrayList<>();
-            Producer<byte[], byte[]> producer = new MockProducer<>(true, byteArraySerde.serializer(), byteArraySerde.serializer());
+            Producer<byte[], Void, byte[]> producer = new MockProducer<>(true, byteArraySerde.serializer(), byteArraySerde.serializer());
             RecordCollector recordCollector = new RecordCollector(producer, "RocksDBWindowStoreTest-TestPutAndFetch") {
                 @Override
-                public <K1, V1> void send(HeaderProducerRecord<K1, V1> record, Serializer<K1> keySerializer, Serializer<V1> valueSerializer) {
+                public <K1, Void, V1> void send(HeaderProducerRecord<K1, Void, V1> record, Serializer<K1> keySerializer, Serializer<V1> valueSerializer) {
                     changeLog.add(new KeyValue<>(
                                     keySerializer.serialize(record.topic(), record.key()),
                                     valueSerializer.serialize(record.topic(), record.value()))
@@ -197,10 +198,10 @@ public class RocksDBWindowStoreTest {
         File baseDir = Files.createTempDirectory("test").toFile();
         try {
             final List<KeyValue<byte[], byte[]>> changeLog = new ArrayList<>();
-            Producer<byte[], byte[]> producer = new MockProducer<>(true, byteArraySerde.serializer(), byteArraySerde.serializer());
+            Producer<byte[], Void, byte[]> producer = new MockProducer<>(true, byteArraySerde.serializer(), byteArraySerde.serializer());
             RecordCollector recordCollector = new RecordCollector(producer, "RocksDBWindowStoreTest-TestPutAndFetchBefore") {
                 @Override
-                public <K1, V1> void send(HeaderProducerRecord<K1, V1> record, Serializer<K1> keySerializer, Serializer<V1> valueSerializer) {
+                public <K1, Void, V1> void send(HeaderProducerRecord<K1, Void, V1> record, Serializer<K1> keySerializer, Serializer<V1> valueSerializer) {
                     changeLog.add(new KeyValue<>(
                                     keySerializer.serialize(record.topic(), record.key()),
                                     valueSerializer.serialize(record.topic(), record.value()))
@@ -286,10 +287,10 @@ public class RocksDBWindowStoreTest {
         File baseDir = Files.createTempDirectory("test").toFile();
         try {
             final List<KeyValue<byte[], byte[]>> changeLog = new ArrayList<>();
-            Producer<byte[], byte[]> producer = new MockProducer<>(true, byteArraySerde.serializer(), byteArraySerde.serializer());
+            Producer<byte[], Void, byte[]> producer = new MockProducer<>(true, byteArraySerde.serializer(), byteArraySerde.serializer());
             RecordCollector recordCollector = new RecordCollector(producer, "RocksDBWindowStoreTest-TestPutAndFetchAfter") {
                 @Override
-                public <K1, V1> void send(HeaderProducerRecord<K1, V1> record, Serializer<K1> keySerializer, Serializer<V1> valueSerializer) {
+                public <K1, Void, V1> void send(HeaderProducerRecord<K1, Void, V1> record, Serializer<K1> keySerializer, Serializer<V1> valueSerializer) {
                     changeLog.add(new KeyValue<>(
                                     keySerializer.serialize(record.topic(), record.key()),
                                     valueSerializer.serialize(record.topic(), record.value()))
@@ -373,10 +374,10 @@ public class RocksDBWindowStoreTest {
         File baseDir = Files.createTempDirectory("test").toFile();
         try {
             final List<KeyValue<byte[], byte[]>> changeLog = new ArrayList<>();
-            Producer<byte[], byte[]> producer = new MockProducer<>(true, byteArraySerde.serializer(), byteArraySerde.serializer());
+            Producer<byte[], Void, byte[]> producer = new MockProducer<>(true, byteArraySerde.serializer(), byteArraySerde.serializer());
             RecordCollector recordCollector = new RecordCollector(producer, "RocksDBWindowStoreTest-TestPutSameKeyTimestamp") {
                 @Override
-                public <K1, V1> void send(HeaderProducerRecord<K1, V1> record, Serializer<K1> keySerializer, Serializer<V1> valueSerializer) {
+                public <K1, Void, V1> void send(HeaderProducerRecord<K1, Void, V1> record, Serializer<K1> keySerializer, Serializer<V1> valueSerializer) {
                     changeLog.add(new KeyValue<>(
                                     keySerializer.serialize(record.topic(), record.key()),
                                     valueSerializer.serialize(record.topic(), record.value()))
@@ -429,10 +430,10 @@ public class RocksDBWindowStoreTest {
         File baseDir = Files.createTempDirectory("test").toFile();
         try {
             final List<KeyValue<byte[], byte[]>> changeLog = new ArrayList<>();
-            Producer<byte[], byte[]> producer = new MockProducer<>(true, byteArraySerde.serializer(), byteArraySerde.serializer());
+            Producer<byte[], Void, byte[]> producer = new MockProducer<>(true, byteArraySerde.serializer(), byteArraySerde.serializer());
             RecordCollector recordCollector = new RecordCollector(producer, "anyTaskID") {
                 @Override
-                public <K1, V1> void send(HeaderProducerRecord<K1, V1> record, Serializer<K1> keySerializer, Serializer<V1> valueSerializer) {
+                public <K1, Void, V1> void send(HeaderProducerRecord<K1, Void, V1> record, Serializer<K1> keySerializer, Serializer<V1> valueSerializer) {
                     changeLog.add(new KeyValue<>(
                         keySerializer.serialize(record.topic(), record.key()),
                         valueSerializer.serialize(record.topic(), record.value()))
@@ -457,10 +458,10 @@ public class RocksDBWindowStoreTest {
         File baseDir = Files.createTempDirectory("test").toFile();
         try {
             final List<KeyValue<byte[], byte[]>> changeLog = new ArrayList<>();
-            Producer<byte[], byte[]> producer = new MockProducer<>(true, byteArraySerde.serializer(), byteArraySerde.serializer());
+            Producer<byte[], Void, byte[]> producer = new MockProducer<>(true, byteArraySerde.serializer(), byteArraySerde.serializer());
             RecordCollector recordCollector = new RecordCollector(producer, "RocksDBWindowStoreTest-TestRolling") {
                 @Override
-                public <K1, V1> void send(HeaderProducerRecord<K1, V1> record, Serializer<K1> keySerializer, Serializer<V1> valueSerializer) {
+                public <K1, Void, V1> void send(HeaderProducerRecord<K1, Void, V1> record, Serializer<K1> keySerializer, Serializer<V1> valueSerializer) {
                     changeLog.add(new KeyValue<>(
                                     keySerializer.serialize(record.topic(), record.key()),
                                     valueSerializer.serialize(record.topic(), record.value()))
@@ -572,10 +573,10 @@ public class RocksDBWindowStoreTest {
 
         File baseDir = Files.createTempDirectory("test").toFile();
         try {
-            Producer<byte[], byte[]> producer = new MockProducer<>(true, byteArraySerde.serializer(), byteArraySerde.serializer());
+            Producer<byte[], Void, byte[]> producer = new MockProducer<>(true, byteArraySerde.serializer(), byteArraySerde.serializer());
             RecordCollector recordCollector = new RecordCollector(producer, "RocksDBWindowStoreTest-TestRestore") {
                 @Override
-                public <K1, V1> void send(HeaderProducerRecord<K1, V1> record, Serializer<K1> keySerializer, Serializer<V1> valueSerializer) {
+                public <K1, Void, V1> void send(HeaderProducerRecord<K1, Void, V1> record, Serializer<K1> keySerializer, Serializer<V1> valueSerializer) {
                     changeLog.add(new KeyValue<>(
                                     keySerializer.serialize(record.topic(), record.key()),
                                     valueSerializer.serialize(record.topic(), record.value()))
@@ -621,10 +622,10 @@ public class RocksDBWindowStoreTest {
 
         File baseDir2 = Files.createTempDirectory("test").toFile();
         try {
-            Producer<byte[], byte[]> producer = new MockProducer<>(true, byteArraySerde.serializer(), byteArraySerde.serializer());
+            Producer<byte[], Void, byte[]> producer = new MockProducer<>(true, byteArraySerde.serializer(), byteArraySerde.serializer());
             RecordCollector recordCollector = new RecordCollector(producer, "RocksDBWindowStoreTest-TestRestoreII") {
                 @Override
-                public <K1, V1> void send(HeaderProducerRecord<K1, V1> record, Serializer<K1> keySerializer, Serializer<V1> valueSerializer) {
+                public <K1, Void, V1> void send(HeaderProducerRecord<K1, Void, V1> record, Serializer<K1> keySerializer, Serializer<V1> valueSerializer) {
                     changeLog.add(new KeyValue<>(
                                     keySerializer.serialize(record.topic(), record.key()),
                                     valueSerializer.serialize(record.topic(), record.value()))
@@ -676,10 +677,10 @@ public class RocksDBWindowStoreTest {
     public void testSegmentMaintenance() throws IOException {
         File baseDir = Files.createTempDirectory("test").toFile();
         try {
-            Producer<byte[], byte[]> producer = new MockProducer<>(true, byteArraySerde.serializer(), byteArraySerde.serializer());
+            Producer<byte[], Void, byte[]> producer = new MockProducer<>(true, byteArraySerde.serializer(), byteArraySerde.serializer());
             RecordCollector recordCollector = new RecordCollector(producer, "RocksDBWindowStoreTest-TestSegmentMaintenance") {
                 @Override
-                public <K1, V1> void send(HeaderProducerRecord<K1, V1> record, Serializer<K1> keySerializer, Serializer<V1> valueSerializer) {
+                public <K1, Void, V1> void send(HeaderProducerRecord<K1, Void, V1> record, Serializer<K1> keySerializer, Serializer<V1> valueSerializer) {
                     // do nothing
                 }
             };
@@ -779,10 +780,10 @@ public class RocksDBWindowStoreTest {
     public void testInitialLoading() throws IOException {
         File baseDir = Files.createTempDirectory("test").toFile();
         try {
-            Producer<byte[], byte[]> producer = new MockProducer<>(true, byteArraySerde.serializer(), byteArraySerde.serializer());
+            Producer<byte[], Void, byte[]> producer = new MockProducer<>(true, byteArraySerde.serializer(), byteArraySerde.serializer());
             RecordCollector recordCollector = new RecordCollector(producer, "RocksDBWindowStoreTest-TestInitialLoading") {
                 @Override
-                public <K1, V1> void send(HeaderProducerRecord<K1, V1> record, Serializer<K1> keySerializer, Serializer<V1> valueSerializer) {
+                public <K1, Void, V1> void send(HeaderProducerRecord<K1, Void, V1> record, Serializer<K1> keySerializer, Serializer<V1> valueSerializer) {
                     // do nothing
                 }
             };

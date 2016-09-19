@@ -726,9 +726,9 @@ public class StreamPartitionAssignorTest {
     private class MockInternalTopicManager extends InternalTopicManager {
 
         public Map<String, Integer> readyTopics = new HashMap<>();
-        public MockConsumer<byte[], byte[]> restoreConsumer;
+        public MockConsumer<byte[], Void, byte[]> restoreConsumer;
 
-        public MockInternalTopicManager(MockConsumer<byte[], byte[]> restoreConsumer) {
+        public MockInternalTopicManager(MockConsumer<byte[], Void, byte[]> restoreConsumer) {
             super();
 
             this.restoreConsumer = restoreConsumer;

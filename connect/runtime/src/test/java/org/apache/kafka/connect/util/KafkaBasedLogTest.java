@@ -108,18 +108,18 @@ public class KafkaBasedLogTest {
     private static final String TP1_VALUE_NEW = "VAL1_NEW";
 
     private Time time = new MockTime();
-    private KafkaBasedLog<String, String> store;
+    private KafkaBasedLog<String, Object, String> store;
 
     @Mock
-    private KafkaProducer<String, String> producer;
-    private MockConsumer<String, String> consumer;
+    private KafkaProducer<String, Object, String> producer;
+    private MockConsumer<String, Object, String> consumer;
 
-    private Map<TopicPartition, List<HeaderConsumerRecord<String, String>>> consumedRecords = new HashMap<>();
-    private Callback<HeaderConsumerRecord<String, String>> consumedCallback = new Callback<HeaderConsumerRecord<String, String>>() {
+    private Map<TopicPartition, List<HeaderConsumerRecord<String, Object, String>>> consumedRecords = new HashMap<>();
+    private Callback<HeaderConsumerRecord<String, Object, String>> consumedCallback = new Callback<HeaderConsumerRecord<String, Object, String>>() {
         @Override
-        public void onCompletion(Throwable error, HeaderConsumerRecord<String, String> record) {
+        public void onCompletion(Throwable error, HeaderConsumerRecord<String, Object, String> record) {
             TopicPartition partition = new TopicPartition(record.topic(), record.partition());
-            List<HeaderConsumerRecord<String, String>> records = consumedRecords.get(partition);
+            List<HeaderConsumerRecord<String, Object, String>> records = consumedRecords.get(partition);
             if (records == null) {
                 records = new ArrayList<>();
                 consumedRecords.put(partition, records);
@@ -222,11 +222,11 @@ public class KafkaBasedLogTest {
     public void testSendAndReadToEnd() throws Exception {
         expectStart();
         TestFuture<RecordMetadata> tp0Future = new TestFuture<>();
-        HeaderProducerRecord<String, String> tp0Record = new HeaderProducerRecord<>(TOPIC, TP0_KEY, TP0_VALUE);
+        HeaderProducerRecord<String, Object, String> tp0Record = new HeaderProducerRecord<>(TOPIC, TP0_KEY, TP0_VALUE);
         Capture<org.apache.kafka.clients.producer.Callback> callback0 = EasyMock.newCapture();
         EasyMock.expect(producer.send(EasyMock.eq(tp0Record), EasyMock.capture(callback0))).andReturn(tp0Future);
         TestFuture<RecordMetadata> tp1Future = new TestFuture<>();
-        HeaderProducerRecord<String, String> tp1Record = new HeaderProducerRecord<>(TOPIC, TP1_KEY, TP1_VALUE);
+        HeaderProducerRecord<String, Object, String> tp1Record = new HeaderProducerRecord<>(TOPIC, TP1_KEY, TP1_VALUE);
         Capture<org.apache.kafka.clients.producer.Callback> callback1 = EasyMock.newCapture();
         EasyMock.expect(producer.send(EasyMock.eq(tp1Record), EasyMock.capture(callback1))).andReturn(tp1Future);
 
@@ -392,7 +392,7 @@ public class KafkaBasedLogTest {
     public void testProducerError() throws Exception {
         expectStart();
         TestFuture<RecordMetadata> tp0Future = new TestFuture<>();
-        HeaderProducerRecord<String, String> tp0Record = new HeaderProducerRecord<>(TOPIC, TP0_KEY, TP0_VALUE);
+        HeaderProducerRecord<String, Object, String> tp0Record = new HeaderProducerRecord<>(TOPIC, TP0_KEY, TP0_VALUE);
         Capture<org.apache.kafka.clients.producer.Callback> callback0 = EasyMock.newCapture();
         EasyMock.expect(producer.send(EasyMock.eq(tp0Record), EasyMock.capture(callback0))).andReturn(tp0Future);
 

@@ -36,7 +36,7 @@ public class WallclockTimestampExtractor implements TimestampExtractor {
      * @return        the current wall clock time, expressed in milliseconds since midnight, January 1, 1970 UTC
      */
     @Override
-    public long extract(HeaderConsumerRecord<Object, Object> record) {
+    public long extract(HeaderConsumerRecord<Object, ?, Object> record) {
         return System.currentTimeMillis();
     }
 }

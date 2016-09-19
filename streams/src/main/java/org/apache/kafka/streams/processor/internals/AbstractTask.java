@@ -49,8 +49,8 @@ public abstract class AbstractTask {
                            String applicationId,
                            Collection<TopicPartition> partitions,
                            ProcessorTopology topology,
-                           Consumer<byte[], byte[]> consumer,
-                           Consumer<byte[], byte[]> restoreConsumer,
+                           Consumer<byte[], Void, byte[]> consumer,
+                           Consumer<byte[], Void, byte[]> restoreConsumer,
                            boolean isStandby,
                            StateDirectory stateDirectory,
                            final ThreadCache cache) {
