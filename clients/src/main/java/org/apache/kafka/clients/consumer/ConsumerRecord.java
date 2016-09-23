@@ -12,6 +12,10 @@
  */
 package org.apache.kafka.clients.consumer;
 
+import java.util.Map;
+
+import org.apache.kafka.clients.ClientRecord;
+import org.apache.kafka.clients.message.Message;
 import org.apache.kafka.common.record.Record;
 import org.apache.kafka.common.record.TimestampType;
 
@@ -19,21 +23,17 @@ import org.apache.kafka.common.record.TimestampType;
  * A key/value pair to be received from Kafka. This consists of a topic name and a partition number, from which the
  * record is being received and an offset that points to the record in a Kafka partition.
  */
-public final class ConsumerRecord<K, V> {
+public final class ConsumerRecord<K, V> extends ClientRecord<K, V>
+{
     public static final long NO_TIMESTAMP = Record.NO_TIMESTAMP;
     public static final int NULL_SIZE = -1;
     public static final int NULL_CHECKSUM = -1;
 
-    private final String topic;
-    private final int partition;
     private final long offset;
-    private final long timestamp;
     private final TimestampType timestampType;
     private final long checksum;
     private final int serializedKeySize;
     private final int serializedValueSize;
-    private final K key;
-    private final V value;
 
     /**
      * Creates a record to be received from a specified topic and partition (provided for
@@ -55,10 +55,10 @@ public final class ConsumerRecord<K, V> {
                 NULL_CHECKSUM, NULL_SIZE, NULL_SIZE, key, value);
     }
 
-
     /**
-     * Creates a record to be received from a specified topic and partition
-     *
+     * Creates a record to be received from a specified topic and partition (provided for
+     * compatibility with Kafka 0.10 before the message format supported message headers and payload).
+     * *
      * @param topic The topic this record is received from
      * @param partition The partition of the topic this record is received from
      * @param offset The offset of this record in the corresponding Kafka partition
@@ -80,60 +80,48 @@ public final class ConsumerRecord<K, V> {
                           int serializedValueSize,
                           K key,
                           V value) {
-        if (topic == null)
-            throw new IllegalArgumentException("Topic cannot be null");
-        this.topic = topic;
-        this.partition = partition;
+        this(topic, partition, offset, timestamp, timestampType, checksum, serializedKeySize, serializedValueSize, key, new Message<V>(null, value));
+    }
+
+
+    /**
+     * Creates a record to be received from a specified topic and partition
+     *
+     * @param topic The topic this record is received from
+     * @param partition The partition of the topic this record is received from
+     * @param offset The offset of this record in the corresponding Kafka partition
+     * @param timestamp The timestamp of the record.
+     * @param timestampType The timestamp type
+     * @param checksum The checksum (CRC32) of the full record
+     * @param serializedKeySize The length of the serialized key
+     * @param serializedValueSize The length of the serialized value
+     * @param key The key of the record, if one exists (null is allowed)
+     * @param message The message contents
+     */
+    public ConsumerRecord(String topic,
+                          int partition,
+                          long offset,
+                          long timestamp,
+                          TimestampType timestampType,
+                          long checksum,
+                          int serializedKeySize,
+                          int serializedValueSize,
+                          K key,
+                          Message<V> message) {
+        super(topic, partition, timestamp, key, message);
         this.offset = offset;
-        this.timestamp = timestamp;
         this.timestampType = timestampType;
         this.checksum = checksum;
         this.serializedKeySize = serializedKeySize;
         this.serializedValueSize = serializedValueSize;
-        this.key = key;
-        this.value = value;
     }
 
-    /**
-     * The topic this record is received from
-     */
-    public String topic() {
-        return this.topic;
-    }
-
-    /**
-     * The partition from which this record is received
-     */
-    public int partition() {
-        return this.partition;
-    }
-
-    /**
-     * The key (or null if no key is specified)
-     */
-    public K key() {
-        return key;
-    }
-
-    /**
-     * The value
-     */
-    public V value() {
-        return value;
-    }
 
     /**
      * The position of this record in the corresponding Kafka partition.
      */
     public long offset() {
         return offset;
-    }
-
-    /**
-     * The timestamp of this record
-     */
-    public long timestamp() {
-        return timestamp;
     }
 
     /**
@@ -166,12 +154,16 @@ public final class ConsumerRecord<K, V> {
         return this.serializedValueSize;
     }
 
+
     @Override
-    public String toString() {
-        return "ConsumerRecord(topic = " + topic() + ", partition = " + partition() + ", offset = " + offset()
-               + ", " + timestampType + " = " + timestamp + ", checksum = " + checksum
-               + ", serialized key size = "  + serializedKeySize
-               + ", serialized value size = " + serializedValueSize
-               + ", key = " + key + ", value = " + value + ")";
+    public String toString()
+    {
+        return "ConsumerRecord{" +
+               "offset=" + offset +
+               ", timestampType=" + timestampType +
+               ", checksum=" + checksum +
+               ", serializedKeySize=" + serializedKeySize +
+               ", serializedValueSize=" + serializedValueSize +
+               "} " + super.toString();
     }
 }

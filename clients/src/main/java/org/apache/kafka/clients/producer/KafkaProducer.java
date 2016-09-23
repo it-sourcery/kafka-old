@@ -53,6 +53,7 @@ import org.apache.kafka.common.network.ChannelBuilder;
 import org.apache.kafka.common.record.CompressionType;
 import org.apache.kafka.common.record.Record;
 import org.apache.kafka.common.record.Records;
+import org.apache.kafka.common.serialization.MessageSerializer;
 import org.apache.kafka.common.serialization.Serializer;
 import org.apache.kafka.common.utils.AppInfoParser;
 import org.apache.kafka.common.utils.KafkaThread;
@@ -452,7 +453,11 @@ public class KafkaProducer<K, V> implements Producer<K, V> {
             }
             byte[] serializedValue;
             try {
-                serializedValue = valueSerializer.serialize(record.topic(), record.value());
+                if (valueSerializer instanceof MessageSerializer){
+                    serializedValue = ((MessageSerializer)valueSerializer).serialize(record.topic(), record.message());
+                } else {
+                    serializedValue = valueSerializer.serialize(record.topic(), record.value());
+                }
             } catch (ClassCastException cce) {
                 throw new SerializationException("Can't convert value of class " + record.value().getClass().getName() +
                         " to class " + producerConfig.getClass(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG).getName() +

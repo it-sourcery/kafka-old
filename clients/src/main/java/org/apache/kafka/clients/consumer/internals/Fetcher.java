@@ -19,6 +19,7 @@ import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.NoOffsetForPartitionException;
 import org.apache.kafka.clients.consumer.OffsetOutOfRangeException;
 import org.apache.kafka.clients.consumer.OffsetResetStrategy;
+import org.apache.kafka.clients.message.Message;
 import org.apache.kafka.common.Cluster;
 import org.apache.kafka.common.KafkaException;
 import org.apache.kafka.common.Node;
@@ -51,6 +52,7 @@ import org.apache.kafka.common.requests.ListOffsetResponse;
 import org.apache.kafka.common.requests.MetadataRequest;
 import org.apache.kafka.common.requests.MetadataResponse;
 import org.apache.kafka.common.serialization.Deserializer;
+import org.apache.kafka.common.serialization.MessageDeserializer;
 import org.apache.kafka.common.utils.Time;
 import org.apache.kafka.common.utils.Utils;
 import org.slf4j.Logger;
@@ -675,13 +677,22 @@ public class Fetcher<K, V> {
             K key = keyBytes == null ? null : this.keyDeserializer.deserialize(partition.topic(), keyByteArray);
             ByteBuffer valueBytes = record.value();
             byte[] valueByteArray = valueBytes == null ? null : Utils.toArray(valueBytes);
-            V value = valueBytes == null ? null : this.valueDeserializer.deserialize(partition.topic(), valueByteArray);
-
+            Message<V> message;
+            if (valueBytes == null){
+                message = new Message<>(null, null);
+            } else {
+                if (valueDeserializer instanceof MessageDeserializer){
+                    message = ((MessageDeserializer<V>)this.valueDeserializer).deserialize(partition.topic(), valueByteArray);
+                } else {
+                    V value = this.valueDeserializer.deserialize(partition.topic(), valueByteArray);
+                    message = new Message<>(null, value);
+                }
+            }
             return new ConsumerRecord<>(partition.topic(), partition.partition(), offset,
                                         timestamp, timestampType, record.checksum(),
                                         keyByteArray == null ? ConsumerRecord.NULL_SIZE : keyByteArray.length,
                                         valueByteArray == null ? ConsumerRecord.NULL_SIZE : valueByteArray.length,
-                                        key, value);
+                                        key, message);
         } catch (RuntimeException e) {
             throw new SerializationException("Error deserializing key/value for partition " + partition +
                     " at offset " + logEntry.offset(), e);
