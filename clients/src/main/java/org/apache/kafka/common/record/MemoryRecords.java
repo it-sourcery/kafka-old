@@ -3,9 +3,9 @@
  * file distributed with this work for additional information regarding copyright ownership. The ASF licenses this file
  * to You under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the
  * License. You may obtain a copy of the License at
- * 
+ *
  * http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on
  * an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the
  * specific language governing permissions and limitations under the License.
@@ -91,14 +91,14 @@ public class MemoryRecords implements Records {
      * Append a new record and offset to the buffer
      * @return crc of the record
      */
-    public long append(long offset, long timestamp, byte[] key, byte[] value) {
+    public long append(long offset, long timestamp, byte[] key, byte[] headers, byte[] value) {
         if (!writable)
             throw new IllegalStateException("Memory records is not writable");
 
-        int size = Record.recordSize(key, value);
+        int size = Record.recordSize(key, headers, value);
         compressor.putLong(offset);
         compressor.putInt(size);
-        long crc = compressor.putRecord(timestamp, key, value);
+        long crc = compressor.putRecord(timestamp, key, headers, value);
         compressor.recordWritten(size + Records.LOG_OVERHEAD);
         return crc;
     }
@@ -115,13 +115,13 @@ public class MemoryRecords implements Records {
      * the checking should be based on the capacity of the initialized buffer rather than the write limit in order
      * to accept this single record.
      */
-    public boolean hasRoomFor(byte[] key, byte[] value) {
+    public boolean hasRoomFor(byte[] key, byte[] headers, byte[] value) {
         if (!this.writable)
             return false;
 
         return this.compressor.numRecordsWritten() == 0 ?
-            this.initialCapacity >= Records.LOG_OVERHEAD + Record.recordSize(key, value) :
-            this.writeLimit >= this.compressor.estimatedBytesWritten() + Records.LOG_OVERHEAD + Record.recordSize(key, value);
+               this.initialCapacity >= Records.LOG_OVERHEAD + Record.recordSize(key, headers, value) :
+               this.writeLimit >= this.compressor.estimatedBytesWritten() + Records.LOG_OVERHEAD + Record.recordSize(key, headers, value);
     }
 
     public boolean isFull() {
@@ -194,7 +194,7 @@ public class MemoryRecords implements Records {
             return new RecordsIterator(this.buffer.duplicate(), false);
         }
     }
-    
+
     @Override
     public String toString() {
         Iterator<LogEntry> iter = iterator();
@@ -258,9 +258,9 @@ public class MemoryRecords implements Records {
                         LogEntry logEntry = getNextEntryFromStream();
                         if (entry.record().magic() > Record.MAGIC_VALUE_V0) {
                             Record recordWithTimestamp = new Record(
-                                    logEntry.record().buffer(),
-                                    wrapperRecordTimestamp,
-                                    entry.record().timestampType()
+                                                                      logEntry.record().buffer(),
+                                                                      wrapperRecordTimestamp,
+                                                                      entry.record().timestampType()
                             );
                             logEntry = new LogEntry(logEntry.offset(), recordWithTimestamp);
                         }
@@ -282,7 +282,7 @@ public class MemoryRecords implements Records {
 
         /*
          * Read the next record from the buffer.
-         * 
+         *
          * Note that in the compressed message set, each message value size is set as the size of the un-compressed
          * version of the message value, so when we do de-compression allocating an array of the specified size for
          * reading compressed value data is sufficient.

@@ -36,6 +36,7 @@ import org.apache.kafka.common.metrics.Metrics;
 import org.apache.kafka.common.metrics.MetricsReporter;
 import org.apache.kafka.common.network.ChannelBuilder;
 import org.apache.kafka.common.network.Selector;
+import org.apache.kafka.common.record.HeadersCoder;
 import org.apache.kafka.common.requests.MetadataRequest;
 import org.apache.kafka.common.serialization.Deserializer;
 import org.apache.kafka.common.utils.AppInfoParser;
@@ -498,6 +499,7 @@ public class KafkaConsumer<K, V> implements Consumer<K, V> {
     private final ConsumerCoordinator coordinator;
     private final Deserializer<K> keyDeserializer;
     private final Deserializer<V> valueDeserializer;
+    private final HeadersCoder headersCoder;
     private final Fetcher<K, V> fetcher;
     private final ConsumerInterceptors<K, V> interceptors;
 
@@ -527,7 +529,7 @@ public class KafkaConsumer<K, V> implements Consumer<K, V> {
      * @param configs The consumer configs
      */
     public KafkaConsumer(Map<String, Object> configs) {
-        this(configs, null, null);
+        this(configs, null, null, null);
     }
 
     /**
@@ -544,20 +546,29 @@ public class KafkaConsumer<K, V> implements Consumer<K, V> {
     public KafkaConsumer(Map<String, Object> configs,
                          Deserializer<K> keyDeserializer,
                          Deserializer<V> valueDeserializer) {
-        this(new ConsumerConfig(ConsumerConfig.addDeserializerToConfig(configs, keyDeserializer, valueDeserializer)),
-            keyDeserializer,
-            valueDeserializer);
+        this(configs, null, keyDeserializer, valueDeserializer);
     }
 
     /**
-     * A consumer is instantiated by providing a {@link java.util.Properties} object as configuration.
+     * A consumer is instantiated by providing a set of key-value pairs as configuration, and a key and a value {@link Deserializer}.
      * <p>
      * Valid configuration strings are documented at {@link ConsumerConfig}
      *
-     * @param properties The consumer configuration properties
+     * @param configs The consumer configs
+     * @param headersDeserializer The deserializer for headers that implements {@link Deserializer}. The configure() method
+     *            won't be called in the consumer when the deserializer is passed in directly.
+     * @param keyDeserializer The deserializer for key that implements {@link Deserializer}. The configure() method
+     *            won't be called in the consumer when the deserializer is passed in directly.
+     * @param valueDeserializer The deserializer for value that implements {@link Deserializer}. The configure() method
+     *            won't be called in the consumer when the deserializer is passed in directly.
      */
-    public KafkaConsumer(Properties properties) {
-        this(properties, null, null);
+    public KafkaConsumer(Map<String, Object> configs,
+                         Deserializer<Map<String, String>> headersDeserializer,
+                         Deserializer<K> keyDeserializer,
+                         Deserializer<V> valueDeserializer) {
+        this(new ConsumerConfig(ConsumerConfig.addDeserializerToConfig(configs, keyDeserializer, valueDeserializer)),
+            keyDeserializer,
+            valueDeserializer);
     }
 
     /**
@@ -651,6 +662,8 @@ public class KafkaConsumer<K, V> implements Consumer<K, V> {
                     config.getInt(ConsumerConfig.AUTO_COMMIT_INTERVAL_MS_CONFIG),
                     this.interceptors,
                     config.getBoolean(ConsumerConfig.EXCLUDE_INTERNAL_TOPICS_CONFIG));
+
+            this.headersCoder = new HeadersCoder();
             if (keyDeserializer == null) {
                 this.keyDeserializer = config.getConfiguredInstance(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG,
                         Deserializer.class);
@@ -675,6 +688,7 @@ public class KafkaConsumer<K, V> implements Consumer<K, V> {
                     config.getBoolean(ConsumerConfig.CHECK_CRCS_CONFIG),
                     this.keyDeserializer,
                     this.valueDeserializer,
+                    this.headersCoder,
                     this.metadata,
                     this.subscriptions,
                     metrics,
@@ -700,6 +714,7 @@ public class KafkaConsumer<K, V> implements Consumer<K, V> {
                   ConsumerCoordinator coordinator,
                   Deserializer<K> keyDeserializer,
                   Deserializer<V> valueDeserializer,
+                  HeadersCoder headersCoder,
                   Fetcher<K, V> fetcher,
                   ConsumerInterceptors<K, V> interceptors,
                   Time time,
@@ -713,6 +728,7 @@ public class KafkaConsumer<K, V> implements Consumer<K, V> {
         this.coordinator = coordinator;
         this.keyDeserializer = keyDeserializer;
         this.valueDeserializer = valueDeserializer;
+        this.headersCoder = headersCoder;
         this.fetcher = fetcher;
         this.interceptors = interceptors;
         this.time = time;

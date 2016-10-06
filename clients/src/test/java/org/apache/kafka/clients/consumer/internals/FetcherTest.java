@@ -41,6 +41,7 @@ import org.apache.kafka.common.protocol.Errors;
 import org.apache.kafka.common.protocol.types.Struct;
 import org.apache.kafka.common.record.CompressionType;
 import org.apache.kafka.common.record.Compressor;
+import org.apache.kafka.common.record.HeadersCoder;
 import org.apache.kafka.common.record.MemoryRecords;
 import org.apache.kafka.common.record.Record;
 import org.apache.kafka.common.requests.FetchRequest;
@@ -105,13 +106,13 @@ public class FetcherTest {
         metadata.update(cluster, time.milliseconds());
         client.setNode(node);
 
-        records.append(1L, 0L, "key".getBytes(), "value-1".getBytes());
-        records.append(2L, 0L, "key".getBytes(), "value-2".getBytes());
-        records.append(3L, 0L, "key".getBytes(), "value-3".getBytes());
+        records.append(1L, 0L, "key".getBytes(), null, "value-1".getBytes());
+        records.append(2L, 0L, "key".getBytes(), null, "value-2".getBytes());
+        records.append(3L, 0L, "key".getBytes(), null, "value-3".getBytes());
         records.close();
 
-        nextRecords.append(4L, 0L, "key".getBytes(), "value-4".getBytes());
-        nextRecords.append(5L, 0L, "key".getBytes(), "value-5".getBytes());
+        nextRecords.append(4L, 0L, "key".getBytes(), null, "value-4".getBytes());
+        nextRecords.append(5L, 0L, "key".getBytes(), null, "value-5".getBytes());
         nextRecords.close();
     }
 
@@ -220,18 +221,18 @@ public class FetcherTest {
         long offset = 0;
         long timestamp = 500L;
 
-        int size = Record.recordSize(key, value);
-        long crc = Record.computeChecksum(timestamp, key, value, CompressionType.NONE, 0, -1);
+        int size = Record.recordSize(key, null, value);
+        long crc = Record.computeChecksum(timestamp, key, null, value, CompressionType.NONE, 0, -1);
 
         // write one valid record
         compressor.putLong(offset);
         compressor.putInt(size);
-        Record.write(compressor, crc, Record.computeAttributes(CompressionType.NONE), timestamp, key, value, 0, -1);
+        Record.write(compressor, crc, Record.computeAttributes(CompressionType.NONE), timestamp, key, null, value, 0, -1);
 
         // and one invalid record (note the crc)
         compressor.putLong(offset);
         compressor.putInt(size);
-        Record.write(compressor, crc + 1, Record.computeAttributes(CompressionType.NONE), timestamp, key, value, 0, -1);
+        Record.write(compressor, crc + 1, Record.computeAttributes(CompressionType.NONE), timestamp, key, null, value, 0, -1);
 
         compressor.close();
         buffer.flip();
@@ -293,9 +294,9 @@ public class FetcherTest {
         // this test verifies the fetcher updates the current fetched/consumed positions correctly for this case
 
         MemoryRecords records = MemoryRecords.emptyRecords(ByteBuffer.allocate(1024), CompressionType.NONE);
-        records.append(15L, 0L, "key".getBytes(), "value-1".getBytes());
-        records.append(20L, 0L, "key".getBytes(), "value-2".getBytes());
-        records.append(30L, 0L, "key".getBytes(), "value-3".getBytes());
+        records.append(15L, 0L, "key".getBytes(), null, "value-1".getBytes());
+        records.append(20L, 0L, "key".getBytes(), null, "value-2".getBytes());
+        records.append(30L, 0L, "key".getBytes(), null, "value-3".getBytes());
         records.close();
 
         List<ConsumerRecord<byte[], byte[]>> consumerRecords;
@@ -324,7 +325,7 @@ public class FetcherTest {
         MemoryRecords records = MemoryRecords.emptyRecords(ByteBuffer.allocate(1024), CompressionType.NONE);
         byte[] bytes = new byte[this.fetchSize];
         new Random().nextBytes(bytes);
-        records.append(1L, 0L, null, bytes);
+        records.append(1L, 0L, null, null, bytes);
         records.close();
 
         // resize the limit of the buffer to pretend it is only fetch-size large
@@ -637,7 +638,7 @@ public class FetcherTest {
             if (i > 1) {
                 this.records = MemoryRecords.emptyRecords(ByteBuffer.allocate(1024), CompressionType.NONE);
                 for (int v = 0; v < 3; v++) {
-                    this.records.append((long) i * 3 + v, Record.NO_TIMESTAMP, "key".getBytes(), String.format("value-%d", v).getBytes());
+                    this.records.append((long) i * 3 + v, Record.NO_TIMESTAMP, "key".getBytes(), null, String.format("value-%d", v).getBytes());
                 }
                 this.records.close();
             }
@@ -727,6 +728,7 @@ public class FetcherTest {
                 true, // check crc
                 keyDeserializer,
                 valueDeserializer,
+                new HeadersCoder(),
                 metadata,
                 subscriptions,
                 metrics,

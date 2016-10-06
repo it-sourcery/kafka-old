@@ -39,6 +39,7 @@ import org.apache.kafka.common.protocol.ApiKeys;
 import org.apache.kafka.common.protocol.Errors;
 import org.apache.kafka.common.protocol.types.Struct;
 import org.apache.kafka.common.record.CompressionType;
+import org.apache.kafka.common.record.HeadersCoder;
 import org.apache.kafka.common.record.MemoryRecords;
 import org.apache.kafka.common.requests.FetchResponse;
 import org.apache.kafka.common.requests.FetchResponse.PartitionData;
@@ -1044,7 +1045,7 @@ public class KafkaConsumerTest {
             int fetchCount = fetchEntry.getValue().count;
             MemoryRecords records = MemoryRecords.emptyRecords(ByteBuffer.allocate(1024), CompressionType.NONE);
             for (int i = 0; i < fetchCount; i++)
-                records.append(fetchOffset + i, 0L, ("key-" + i).getBytes(), ("value-" + i).getBytes());
+                records.append(fetchOffset + i, 0L, ("key-" + i).getBytes(), ("headers-" + i).getBytes(), ("value-" + i).getBytes());
             records.close();
             tpResponses.put(partition, new FetchResponse.PartitionData(Errors.NONE.code(), 0, records.buffer()));
         }
@@ -1082,6 +1083,7 @@ public class KafkaConsumerTest {
 
         Deserializer<String> keyDeserializer = new StringDeserializer();
         Deserializer<String> valueDeserializer = new StringDeserializer();
+        HeadersCoder headersCoder = new HeadersCoder();
 
         OffsetResetStrategy autoResetStrategy = OffsetResetStrategy.EARLIEST;
         OffsetCommitCallback defaultCommitCallback = new ConsumerCoordinator.DefaultOffsetCommitCallback();
@@ -1119,6 +1121,7 @@ public class KafkaConsumerTest {
                 checkCrcs,
                 keyDeserializer,
                 valueDeserializer,
+                headersCoder,
                 metadata,
                 subscriptions,
                 metrics,
@@ -1131,6 +1134,7 @@ public class KafkaConsumerTest {
                 consumerCoordinator,
                 keyDeserializer,
                 valueDeserializer,
+                headersCoder,
                 fetcher,
                 interceptors,
                 time,
