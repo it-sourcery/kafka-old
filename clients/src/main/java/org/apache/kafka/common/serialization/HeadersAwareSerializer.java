@@ -12,13 +12,16 @@
  */
 package org.apache.kafka.common.serialization;
 
+import java.util.Collections;
 import java.util.Map;
 
 public abstract class HeadersAwareSerializer<T> implements Serializer<T>
 {
 
-   public byte[] serialize(String topic, Map<Integer, byte[]> headers, T data){
-      return this.serialize(topic, data);
+   public abstract byte[] serialize(String topic, Map<Integer, byte[]> headers, T data);
+
+   public byte[] serialize(String topic, T data){
+      return serialize(topic, Collections.EMPTY_MAP, data);
    }
 
 }

@@ -12,13 +12,17 @@
  */
 package org.apache.kafka.common.serialization;
 
+import java.util.Collections;
 import java.util.Map;
 
 public abstract class HeadersAwareDeserializer<T> implements Deserializer<T>
 {
 
-   public T deserialize(String topic, Map<Integer, byte[]> headers, byte[] data){
-      return this.deserialize(topic, data);
+   public abstract T deserialize(String topic, Map<Integer, byte[]> headers, byte[] data);
+
+   public T deserialize(String topic, byte[] data){
+      return (T)deserialize(topic, Collections.EMPTY_MAP, data);
    }
+
 
 }
