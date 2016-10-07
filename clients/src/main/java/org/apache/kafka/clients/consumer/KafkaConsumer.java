@@ -552,6 +552,17 @@ public class KafkaConsumer<K, V> implements Consumer<K, V> {
     }
 
     /**
+     * A consumer is instantiated by providing a {@link java.util.Properties} object as configuration.
+     * <p>
+     * Valid configuration strings are documented at {@link ConsumerConfig}
+     *
+     * @param properties The consumer configuration properties
+     */
+    public KafkaConsumer(Properties properties) {
+        this(properties, null, null);
+    }
+
+    /**
      * A consumer is instantiated by providing a {@link java.util.Properties} object as configuration, and a
      * key and a value {@link Deserializer}.
      * <p>
