@@ -59,6 +59,7 @@ public final class ConsumerRecord<K, V> {
                 NULL_CHECKSUM, null, NULL_SIZE, NULL_SIZE, key, value);
     }
 
+
     /**
      * Creates a record to be received from a specified topic and partition
      *
