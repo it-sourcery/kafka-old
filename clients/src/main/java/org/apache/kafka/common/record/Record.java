@@ -43,9 +43,7 @@ public final class Record {
    public static final int KEY_SIZE_LENGTH = 4;
    public static final int KEY_OFFSET_V0 = KEY_SIZE_OFFSET_V0 + KEY_SIZE_LENGTH;
    public static final int KEY_OFFSET_V1_V2 = KEY_SIZE_OFFSET_V1_V2 + KEY_SIZE_LENGTH;
-
    public static final int HEADERS_SIZE_LENGTH = 4;
-
    public static final int VALUE_SIZE_LENGTH = 4;
 
    /**

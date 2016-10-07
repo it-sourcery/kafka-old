@@ -120,8 +120,8 @@ public class MemoryRecords implements Records {
             return false;
 
         return this.compressor.numRecordsWritten() == 0 ?
-               this.initialCapacity >= Records.LOG_OVERHEAD + Record.recordSize(key, headers, value) :
-               this.writeLimit >= this.compressor.estimatedBytesWritten() + Records.LOG_OVERHEAD + Record.recordSize(key, headers, value);
+            this.initialCapacity >= Records.LOG_OVERHEAD + Record.recordSize(key, headers, value) :
+            this.writeLimit >= this.compressor.estimatedBytesWritten() + Records.LOG_OVERHEAD + Record.recordSize(key, headers, value);
     }
 
     public boolean isFull() {
@@ -258,9 +258,9 @@ public class MemoryRecords implements Records {
                         LogEntry logEntry = getNextEntryFromStream();
                         if (entry.record().magic() > Record.MAGIC_VALUE_V0) {
                             Record recordWithTimestamp = new Record(
-                                                                      logEntry.record().buffer(),
-                                                                      wrapperRecordTimestamp,
-                                                                      entry.record().timestampType()
+                                    logEntry.record().buffer(),
+                                    wrapperRecordTimestamp,
+                                    entry.record().timestampType()
                             );
                             logEntry = new LogEntry(logEntry.offset(), recordWithTimestamp);
                         }

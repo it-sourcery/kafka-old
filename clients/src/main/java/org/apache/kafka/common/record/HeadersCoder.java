@@ -30,7 +30,7 @@ public class HeadersCoder
 {
    public byte[] encode(Map<Integer, byte[]> headers){
       byte[] bytes = null;
-      if (headers != null && headers.size() > 0){
+      if (headers != null && !headers.isEmpty()){
          try {
             bytes = encodeInternal(headers);
          } catch (IOException e) {
@@ -137,14 +137,4 @@ public class HeadersCoder
             dos.close();
       }
    }
-
-   public byte[] toByteArray(Integer key, byte[] bytes){
-      ByteBuffer byteBuffer = ByteBuffer.allocate(4 + 4 + bytes.length);
-      byteBuffer.putInt(key);
-      byteBuffer.putInt(bytes.length);
-      byteBuffer.put(bytes);
-      return byteBuffer.array();
-   }
-
-
 }

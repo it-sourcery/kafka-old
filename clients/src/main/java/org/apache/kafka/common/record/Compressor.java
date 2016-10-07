@@ -53,7 +53,7 @@ public class Compressor {
         @Override
         public Constructor get() throws ClassNotFoundException, NoSuchMethodException {
             return Class.forName("org.xerial.snappy.SnappyOutputStream")
-                        .getConstructor(OutputStream.class, Integer.TYPE);
+                .getConstructor(OutputStream.class, Integer.TYPE);
         }
     });
 
@@ -61,7 +61,7 @@ public class Compressor {
         @Override
         public Constructor get() throws ClassNotFoundException, NoSuchMethodException {
             return Class.forName("org.apache.kafka.common.record.KafkaLZ4BlockOutputStream")
-                        .getConstructor(OutputStream.class);
+                .getConstructor(OutputStream.class);
         }
     });
 
@@ -69,7 +69,7 @@ public class Compressor {
         @Override
         public Constructor get() throws ClassNotFoundException, NoSuchMethodException {
             return Class.forName("org.xerial.snappy.SnappyInputStream")
-                        .getConstructor(InputStream.class);
+                .getConstructor(InputStream.class);
         }
     });
 
@@ -77,7 +77,7 @@ public class Compressor {
         @Override
         public Constructor get() throws ClassNotFoundException, NoSuchMethodException {
             return Class.forName("org.apache.kafka.common.record.KafkaLZ4BlockInputStream")
-                        .getConstructor(InputStream.class, Boolean.TYPE);
+                .getConstructor(InputStream.class, Boolean.TYPE);
         }
     });
 
@@ -140,8 +140,8 @@ public class Compressor {
             buffer.putInt(initPos + Records.LOG_OVERHEAD + Record.KEY_OFFSET_V1_V2, valueSize);
             // compute and fill the crc at the beginning of the message
             long crc = Record.computeChecksum(buffer,
-                                              initPos + Records.LOG_OVERHEAD + Record.MAGIC_OFFSET,
-                                              pos - initPos - Records.LOG_OVERHEAD - Record.MAGIC_OFFSET);
+                initPos + Records.LOG_OVERHEAD + Record.MAGIC_OFFSET,
+                pos - initPos - Records.LOG_OVERHEAD - Record.MAGIC_OFFSET);
             Utils.writeUnsignedInt(buffer, initPos + Records.LOG_OVERHEAD + Record.CRC_OFFSET, crc);
             // reset the position
             buffer.position(pos);
@@ -149,7 +149,7 @@ public class Compressor {
             // update the compression ratio
             this.compressionRate = (float) buffer.position() / this.writtenUncompressed;
             TYPE_TO_RATE[type.id] = TYPE_TO_RATE[type.id] * COMPRESSION_RATE_DAMPING_FACTOR +
-                                    compressionRate * (1 - COMPRESSION_RATE_DAMPING_FACTOR);
+                compressionRate * (1 - COMPRESSION_RATE_DAMPING_FACTOR);
         }
     }
 
@@ -288,7 +288,7 @@ public class Compressor {
                 case LZ4:
                     try {
                         InputStream stream = (InputStream) lz4InputStreamSupplier.get().newInstance(buffer,
-                                                                                                    messageVersion == Record.MAGIC_VALUE_V0);
+                                messageVersion == Record.MAGIC_VALUE_V0);
                         return new DataInputStream(stream);
                     } catch (Exception e) {
                         throw new KafkaException(e);

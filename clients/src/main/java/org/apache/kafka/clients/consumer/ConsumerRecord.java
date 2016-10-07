@@ -59,35 +59,6 @@ public final class ConsumerRecord<K, V> {
                 NULL_CHECKSUM, null, NULL_SIZE, NULL_SIZE, key, value);
     }
 
-
-
-    /**
-     * Creates a record to be received from a specified topic and partition
-     *
-     * @param topic The topic this record is received from
-     * @param partition The partition of the topic this record is received from
-     * @param offset The offset of this record in the corresponding Kafka partition
-     * @param timestamp The timestamp of the record.
-     * @param timestampType The timestamp type
-     * @param checksum The checksum (CRC32) of the full record
-     * @param serializedKeySize The length of the serialized key
-     * @param serializedValueSize The length of the serialized value
-     * @param key The key of the record, if one exists (null is allowed)
-     * @param value The record contents
-     */
-    public ConsumerRecord(String topic,
-                          int partition,
-                          long offset,
-                          long timestamp,
-                          TimestampType timestampType,
-                          long checksum,
-                          int serializedKeySize,
-                          int serializedValueSize,
-                          K key,
-                          V value){
-        this(topic, partition, offset, timestamp, timestampType, checksum, null, serializedKeySize, serializedValueSize, key, value);
-    }
-
     /**
      * Creates a record to be received from a specified topic and partition
      *
@@ -144,7 +115,7 @@ public final class ConsumerRecord<K, V> {
     }
 
     /**
-     * The key (or null if no key is specified)
+     * The headers
      */
     public Map<Integer, byte[]> headers() {
         return headers;

@@ -52,6 +52,7 @@ import org.apache.kafka.common.requests.ListOffsetResponse;
 import org.apache.kafka.common.requests.MetadataRequest;
 import org.apache.kafka.common.requests.MetadataResponse;
 import org.apache.kafka.common.serialization.Deserializer;
+import org.apache.kafka.common.serialization.HeadersAwareDeserializer;
 import org.apache.kafka.common.utils.Time;
 import org.apache.kafka.common.utils.Utils;
 import org.slf4j.Logger;
@@ -162,41 +163,41 @@ public class Fetcher<K, V> {
 
             numInFlightFetches.incrementAndGet();
             client.send(fetchTarget, ApiKeys.FETCH, request)
-                  .addListener(new RequestFutureListener<ClientResponse>() {
-                      @Override
-                      public void onSuccess(ClientResponse resp) {
-                          numInFlightFetches.decrementAndGet();
+                    .addListener(new RequestFutureListener<ClientResponse>() {
+                        @Override
+                        public void onSuccess(ClientResponse resp) {
+                            numInFlightFetches.decrementAndGet();
 
-                          FetchResponse response = new FetchResponse(resp.responseBody());
-                          if (!matchesRequestedPartitions(request, response)) {
-                              // obviously we expect the broker to always send us valid responses, so this check
-                              // is mainly for test cases where mock fetch responses must be manually crafted.
-                              log.warn("Ignoring fetch response containing partitions {} since it does not match " +
-                                       "the requested partitions {}", response.responseData().keySet(),
-                                       request.fetchData().keySet());
-                              return;
-                          }
+                            FetchResponse response = new FetchResponse(resp.responseBody());
+                            if (!matchesRequestedPartitions(request, response)) {
+                                // obviously we expect the broker to always send us valid responses, so this check
+                                // is mainly for test cases where mock fetch responses must be manually crafted.
+                                log.warn("Ignoring fetch response containing partitions {} since it does not match " +
+                                        "the requested partitions {}", response.responseData().keySet(),
+                                        request.fetchData().keySet());
+                                return;
+                            }
 
-                          Set<TopicPartition> partitions = new HashSet<>(response.responseData().keySet());
-                          FetchResponseMetricAggregator metricAggregator = new FetchResponseMetricAggregator(sensors, partitions);
+                            Set<TopicPartition> partitions = new HashSet<>(response.responseData().keySet());
+                            FetchResponseMetricAggregator metricAggregator = new FetchResponseMetricAggregator(sensors, partitions);
 
-                          for (Map.Entry<TopicPartition, FetchResponse.PartitionData> entry : response.responseData().entrySet()) {
-                              TopicPartition partition = entry.getKey();
-                              long fetchOffset = request.fetchData().get(partition).offset;
-                              FetchResponse.PartitionData fetchData = entry.getValue();
-                              completedFetches.add(new CompletedFetch(partition, fetchOffset, fetchData, metricAggregator));
-                          }
+                            for (Map.Entry<TopicPartition, FetchResponse.PartitionData> entry : response.responseData().entrySet()) {
+                                TopicPartition partition = entry.getKey();
+                                long fetchOffset = request.fetchData().get(partition).offset;
+                                FetchResponse.PartitionData fetchData = entry.getValue();
+                                completedFetches.add(new CompletedFetch(partition, fetchOffset, fetchData, metricAggregator));
+                            }
 
-                          sensors.fetchLatency.record(resp.requestLatencyMs());
-                          sensors.fetchThrottleTimeSensor.record(response.getThrottleTime());
-                      }
+                            sensors.fetchLatency.record(resp.requestLatencyMs());
+                            sensors.fetchThrottleTimeSensor.record(response.getThrottleTime());
+                        }
 
-                      @Override
-                      public void onFailure(RuntimeException e) {
-                          numInFlightFetches.decrementAndGet();
-                          log.debug("Fetch request to {} failed", fetchTarget, e);
-                      }
-                  });
+                        @Override
+                        public void onFailure(RuntimeException e) {
+                            numInFlightFetches.decrementAndGet();
+                            log.debug("Fetch request to {} failed", fetchTarget, e);
+                        }
+                    });
         }
     }
 
@@ -298,7 +299,7 @@ public class Fetcher<K, V> {
                             shouldRetry = true;
                         else
                             throw new KafkaException("Unexpected error fetching metadata for topic " + topic,
-                                                     error.exception());
+                                    error.exception());
                     }
                 }
 
@@ -433,7 +434,7 @@ public class Fetcher<K, V> {
                 long nextOffset = partRecords.get(partRecords.size() - 1).offset() + 1;
 
                 log.trace("Returning fetched records at offset {} for assigned partition {} and update " +
-                          "position to {}", position, partitionRecords.partition, nextOffset);
+                        "position to {}", position, partitionRecords.partition, nextOffset);
 
                 List<ConsumerRecord<K, V>> records = drained.get(partitionRecords.partition);
                 if (records == null) {
@@ -449,7 +450,7 @@ public class Fetcher<K, V> {
                 // these records aren't next in line based on the last consumed position, ignore them
                 // they must be from an obsolete request
                 log.debug("Ignoring fetched records for {} at offset {} since the current position is {}",
-                          partitionRecords.partition, partitionRecords.fetchOffset, position);
+                        partitionRecords.partition, partitionRecords.fetchOffset, position);
             }
         }
 
@@ -479,12 +480,12 @@ public class Fetcher<K, V> {
             Node node = info.leader();
             ListOffsetRequest request = new ListOffsetRequest(-1, partitions);
             return client.send(node, ApiKeys.LIST_OFFSETS, request)
-                         .compose(new RequestFutureAdapter<ClientResponse, Long>() {
-                             @Override
-                             public void onSuccess(ClientResponse response, RequestFuture<Long> future) {
-                                 handleListOffsetResponse(topicPartition, response, future);
-                             }
-                         });
+                    .compose(new RequestFutureAdapter<ClientResponse, Long>() {
+                        @Override
+                        public void onSuccess(ClientResponse response, RequestFuture<Long> future) {
+                            handleListOffsetResponse(topicPartition, response, future);
+                        }
+                    });
         }
     }
 
@@ -507,13 +508,13 @@ public class Fetcher<K, V> {
 
             future.complete(offset);
         } else if (errorCode == Errors.NOT_LEADER_FOR_PARTITION.code()
-                   || errorCode == Errors.UNKNOWN_TOPIC_OR_PARTITION.code()) {
+                || errorCode == Errors.UNKNOWN_TOPIC_OR_PARTITION.code()) {
             log.debug("Attempt to fetch offsets for partition {} failed due to obsolete leadership information, retrying.",
-                      topicPartition);
+                    topicPartition);
             future.raise(Errors.forCode(errorCode));
         } else {
             log.warn("Attempt to fetch offsets for partition {} failed due to: {}",
-                     topicPartition, Errors.forCode(errorCode).message());
+                    topicPartition, Errors.forCode(errorCode).message());
             future.raise(new StaleMetadataException());
         }
     }
@@ -587,7 +588,7 @@ public class Fetcher<K, V> {
                 Long position = subscriptions.position(tp);
                 if (position == null || position != fetchOffset) {
                     log.debug("Discarding stale fetch response for partition {} since its offset {} does not match " +
-                              "the expected offset {}", tp, fetchOffset, position);
+                            "the expected offset {}", tp, fetchOffset, position);
                     return null;
                 }
 
@@ -619,21 +620,21 @@ public class Fetcher<K, V> {
                     // record this exception
                     Map<TopicPartition, Long> recordTooLargePartitions = Collections.singletonMap(tp, fetchOffset);
                     throw new RecordTooLargeException("There are some messages at [Partition=Offset]: "
-                                                      + recordTooLargePartitions
-                                                      + " whose size is larger than the fetch size "
-                                                      + this.fetchSize
-                                                      + " and hence cannot be ever returned."
-                                                      + " Increase the fetch size on the client (using max.partition.fetch.bytes),"
-                                                      + " or decrease the maximum message size the broker will allow (using message.max.bytes).",
-                                                      recordTooLargePartitions);
+                            + recordTooLargePartitions
+                            + " whose size is larger than the fetch size "
+                            + this.fetchSize
+                            + " and hence cannot be ever returned."
+                            + " Increase the fetch size on the client (using max.partition.fetch.bytes),"
+                            + " or decrease the maximum message size the broker will allow (using message.max.bytes).",
+                            recordTooLargePartitions);
                 }
             } else if (partition.errorCode == Errors.NOT_LEADER_FOR_PARTITION.code()
-                       || partition.errorCode == Errors.UNKNOWN_TOPIC_OR_PARTITION.code()) {
+                    || partition.errorCode == Errors.UNKNOWN_TOPIC_OR_PARTITION.code()) {
                 this.metadata.requestUpdate();
             } else if (partition.errorCode == Errors.OFFSET_OUT_OF_RANGE.code()) {
                 if (fetchOffset != subscriptions.position(tp)) {
                     log.debug("Discarding stale fetch response for partition {} since the fetched offset {}" +
-                              "does not match the current offset {}", tp, fetchOffset, subscriptions.position(tp));
+                            "does not match the current offset {}", tp, fetchOffset, subscriptions.position(tp));
                 } else if (subscriptions.hasDefaultOffsetResetPolicy()) {
                     log.info("Fetch offset {} is out of range for partition {}, resetting offset", fetchOffset, tp);
                     subscriptions.needOffsetReset(tp);
@@ -666,7 +667,7 @@ public class Fetcher<K, V> {
                 record.ensureValid();
             } catch (InvalidRecordException e) {
                 throw new KafkaException("Record for partition " + partition + " at offset " + logEntry.offset()
-                                         + " is invalid, cause: " + e.getMessage());
+                        + " is invalid, cause: " + e.getMessage());
             }
         }
 
@@ -674,29 +675,41 @@ public class Fetcher<K, V> {
             long offset = logEntry.offset();
             long timestamp = record.timestamp();
             TimestampType timestampType = record.timestampType();
-            ByteBuffer keyBytes = record.key();
-            byte[] keyByteArray = keyBytes == null ? null : Utils.toArray(keyBytes);
-            K key = keyBytes == null ? null : this.keyDeserializer.deserialize(partition.topic(), keyByteArray);
-
-
             ByteBuffer headersBytes = record.headers();
             byte[] headersByteArray = headersBytes == null ? null : Utils.toArray(headersBytes);
             Map<Integer, byte[]> headers = headersCoder.decode(headersByteArray);
-
-
-
+            ByteBuffer keyBytes = record.key();
+            byte[] keyByteArray = keyBytes == null ? null : Utils.toArray(keyBytes);
+            K key = null;
+            if (keyBytes != null) {
+                if (valueDeserializer instanceof HeadersAwareDeserializer){
+                    key = ((HeadersAwareDeserializer<K>)this.keyDeserializer).deserialize(partition.topic(), headers, keyByteArray);
+                } else
+                {
+                    key = this.keyDeserializer.deserialize(partition.topic(), keyByteArray);
+                }
+            }
             ByteBuffer valueBytes = record.value();
             byte[] valueByteArray = valueBytes == null ? null : Utils.toArray(valueBytes);
-            V value = valueBytes == null ? null : this.valueDeserializer.deserialize(partition.topic(), valueByteArray);
+            V value = null;
+            if (valueBytes != null){
+                if (valueDeserializer instanceof HeadersAwareDeserializer){
+                    value = ((HeadersAwareDeserializer<V>)this.valueDeserializer).deserialize(partition.topic(), headers, valueByteArray);
+                } else
+                {
+                    value = this.valueDeserializer.deserialize(partition.topic(), valueByteArray);
+                }
+            }
 
             return new ConsumerRecord<>(partition.topic(), partition.partition(), offset,
-                                              timestamp, timestampType, record.checksum(), headers,
-                                              keyByteArray == null ? ConsumerRecord.NULL_SIZE : keyByteArray.length,
-                                              valueByteArray == null ? ConsumerRecord.NULL_SIZE : valueByteArray.length,
-                                              key, value);
+                                        timestamp, timestampType, record.checksum(),
+                                        headers,
+                                        keyByteArray == null ? ConsumerRecord.NULL_SIZE : keyByteArray.length,
+                                        valueByteArray == null ? ConsumerRecord.NULL_SIZE : valueByteArray.length,
+                                        key, value);
         } catch (RuntimeException e) {
             throw new SerializationException("Error deserializing key/value for partition " + partition +
-                                             " at offset " + logEntry.offset(), e);
+                    " at offset " + logEntry.offset(), e);
         }
     }
 
@@ -811,47 +824,47 @@ public class Fetcher<K, V> {
 
             this.bytesFetched = metrics.sensor("bytes-fetched");
             this.bytesFetched.add(metrics.metricName("fetch-size-avg",
-                                                     this.metricGrpName,
-                                                     "The average number of bytes fetched per request"), new Avg());
+                this.metricGrpName,
+                "The average number of bytes fetched per request"), new Avg());
             this.bytesFetched.add(metrics.metricName("fetch-size-max",
-                                                     this.metricGrpName,
-                                                     "The maximum number of bytes fetched per request"), new Max());
+                this.metricGrpName,
+                "The maximum number of bytes fetched per request"), new Max());
             this.bytesFetched.add(metrics.metricName("bytes-consumed-rate",
-                                                     this.metricGrpName,
-                                                     "The average number of bytes consumed per second"), new Rate());
+                this.metricGrpName,
+                "The average number of bytes consumed per second"), new Rate());
 
             this.recordsFetched = metrics.sensor("records-fetched");
             this.recordsFetched.add(metrics.metricName("records-per-request-avg",
-                                                       this.metricGrpName,
-                                                       "The average number of records in each request"), new Avg());
+                this.metricGrpName,
+                "The average number of records in each request"), new Avg());
             this.recordsFetched.add(metrics.metricName("records-consumed-rate",
-                                                       this.metricGrpName,
-                                                       "The average number of records consumed per second"), new Rate());
+                this.metricGrpName,
+                "The average number of records consumed per second"), new Rate());
 
             this.fetchLatency = metrics.sensor("fetch-latency");
             this.fetchLatency.add(metrics.metricName("fetch-latency-avg",
-                                                     this.metricGrpName,
-                                                     "The average time taken for a fetch request."), new Avg());
+                this.metricGrpName,
+                "The average time taken for a fetch request."), new Avg());
             this.fetchLatency.add(metrics.metricName("fetch-latency-max",
-                                                     this.metricGrpName,
-                                                     "The max time taken for any fetch request."), new Max());
+                this.metricGrpName,
+                "The max time taken for any fetch request."), new Max());
             this.fetchLatency.add(metrics.metricName("fetch-rate",
-                                                     this.metricGrpName,
-                                                     "The number of fetch requests per second."), new Rate(new Count()));
+                this.metricGrpName,
+                "The number of fetch requests per second."), new Rate(new Count()));
 
             this.recordsFetchLag = metrics.sensor("records-lag");
             this.recordsFetchLag.add(metrics.metricName("records-lag-max",
-                                                        this.metricGrpName,
-                                                        "The maximum lag in terms of number of records for any partition in this window"), new Max());
+                this.metricGrpName,
+                "The maximum lag in terms of number of records for any partition in this window"), new Max());
 
             this.fetchThrottleTimeSensor = metrics.sensor("fetch-throttle-time");
             this.fetchThrottleTimeSensor.add(metrics.metricName("fetch-throttle-time-avg",
-                                                                this.metricGrpName,
-                                                                "The average throttle time in ms"), new Avg());
+                                                         this.metricGrpName,
+                                                         "The average throttle time in ms"), new Avg());
 
             this.fetchThrottleTimeSensor.add(metrics.metricName("fetch-throttle-time-max",
-                                                                this.metricGrpName,
-                                                                "The maximum throttle time in ms"), new Max());
+                                                         this.metricGrpName,
+                                                         "The maximum throttle time in ms"), new Max());
         }
 
         public void recordTopicFetchMetrics(String topic, int bytes, int records) {
@@ -863,17 +876,17 @@ public class Fetcher<K, V> {
 
                 bytesFetched = this.metrics.sensor(name);
                 bytesFetched.add(this.metrics.metricName("fetch-size-avg",
-                                                         this.metricGrpName,
-                                                         "The average number of bytes fetched per request for topic " + topic,
-                                                         metricTags), new Avg());
+                        this.metricGrpName,
+                        "The average number of bytes fetched per request for topic " + topic,
+                        metricTags), new Avg());
                 bytesFetched.add(this.metrics.metricName("fetch-size-max",
-                                                         this.metricGrpName,
-                                                         "The maximum number of bytes fetched per request for topic " + topic,
-                                                         metricTags), new Max());
+                        this.metricGrpName,
+                        "The maximum number of bytes fetched per request for topic " + topic,
+                        metricTags), new Max());
                 bytesFetched.add(this.metrics.metricName("bytes-consumed-rate",
-                                                         this.metricGrpName,
-                                                         "The average number of bytes consumed per second for topic " + topic,
-                                                         metricTags), new Rate());
+                        this.metricGrpName,
+                        "The average number of bytes consumed per second for topic " + topic,
+                        metricTags), new Rate());
             }
             bytesFetched.record(bytes);
 
@@ -886,13 +899,13 @@ public class Fetcher<K, V> {
 
                 recordsFetched = this.metrics.sensor(name);
                 recordsFetched.add(this.metrics.metricName("records-per-request-avg",
-                                                           this.metricGrpName,
-                                                           "The average number of records in each request for topic " + topic,
-                                                           metricTags), new Avg());
+                        this.metricGrpName,
+                        "The average number of records in each request for topic " + topic,
+                        metricTags), new Avg());
                 recordsFetched.add(this.metrics.metricName("records-consumed-rate",
-                                                           this.metricGrpName,
-                                                           "The average number of records consumed per second for topic " + topic,
-                                                           metricTags), new Rate());
+                        this.metricGrpName,
+                        "The average number of records consumed per second for topic " + topic,
+                        metricTags), new Rate());
             }
             recordsFetched.record(records);
         }

@@ -54,6 +54,7 @@ import org.apache.kafka.common.record.CompressionType;
 import org.apache.kafka.common.record.HeadersCoder;
 import org.apache.kafka.common.record.Record;
 import org.apache.kafka.common.record.Records;
+import org.apache.kafka.common.serialization.HeadersAwareSerializer;
 import org.apache.kafka.common.serialization.Serializer;
 import org.apache.kafka.common.utils.AppInfoParser;
 import org.apache.kafka.common.utils.KafkaThread;
@@ -446,21 +447,29 @@ public class KafkaProducer<K, V> implements Producer<K, V> {
             Cluster cluster = clusterAndWaitTime.cluster;
             byte[] serializedKey;
             try {
-                serializedKey = keySerializer.serialize(record.topic(), record.key());
+                if (keySerializer instanceof HeadersAwareSerializer){
+                    serializedKey = ((HeadersAwareSerializer<K>)keySerializer).serialize(record.topic(), record.headers(), record.key());
+                } else {
+                    serializedKey = keySerializer.serialize(record.topic(), record.key());
+                }
             } catch (ClassCastException cce) {
                 throw new SerializationException("Can't convert key of class " + record.key().getClass().getName() +
                         " to class " + producerConfig.getClass(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG).getName() +
                         " specified in key.serializer");
             }
-            byte[] serializedHeaders = headersCoder.encode(record.headers());
             byte[] serializedValue;
             try {
-                serializedValue = valueSerializer.serialize(record.topic(), record.value());
+                if (valueSerializer instanceof HeadersAwareSerializer){
+                    serializedValue = ((HeadersAwareSerializer<V>)valueSerializer).serialize(record.topic(), record.headers(), record.value());
+                } else {
+                    serializedValue = valueSerializer.serialize(record.topic(), record.value());
+                }
             } catch (ClassCastException cce) {
                 throw new SerializationException("Can't convert value of class " + record.value().getClass().getName() +
                         " to class " + producerConfig.getClass(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG).getName() +
                         " specified in value.serializer");
             }
+            byte[] serializedHeaders = headersCoder.encode(record.headers());
 
             int partition = partition(record, serializedKey, serializedValue, cluster);
             int serializedSize = Records.LOG_OVERHEAD + Record.recordSize(serializedKey, serializedHeaders, serializedValue);

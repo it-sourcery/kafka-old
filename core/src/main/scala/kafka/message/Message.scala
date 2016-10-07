@@ -1,19 +1,19 @@
 /**
-  * Licensed to the Apache Software Foundation (ASF) under one or more
-  * contributor license agreements.  See the NOTICE file distributed with
-  * this work for additional information regarding copyright ownership.
-  * The ASF licenses this file to You under the Apache License, Version 2.0
-  * (the "License"); you may not use this file except in compliance with
-  * the License.  You may obtain a copy of the License at
-  *
-  *    http://www.apache.org/licenses/LICENSE-2.0
-  *
-  * Unless required by applicable law or agreed to in writing, software
-  * distributed under the License is distributed on an "AS IS" BASIS,
-  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-  * See the License for the specific language governing permissions and
-  * limitations under the License.
-  */
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 
 package kafka.message
 
@@ -26,13 +26,13 @@ import kafka.utils._
 import org.apache.kafka.common.utils.Utils
 
 /**
-  * Constants related to messages
-  */
+ * Constants related to messages
+ */
 object Message {
 
   /**
-    * The current offset and size for all the fixed-length fields
-    */
+   * The current offset and size for all the fixed-length fields
+   */
   val CrcOffset = 0
   val CrcLength = 4
   val MagicOffset = CrcOffset + CrcLength
@@ -61,47 +61,48 @@ object Message {
   )
 
   /**
-    * The amount of overhead bytes in a message
-    * This value is only used to check if the message size is valid or not. So the minimum possible message bytes is
-    * used here, which comes from a message in message format V0 with empty key and value.
-    */
+   * The amount of overhead bytes in a message
+   * This value is only used to check if the message size is valid or not. So the minimum possible message bytes is
+   * used here, which comes from a message in message format V0 with empty key and value.
+   */
   val MinMessageOverhead = KeyOffset_V0 + ValueSizeLength
 
   /**
-    * The "magic" value
-    * When magic value is 0, the message uses absolute offset and does not have a timestamp field.
-    * When magic value is 1, the message uses relative offset and has a timestamp field.
-    */
+   * The "magic" value
+   * When magic value is 0, the message uses absolute offset and does not have a timestamp field.
+   * When magic value is 1, the message uses relative offset and has a timestamp field.
+   * When magic value is 2, the message uses relative offset and has a timestamp field, and headers.
+   */
   val MagicValue_V0: Byte = 0
   val MagicValue_V1: Byte = 1
   val MagicValue_V2: Byte = 2
   val CurrentMagicValue: Byte = 2
 
   /**
-    * Specifies the mask for the compression code. 3 bits to hold the compression codec.
-    * 0 is reserved to indicate no compression
-    */
+   * Specifies the mask for the compression code. 3 bits to hold the compression codec.
+   * 0 is reserved to indicate no compression
+   */
   val CompressionCodeMask: Int = 0x07
   /**
-    * Specifies the mask for timestamp type. 1 bit at the 4th least significant bit.
-    * 0 for CreateTime, 1 for LogAppendTime
-    */
+   * Specifies the mask for timestamp type. 1 bit at the 4th least significant bit.
+   * 0 for CreateTime, 1 for LogAppendTime
+   */
   val TimestampTypeMask: Byte = 0x08
   val TimestampTypeAttributeBitOffset: Int = 3
 
   /**
-    * Compression code for uncompressed messages
-    */
+   * Compression code for uncompressed messages
+   */
   val NoCompression: Int = 0
 
   /**
-    * To indicate timestamp is not defined so "magic" value 0 will be used.
-    */
+   * To indicate timestamp is not defined so "magic" value 0 will be used.
+   */
   val NoTimestamp: Long = -1
 
   /**
-    * Give the header size difference between different message versions.
-    */
+   * Give the header size difference between different message versions.
+   */
   def headerSizeDiff(fromMagicValue: Byte, toMagicValue: Byte) : Int =
   MessageHeaderSizeMap(toMagicValue) - MessageHeaderSizeMap(fromMagicValue)
 
@@ -109,35 +110,35 @@ object Message {
 }
 
 /**
-  * A message. The format of an N byte message is the following:
-  *
-  * 1. 4 byte CRC32 of the message
-  * 2. 1 byte "magic" identifier to allow format changes, value is 0 or 1
-  * 3. 1 byte "attributes" identifier to allow annotations on the message independent of the version
-  *    bit 0 ~ 2 : Compression codec.
-  *      0 : no compression
-  *      1 : gzip
-  *      2 : snappy
-  *      3 : lz4
-  *    bit 3 : Timestamp type
-  *      0 : create time
-  *      1 : log append time
-  *    bit 4 ~ 7 : reserved
-  * 4. (Optional) 8 byte timestamp only if "magic" identifier is greater than 0
-  * 5. 4 byte key length, containing length K
-  * 6. K byte key
-  * 5. 4 byte header length, containing length H
-  * 6. H byte header
-  * 7. 4 byte payload length, containing length V
-  * 8. V byte payload
-  *
-  * Default constructor wraps an existing ByteBuffer with the Message object with no change to the contents.
-  * @param buffer the byte buffer of this message.
-  * @param wrapperMessageTimestamp the wrapper message timestamp, which is only defined when the message is an inner
-  *                                message of a compressed message.
-  * @param wrapperMessageTimestampType the wrapper message timestamp type, which is only defined when the message is an
-  *                                    inner message of a compressed message.
-  */
+ * A message. The format of an N byte message is the following:
+ *
+ * 1. 4 byte CRC32 of the message
+ * 2. 1 byte "magic" identifier to allow format changes, value is 0 or 1
+ * 3. 1 byte "attributes" identifier to allow annotations on the message independent of the version
+ *    bit 0 ~ 2 : Compression codec.
+ *      0 : no compression
+ *      1 : gzip
+ *      2 : snappy
+ *      3 : lz4
+ *    bit 3 : Timestamp type
+ *      0 : create time
+ *      1 : log append time
+ *    bit 4 ~ 7 : reserved
+ * 4. (Optional) 8 byte timestamp only if "magic" identifier is greater than 0
+ * 5. 4 byte key length, containing length K
+ * 6. K byte key
+ * 7. 4 byte header length, containing length H
+ * 8. H byte header
+ * 9. 4 byte payload length, containing length V
+ * 10. V byte payload
+ *
+ * Default constructor wraps an existing ByteBuffer with the Message object with no change to the contents.
+ * @param buffer the byte buffer of this message.
+ * @param wrapperMessageTimestamp the wrapper message timestamp, which is only defined when the message is an inner
+ *                                message of a compressed message.
+ * @param wrapperMessageTimestampType the wrapper message timestamp type, which is only defined when the message is an
+ *                                    inner message of a compressed message.
+ */
 class Message(val buffer: ByteBuffer,
               private val wrapperMessageTimestamp: Option[Long] = None,
               private val wrapperMessageTimestampType: Option[TimestampType] = None) {
@@ -145,17 +146,17 @@ class Message(val buffer: ByteBuffer,
   import kafka.message.Message._
 
   /**
-    * A constructor to create a Message
-    * @param bytes The payload of the message
-    * @param header The header of the message (null, if none)
-    * @param key The key of the message (null, if none)
-    * @param timestamp The timestamp of the message.
-    * @param timestampType The timestamp type of the message.
-    * @param codec The compression codec used on the contents of the message (if any)
-    * @param payloadOffset The offset into the payload array used to extract payload
-    * @param payloadSize The size of the payload to use
-    * @param magicValue the magic value to use
-    */
+   * A constructor to create a Message
+   * @param bytes The payload of the message
+   * @param header The header of the message (null, if none)
+   * @param key The key of the message (null, if none)
+   * @param timestamp The timestamp of the message.
+   * @param timestampType The timestamp type of the message.
+   * @param codec The compression codec used on the contents of the message (if any)
+   * @param payloadOffset The offset into the payload array used to extract payload
+   * @param payloadSize The size of the payload to use
+   * @param magicValue the magic value to use
+   */
   def this(bytes: Array[Byte],
            header: Array[Byte],
            key: Array[Byte],
@@ -166,18 +167,18 @@ class Message(val buffer: ByteBuffer,
            payloadSize: Int,
            magicValue: Byte) = {
     this(ByteBuffer.allocate(Message.CrcLength +
-      Message.MagicLength +
-      Message.AttributesLength +
-      (if (magicValue == Message.MagicValue_V0) 0
-      else Message.TimestampLength) +
-      Message.KeySizeLength +
-      (if(key == null) 0 else key.length) +
-      Message.HeadersSizeLength +
-      (if(header == null) 0 else header.length) +
-      Message.ValueSizeLength +
-      (if(bytes == null) 0
-      else if(payloadSize >= 0) payloadSize
-      else bytes.length - payloadOffset)))
+                             Message.MagicLength +
+                             Message.AttributesLength +
+                             (if (magicValue == Message.MagicValue_V0) 0
+                              else Message.TimestampLength) +
+                             Message.KeySizeLength +
+                             (if(key == null) 0 else key.length) +
+                             Message.HeadersSizeLength +
+                             (if(header == null) 0 else header.length) +
+                             Message.ValueSizeLength +
+                             (if(bytes == null) 0
+                              else if(payloadSize >= 0) payloadSize
+                              else bytes.length - payloadOffset)))
     validateTimestampAndMagicValue(timestamp, magicValue)
     // skip crc, we will fill that in at the end
     buffer.position(MagicOffset)
@@ -204,11 +205,9 @@ class Message(val buffer: ByteBuffer,
         buffer.put(header, 0, header.length)
       }
     }
-
-
     val size = if(bytes == null) -1
-    else if(payloadSize >= 0) payloadSize
-    else bytes.length - payloadOffset
+               else if(payloadSize >= 0) payloadSize
+               else bytes.length - payloadOffset
     buffer.putInt(size)
     if(bytes != null)
       buffer.put(bytes, payloadOffset, size)
@@ -240,50 +239,50 @@ class Message(val buffer: ByteBuffer,
     this(bytes = bytes, key = null, timestamp = Message.NoTimestamp, codec = NoCompressionCodec, magicValue = Message.CurrentMagicValue)
 
   /**
-    * Compute the checksum of the message from the message contents
-    */
+   * Compute the checksum of the message from the message contents
+   */
   def computeChecksum: Long =
-  CoreUtils.crc32(buffer.array, buffer.arrayOffset + MagicOffset,  buffer.limit - MagicOffset)
+    CoreUtils.crc32(buffer.array, buffer.arrayOffset + MagicOffset,  buffer.limit - MagicOffset)
 
   /**
-    * Retrieve the previously computed CRC for this message
-    */
+   * Retrieve the previously computed CRC for this message
+   */
   def checksum: Long = Utils.readUnsignedInt(buffer, CrcOffset)
 
-  /**
-    * Returns true if the crc stored with the message matches the crc computed off the message contents
-    */
+    /**
+   * Returns true if the crc stored with the message matches the crc computed off the message contents
+   */
   def isValid: Boolean = checksum == computeChecksum
 
   /**
-    * Throw an InvalidMessageException if isValid is false for this message
-    */
+   * Throw an InvalidMessageException if isValid is false for this message
+   */
   def ensureValid() {
     if(!isValid)
       throw new InvalidMessageException(s"Message is corrupt (stored crc = ${checksum}, computed crc = ${computeChecksum})")
   }
 
   /**
-    * The complete serialized size of this message in bytes (including crc, header attributes, etc)
-    */
+   * The complete serialized size of this message in bytes (including crc, header attributes, etc)
+   */
   def size: Int = buffer.limit
 
   /**
-    * The position where the key size is stored.
-    */
+   * The position where the key size is stored.
+   */
   private def keySizeOffset = {
     if (magic == MagicValue_V0) KeySizeOffset_V0
     else KeySizeOffset_V1_V2
   }
 
   /**
-    * The length of the key in bytes
-    */
+   * The length of the key in bytes
+   */
   def keySize: Int = buffer.getInt(keySizeOffset)
 
   /**
-    * Does the message have a key?
-    */
+   * Does the message have a key?
+   */
   def hasKey: Boolean = keySize >= 0
 
 
@@ -305,8 +304,8 @@ class Message(val buffer: ByteBuffer,
   def hasHeaders: Boolean = headersSize >= 0
 
   /**
-    * The position where the payload size is stored
-    */
+   * The position where the payload size is stored
+   */
   private def payloadSizeOffset = {
     if (magic == MagicValue_V0) KeyOffset_V0 + max(0, keySize)
     else if(magic == MagicValue_V1) KeyOffset_V1_V2 + max(0, keySize)
@@ -314,32 +313,32 @@ class Message(val buffer: ByteBuffer,
   }
 
   /**
-    * The length of the message value in bytes
-    */
+   * The length of the message value in bytes
+   */
   def payloadSize: Int = buffer.getInt(payloadSizeOffset)
 
   /**
-    * Is the payload of this message null
-    */
+   * Is the payload of this message null
+   */
   def isNull: Boolean = payloadSize < 0
 
   /**
-    * The magic version of this message
-    */
+   * The magic version of this message
+   */
   def magic: Byte = buffer.get(MagicOffset)
 
   /**
-    * The attributes stored with this message
-    */
+   * The attributes stored with this message
+   */
   def attributes: Byte = buffer.get(AttributesOffset)
 
   /**
-    * The timestamp of the message, only available when the "magic" value is greater than 0
-    * When magic > 0, The timestamp of a message is determined in the following way:
-    * 1. wrapperMessageTimestampType = None and wrapperMessageTimestamp is None - Uncompressed message, timestamp and timestamp type are in the message.
-    * 2. wrapperMessageTimestampType = LogAppendTime and wrapperMessageTimestamp is defined - Compressed message using LogAppendTime
-    * 3. wrapperMessageTimestampType = CreateTime and wrapperMessageTimestamp is defined - Compressed message using CreateTime
-    */
+   * The timestamp of the message, only available when the "magic" value is greater than 0
+   * When magic > 0, The timestamp of a message is determined in the following way:
+   * 1. wrapperMessageTimestampType = None and wrapperMessageTimestamp is None - Uncompressed message, timestamp and timestamp type are in the message.
+   * 2. wrapperMessageTimestampType = LogAppendTime and wrapperMessageTimestamp is defined - Compressed message using LogAppendTime
+   * 3. wrapperMessageTimestampType = CreateTime and wrapperMessageTimestamp is defined - Compressed message using CreateTime
+   */
   def timestamp: Long = {
     if (magic == MagicValue_V0)
       Message.NoTimestamp
@@ -351,8 +350,8 @@ class Message(val buffer: ByteBuffer,
   }
 
   /**
-    * The timestamp type of the message
-    */
+   * The timestamp type of the message
+   */
   def timestampType = {
     if (magic == MagicValue_V0)
       TimestampType.NO_TIMESTAMP_TYPE
@@ -361,14 +360,14 @@ class Message(val buffer: ByteBuffer,
   }
 
   /**
-    * The compression codec used with this message
-    */
+   * The compression codec used with this message
+   */
   def compressionCodec: CompressionCodec =
-  CompressionCodec.getCompressionCodec(buffer.get(AttributesOffset) & CompressionCodeMask)
+    CompressionCodec.getCompressionCodec(buffer.get(AttributesOffset) & CompressionCodeMask)
 
   /**
-    * A ByteBuffer containing the content of the message
-    */
+   * A ByteBuffer containing the content of the message
+   */
   def payload: ByteBuffer = sliceDelimited(payloadSizeOffset)
 
   /**
@@ -383,13 +382,13 @@ class Message(val buffer: ByteBuffer,
   }
 
   /**
-    * A ByteBuffer containing the message key
-    */
+   * A ByteBuffer containing the message key
+   */
   def key: ByteBuffer = sliceDelimited(keySizeOffset)
 
   /**
-    * convert the message to specified format
-    */
+   * convert the message to specified format
+   */
   def toFormatVersion(toMagicValue: Byte): Message = {
     if (magic == toMagicValue)
       this
@@ -434,8 +433,8 @@ class Message(val buffer: ByteBuffer,
   }
 
   /**
-    * Read a size-delimited byte buffer starting at the given offset
-    */
+   * Read a size-delimited byte buffer starting at the given offset
+   */
   private def sliceDelimited(start: Int): ByteBuffer = {
     val size = buffer.getInt(start)
     if(size < 0) {
@@ -451,8 +450,8 @@ class Message(val buffer: ByteBuffer,
   }
 
   /**
-    * Validate the timestamp and "magic" value
-    */
+   * Validate the timestamp and "magic" value
+   */
   private def validateTimestampAndMagicValue(timestamp: Long, magic: Byte) {
     if (magic != MagicValue_V0 && magic != MagicValue_V1 && magic != MagicValue_V2)
       throw new IllegalArgumentException(s"Invalid magic value $magic")

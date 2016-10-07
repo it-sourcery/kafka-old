@@ -529,7 +529,7 @@ public class KafkaConsumer<K, V> implements Consumer<K, V> {
      * @param configs The consumer configs
      */
     public KafkaConsumer(Map<String, Object> configs) {
-        this(configs, null, null, null);
+        this(configs, null, null);
     }
 
     /**
@@ -544,26 +544,6 @@ public class KafkaConsumer<K, V> implements Consumer<K, V> {
      *            won't be called in the consumer when the deserializer is passed in directly.
      */
     public KafkaConsumer(Map<String, Object> configs,
-                         Deserializer<K> keyDeserializer,
-                         Deserializer<V> valueDeserializer) {
-        this(configs, null, keyDeserializer, valueDeserializer);
-    }
-
-    /**
-     * A consumer is instantiated by providing a set of key-value pairs as configuration, and a key and a value {@link Deserializer}.
-     * <p>
-     * Valid configuration strings are documented at {@link ConsumerConfig}
-     *
-     * @param configs The consumer configs
-     * @param headersDeserializer The deserializer for headers that implements {@link Deserializer}. The configure() method
-     *            won't be called in the consumer when the deserializer is passed in directly.
-     * @param keyDeserializer The deserializer for key that implements {@link Deserializer}. The configure() method
-     *            won't be called in the consumer when the deserializer is passed in directly.
-     * @param valueDeserializer The deserializer for value that implements {@link Deserializer}. The configure() method
-     *            won't be called in the consumer when the deserializer is passed in directly.
-     */
-    public KafkaConsumer(Map<String, Object> configs,
-                         Deserializer<Map<String, String>> headersDeserializer,
                          Deserializer<K> keyDeserializer,
                          Deserializer<V> valueDeserializer) {
         this(new ConsumerConfig(ConsumerConfig.addDeserializerToConfig(configs, keyDeserializer, valueDeserializer)),
