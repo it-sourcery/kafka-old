@@ -104,7 +104,7 @@ object Message {
    * Give the header size difference between different message versions.
    */
   def headerSizeDiff(fromMagicValue: Byte, toMagicValue: Byte) : Int =
-  MessageHeaderSizeMap(toMagicValue) - MessageHeaderSizeMap(fromMagicValue)
+    MessageHeaderSizeMap(toMagicValue) - MessageHeaderSizeMap(fromMagicValue)
 
 
 }
