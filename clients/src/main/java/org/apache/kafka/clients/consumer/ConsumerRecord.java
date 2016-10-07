@@ -12,7 +12,7 @@
  */
 package org.apache.kafka.clients.consumer;
 
-import java.util.Collections;
+import java.util.HashMap;
 import java.util.Map;
 
 import org.apache.kafka.common.record.Record;
@@ -93,7 +93,7 @@ public final class ConsumerRecord<K, V> {
         this.offset = offset;
         this.timestamp = timestamp;
         this.timestampType = timestampType;
-        this.headers = Collections.unmodifiableMap(headers != null ? headers : Collections.EMPTY_MAP);
+        this.headers = headers == null ? new HashMap<Integer, byte[]>() : headers;
         this.checksum = checksum;
         this.serializedKeySize = serializedKeySize;
         this.serializedValueSize = serializedValueSize;

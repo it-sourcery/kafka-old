@@ -17,11 +17,8 @@
 package org.apache.kafka.common.record;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
 
-import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
@@ -72,23 +69,6 @@ public class HeadersCoderTest
         Map<Integer, byte[]> decoded = headersCoder.decode(bytes);
 
         assertEquals(0, decoded.size());
-    }
-
-    @Test
-    public void testDeserializationToMaxKeyOnly() {
-        Map<Integer, byte[]> original = new HashMap<>();
-        original.put(1, "hello".getBytes());
-        original.put(2, "hello1".getBytes());
-        original.put(3, "hello2".getBytes());
-
-        byte[] bytes = headersCoder.encode(original);
-
-        Map<Integer, byte[]> decoded = headersCoder.decode(bytes, 2);
-
-        assertEquals(3, original.size());
-        assertEquals(2, decoded.size());
-        assertTrue(Arrays.equals(original.get(1), decoded.get(1)));
-        assertTrue(Arrays.equals(original.get(2), decoded.get(2)));
     }
 
 }

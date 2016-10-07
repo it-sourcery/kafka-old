@@ -49,15 +49,12 @@ public class HeadersCoder
       return bytes;
    }
 
-   public Map<Integer, byte[]> decode(byte[] bytes) {
-      return decode(bytes, Integer.MAX_VALUE);
-   }
 
-   public Map<Integer, byte[]> decode(byte[] bytes, int maxHeaderKey){
+   public Map<Integer, byte[]> decode(byte[] bytes){
       Map<Integer, byte[]> headers = new HashMap<>();
       try {
          if (bytes != null && bytes.length > 0){
-            decodeInternal(bytes, maxHeaderKey, headers);
+            decodeInternal(bytes, headers);
          }
       } catch (IOException e) {
          throw new SerializationException("IOException caught decoding headers", e);
@@ -65,7 +62,7 @@ public class HeadersCoder
       return headers;
    }
 
-   public void decodeInternal(byte[] bytes, int maxHeaderKey, Map<Integer, byte[]> headers) throws IOException
+   public void decodeInternal(byte[] bytes, Map<Integer, byte[]> headers) throws IOException
    {
 
       ByteArrayInputStream bais = null;
@@ -79,9 +76,6 @@ public class HeadersCoder
          while (hasNext(dis))
          {
             int key = dis.readInt();
-            if (key > maxHeaderKey){
-               break;
-            }
             int valueLength = dis.readInt();
             byte[] value = new byte[valueLength];
             dis.read(value);
